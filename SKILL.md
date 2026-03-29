@@ -20,6 +20,8 @@ PowerPointファイル（.pptx）の内容をCLIから出力するツール。
 基本的には `info` → `slides` で内容を把握する。特定のキーワードを探す場合は `search` が効率的。
 図形の書式情報（フォント・色・枠線）は常に出力される。画像を確認するには `--extract-images <dir>` で抽出し、出力の `image.path` を Read ツールで読む。
 
+**重要:** `info` の結果で `has_images: true` のスライドがある場合、`slides` コマンドには必ず `--extract-images /tmp/pptx_images` を付けること。抽出後は出力の `image.path` を Read ツールで読み、画像の内容を確認すること。
+
 ## コマンドリファレンス
 
 ### info
@@ -30,11 +32,12 @@ cc-read-pptx info <file>
 
 出力例:
 ```json
-{"file":"基本設計書.pptx","slide_size":{"width":9144000,"height":6858000},"slides":[{"number":1,"title":"基本設計書","has_notes":true},{"number":2,"title":"目次"},{"number":3,"title":"システム構成"},{"number":4},{"number":5,"title":"フロー図","hidden":true}]}
+{"file":"基本設計書.pptx","slide_size":{"width":9144000,"height":6858000},"slides":[{"number":1,"title":"基本設計書","has_notes":true},{"number":2,"title":"目次"},{"number":3,"title":"システム構成","has_images":true},{"number":4},{"number":5,"title":"フロー図","hidden":true}]}
 ```
 
 - `slides[].title`: タイトルプレースホルダーのテキスト。存在しない場合は省略
 - `slides[].has_notes`: ノートにテキストがある場合のみ `true`
+- `slides[].has_images`: 画像を含む場合のみ `true`（グループ内の画像も検出）
 - `slides[].hidden`: 非表示スライドの場合のみ `true`
 - `slide_size`: スライドサイズ（EMU単位。標準4:3=9144000x6858000, 16:9=12192000x6858000）
 

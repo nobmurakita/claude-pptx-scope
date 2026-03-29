@@ -4,10 +4,11 @@ package pptx
 
 // SlideInfo は info コマンドの出力用
 type SlideInfo struct {
-	Number   int    `json:"number"`
-	Title    string `json:"title,omitempty"`
-	HasNotes bool   `json:"has_notes,omitempty"`
-	Hidden   bool   `json:"hidden,omitempty"`
+	Number    int    `json:"number"`
+	Title     string `json:"title,omitempty"`
+	HasNotes  bool   `json:"has_notes,omitempty"`
+	HasImages bool   `json:"has_images,omitempty"`
+	Hidden    bool   `json:"hidden,omitempty"`
 }
 
 // Shape は図形の出力データ

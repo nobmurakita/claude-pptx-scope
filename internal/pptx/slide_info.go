@@ -38,6 +38,9 @@ func (f *File) LoadSlideInfos() ([]SlideInfo, error) {
 		// ノート有無チェック
 		info.HasNotes = f.hasNotes(i)
 
+		// 画像有無チェック
+		info.HasImages = hasImages(sld.CSld.SpTree)
+
 		infos = append(infos, info)
 	}
 
@@ -83,6 +86,31 @@ func extractParagraphText(p xmlP) string {
 		sb.WriteString(fld.T)
 	}
 	return sb.String()
+}
+
+// hasImages は spTree 内に画像が存在するかチェックする（グループ内も再帰的に確認）
+func hasImages(spTree xmlSpTree) bool {
+	if len(spTree.Pictures) > 0 {
+		return true
+	}
+	for _, grp := range spTree.GroupShapes {
+		if hasImagesInGroup(grp) {
+			return true
+		}
+	}
+	return false
+}
+
+func hasImagesInGroup(grp xmlGrpSp) bool {
+	if len(grp.Pictures) > 0 {
+		return true
+	}
+	for _, sub := range grp.GroupShapes {
+		if hasImagesInGroup(sub) {
+			return true
+		}
+	}
+	return false
 }
 
 // hasNotes はスライドにノートが存在するか確認する
