@@ -58,7 +58,7 @@ cc-read-pptx slides --slide 1 基本設計書.pptx
 ```
 
 ```jsonl
-{"slide":1,"title":"基本設計書","shapes":[{"id":1,"type":"rect","placeholder":"ctrTitle","position":{"x":685800,"y":2286000,"cx":7772400,"cy":1470025},"z":0,"font":{"name":"メイリオ","size":36,"bold":true},"paragraphs":[{"text":"基本設計書"}]},{"id":2,"type":"rect","placeholder":"subTitle","position":{"x":1371600,"y":3886200,"cx":6400800,"cy":1752600},"z":1,"paragraphs":[{"text":"2025年4月版"}]}]}
+{"slide":1,"title":"基本設計書","shapes":[{"id":1,"type":"rect","placeholder":"ctrTitle","position":{"x":685800,"y":2286000,"cx":7772400,"cy":1470025},"z":0,"paragraphs":[{"text":"基本設計書","font":{"name":"メイリオ","size":36,"bold":true}}]},{"id":2,"type":"rect","placeholder":"subTitle","position":{"x":1371600,"y":3886200,"cx":6400800,"cy":1752600},"z":1,"paragraphs":[{"text":"2025年4月版"}]}]}
 ```
 
 1スライドにつき1行のJSONオブジェクト（JSONL形式）。`--slide` 未指定時は全スライドを順番に出力する。
@@ -105,7 +105,7 @@ cc-read-pptx slides --slide 1 --notes 資料.pptx
 |-----------|------|-----------|
 | `--slide` | 対象スライド番号（1始まり） | 全スライド |
 | `--notes` | ノートも出力する | OFF |
-| `--extract-images` | 画像を指定ディレクトリに抽出する | OFF（画像スキップ） |
+| `--extract-images` | 画像を指定ディレクトリに抽出する | OFF（`image` フィールド省略） |
 
 ### search — テキストを検索
 
@@ -135,6 +135,6 @@ cc-read-pptx search --text "データ" 基本設計書.pptx
 | コネクタ | `connector` | `from`/`to` で接続先の図形IDを参照 |
 | グループ | `group` | `children` に子要素の配列 |
 | テーブル | `table` | `table` フィールドに `cols` と `rows` |
-| 画像 | `picture` | `--extract-images` 未指定時はスキップ |
+| 画像 | `picture` | `--extract-images` 未指定時は `image` フィールドを省略 |
 
 出力フィールドの詳細は [DESIGN.md](DESIGN.md) を参照。

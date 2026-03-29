@@ -51,11 +51,11 @@ cc-read-pptx slides [options] <file>
 |-----------|------|-----------|
 | `--slide <number>` | 対象スライド番号（1始まり） | 全スライド |
 | `--notes` | ノートも出力する | OFF |
-| `--extract-images <dir>` | 画像を指定ディレクトリに抽出 | OFF（画像スキップ） |
+| `--extract-images <dir>` | 画像を指定ディレクトリに抽出 | OFF（`image` フィールド省略） |
 
 出力例:
 ```jsonl
-{"slide":1,"title":"基本設計書","shapes":[{"id":1,"type":"rect","placeholder":"ctrTitle","position":{"x":685800,"y":2286000,"cx":7772400,"cy":1470025},"z":0,"font":{"name":"メイリオ","size":36,"bold":true,"color":"#333333"},"alignment":{"horizontal":"center","vertical":"center"},"paragraphs":[{"text":"基本設計書"}]}]}
+{"slide":1,"title":"基本設計書","shapes":[{"id":1,"type":"rect","placeholder":"ctrTitle","position":{"x":685800,"y":2286000,"cx":7772400,"cy":1470025},"z":0,"alignment":{"vertical":"center"},"paragraphs":[{"text":"基本設計書","font":{"name":"メイリオ","size":36,"bold":true,"color":"#333333"},"alignment":{"horizontal":"center"}}]}]}
 {"slide":2,"title":"目次","shapes":[{"id":1,"type":"rect","placeholder":"title","z":0,"paragraphs":[{"text":"目次"}]},{"id":2,"type":"rect","placeholder":"body","z":1,"paragraphs":[{"text":"システム概要","bullet":"1."},{"text":"機能一覧","bullet":"2."}]}]}
 ```
 
@@ -67,7 +67,7 @@ cc-read-pptx slides [options] <file>
 - コネクタ: `type` は常に `"connector"`。`from`/`to` で接続先の図形IDを参照。`connector_type` でコネクタ形状、`arrow` で矢印の位置
 - グループ: `type` は `"group"`。`children` に子要素の配列
 - テーブル: `type` は `"table"`。`table` フィールドに `cols`（列数）と `rows`（行データ配列）。結合で吸収されたセルは `null`
-- 画像: `type` は `"picture"`。`--extract-images` 未指定時はスキップされる
+- 画像: `type` は `"picture"`。`--extract-images` 未指定時は `image` フィールドを省略
 
 **図形の主なフィールド:**
 
@@ -78,6 +78,7 @@ cc-read-pptx slides [options] <file>
 - `z`: Z-order（0始まり、大きいほど前面）
 - `fill`: 塗りつぶし色（`#RRGGBB`）
 - `line`: 枠線情報（`color`, `style`, `width`）
+- `alignment`: テキストの垂直配置（`vertical` フィールド）。デフォルトの場合は省略
 - `paragraphs`: 段落の配列。各段落に `text`, `bullet`, `level`, `font`, `alignment`, `rich_text`
 - `callout_pointer`: 吹き出しのポインタ位置（`x`, `y`。EMU単位）
 

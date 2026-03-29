@@ -83,7 +83,7 @@ Claude Code からの典型的な利用フローは以下の通り:
 **出力例:**
 
 ```jsonl
-{"slide":1,"title":"基本設計書","shapes":[{"id":1,"type":"rect","placeholder":"ctrTitle","position":{"x":685800,"y":2286000,"cx":7772400,"cy":1470025},"z":0,"font":{"name":"メイリオ","size":36,"bold":true,"color":"#333333"},"alignment":{"horizontal":"center","vertical":"center"},"paragraphs":[{"text":"基本設計書"}]},{"id":2,"type":"rect","placeholder":"subTitle","position":{"x":1371600,"y":3886200,"cx":6400800,"cy":1752600},"z":1,"paragraphs":[{"text":"2025年4月版"}]}]}
+{"slide":1,"title":"基本設計書","shapes":[{"id":1,"type":"rect","placeholder":"ctrTitle","position":{"x":685800,"y":2286000,"cx":7772400,"cy":1470025},"z":0,"alignment":{"vertical":"center"},"paragraphs":[{"text":"基本設計書","font":{"name":"メイリオ","size":36,"bold":true,"color":"#333333"},"alignment":{"horizontal":"center"}}]},{"id":2,"type":"rect","placeholder":"subTitle","position":{"x":1371600,"y":3886200,"cx":6400800,"cy":1752600},"z":1,"paragraphs":[{"text":"2025年4月版"}]}]}
 {"slide":2,"title":"目次","shapes":[{"id":1,"type":"rect","placeholder":"title","position":{"x":457200,"y":274638,"cx":8229600,"cy":1143000},"z":0,"paragraphs":[{"text":"目次"}]},{"id":2,"type":"rect","placeholder":"body","position":{"x":457200,"y":1600200,"cx":8229600,"cy":4525963},"z":1,"paragraphs":[{"text":"システム概要","bullet":"1."},{"text":"機能一覧","bullet":"2."},{"text":"データフロー","bullet":"3."}]}]}
 ```
 
@@ -146,6 +146,7 @@ Claude Code からの典型的な利用フローは以下の通り:
 | `fill` | string | 塗りつぶし色（`#RRGGBB` 形式）。塗りつぶしなしの場合は省略 |
 | `line` | object | 枠線情報。枠線がない場合は省略 |
 | `callout_pointer` | object | 吹き出しのポインタ位置（吹き出し図形の場合のみ。後述） |
+| `alignment` | object | テキストの垂直配置（`a:bodyPr` の `anchor` 属性）。デフォルトの場合は省略 |
 | `paragraphs` | array | 段落の配列。テキストがない場合は省略 |
 | `table` | object | テーブルデータ（テーブルの場合。`paragraphs` の代わりに使用） |
 
@@ -176,7 +177,7 @@ Claude Code からの典型的な利用フローは以下の通り:
 | `bullet` | string | 箇条書き記号。箇条書きでない段落は省略 |
 | `level` | number | インデントレベル（0始まり）。0の場合は省略 |
 | `font` | object | フォント情報。デフォルト値のフィールドは省略 |
-| `alignment` | object | 配置情報（`horizontal`, `vertical`）。デフォルトの場合は省略 |
+| `alignment` | object | 水平配置情報。デフォルトの場合は省略 |
 | `rich_text` | array | リッチテキストラン（段落内に書式の異なるランが存在する場合のみ） |
 
 テキストが空の段落は出力しない（箇条書き間の空行等）。
