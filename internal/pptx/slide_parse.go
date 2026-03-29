@@ -80,6 +80,16 @@ type parseContext struct {
 	imageCount int         // 画像カウンタ
 }
 
+// newTextOnlyContext はテキスト解析専用の parseContext を生成する。
+// ノート等、テキストのみを扱う場面で使用する。
+// ID割り当てや画像抽出は行わないため、それらのフィールドは初期値のまま。
+func newTextOnlyContext(f *File) *parseContext {
+	return &parseContext{
+		f:         f,
+		pptxIDMap: make(map[int]int),
+	}
+}
+
 func (ctx *parseContext) allocID(pptxID int) int {
 	ctx.nextID++
 	id := ctx.nextID
@@ -597,7 +607,7 @@ func (f *File) loadNotesParagraphs(slideIdx int) []Paragraph {
 		if sp.TxBody == nil {
 			continue
 		}
-		ctx := &parseContext{f: f}
+		ctx := newTextOnlyContext(f)
 		paras := ctx.parseParagraphs(sp.TxBody.Ps)
 		if len(paras) > 0 {
 			return paras
