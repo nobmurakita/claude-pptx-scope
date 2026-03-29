@@ -3,6 +3,7 @@ package pptx
 import (
 	"encoding/xml"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -24,7 +25,7 @@ func (f *File) LoadSlide(slideNum int, includeNotes bool, extractDir string) (*S
 
 	entry := f.slideEntries[idx]
 
-	data, err := readZipFile(f.zr, entry.Path)
+	data, err := readZipFile(f.zi, entry.Path)
 	if err != nil {
 		return nil, fmt.Errorf("スライド %d の読み込みに失敗: %w", slideNum, err)
 	}
@@ -175,17 +176,9 @@ func (ctx *parseContext) parseSpTree(spTree xmlSpTree) []Shape {
 
 // sortShapeItems はプレースホルダー優先でソートする
 func sortShapeItems(items []shapeItem) {
-	// 安定ソート: プレースホルダー → 非プレースホルダー、プレースホルダー内は優先度順
-	n := len(items)
-	for i := 1; i < n; i++ {
-		for j := i; j > 0; j-- {
-			if lessShapeItem(items[j], items[j-1]) {
-				items[j], items[j-1] = items[j-1], items[j]
-			} else {
-				break
-			}
-		}
-	}
+	sort.SliceStable(items, func(i, j int) bool {
+		return lessShapeItem(items[i], items[j])
+	})
 }
 
 func lessShapeItem(a, b shapeItem) bool {
@@ -265,7 +258,7 @@ func (ctx *parseContext) parseSp(sp xmlSp) *Shape {
 	}
 
 	// 塗りつぶし
-	s.Fill = ctx.resolveSolidFill(sp.SpPr.SolidFill)
+	s.Fill = ctx.resolveSolidFillColor(sp.SpPr.SolidFill)
 
 	// 枠線
 	s.Line = ctx.resolveLine(sp.SpPr.Ln)
@@ -329,10 +322,6 @@ func (ctx *parseContext) parseCxnSp(cxn xmlCxnSp) *Shape {
 
 // parsePic は画像をパースする
 func (ctx *parseContext) parsePic(pic xmlPic) *Shape {
-	if ctx.extractDir == "" {
-		return nil // 画像抽出が指定されていない場合はスキップ
-	}
-
 	s := &Shape{
 		ID:   ctx.allocID(pic.NvPicPr.CNvPr.ID),
 		Type: "picture",
@@ -345,8 +334,8 @@ func (ctx *parseContext) parsePic(pic xmlPic) *Shape {
 	// 位置
 	s.Position = xfrmToPosition(pic.SpPr.Xfrm)
 
-	// 画像の抽出
-	if pic.BlipFill.Blip.Embed != "" {
+	// 画像の抽出（extractDir が指定されている場合のみ）
+	if ctx.extractDir != "" && pic.BlipFill.Blip.Embed != "" {
 		s.Image = ctx.extractImage(pic.BlipFill.Blip.Embed, s.Position)
 	}
 
@@ -418,12 +407,15 @@ func (ctx *parseContext) parseGraphicFrame(gf xmlGraphicFrame) *Shape {
 	// 位置
 	s.Position = xfrmToPosition(gf.Xfrm)
 
-	// テーブルデータ
+	// テーブルデータ（結合セルはスキップ）
 	cols := len(tbl.TblGrid.GridCols)
 	var rows [][]string
 	for _, tr := range tbl.Trs {
 		row := make([]string, 0, cols)
 		for _, tc := range tr.Tcs {
+			if tc.VMerge == "1" || tc.HMerge == "1" {
+				continue // 結合で吸収されたセルをスキップ
+			}
 			text := extractTextFromTxBody(tc.TxBody)
 			row = append(row, text)
 		}
@@ -509,44 +501,44 @@ func hasTextContent(txBody *xmlTxBody) bool {
 	return false
 }
 
+// calloutDefaults は吹き出し図形のデフォルトadj値（OOXML仕様準拠）
+// adj1=水平方向オフセット, adj2=垂直方向オフセット（100000分率）
+var calloutDefaults = map[string][2]int64{
+	"wedgeRectCallout":      {-20833, 62500},
+	"wedgeRoundRectCallout": {-20833, 62500},
+	"wedgeEllipseCallout":   {-20833, 62500},
+	"cloudCallout":          {-20833, 62500},
+	"borderCallout1":        {18750, -8333},
+	"borderCallout2":        {18750, -8333},
+	"borderCallout3":        {18750, -8333},
+}
+
 // resolveCalloutPointer は吹き出し図形のポインタ位置を計算する
 func resolveCalloutPointer(geom *xmlPrstGeom, pos *Position) *Point {
-	if geom == nil || pos == nil || geom.AvLst == nil {
-		return nil
-	}
-	// 吹き出し図形の判定
-	switch geom.Prst {
-	case "wedgeRectCallout", "wedgeRoundRectCallout", "wedgeEllipseCallout",
-		"cloudCallout", "borderCallout1", "borderCallout2", "borderCallout3":
-	default:
+	if geom == nil || pos == nil {
 		return nil
 	}
 
-	var adj1, adj2 *int64
-	for _, gd := range geom.AvLst.Gd {
-		val := parseGdVal(gd.Fmla)
-		if val == nil {
-			continue
+	defaults, isCallout := calloutDefaults[geom.Prst]
+	if !isCallout {
+		return nil
+	}
+
+	a1, a2 := defaults[0], defaults[1]
+
+	if geom.AvLst != nil {
+		for _, gd := range geom.AvLst.Gd {
+			val := parseGdVal(gd.Fmla)
+			if val == nil {
+				continue
+			}
+			switch gd.Name {
+			case "adj1":
+				a1 = *val
+			case "adj2":
+				a2 = *val
+			}
 		}
-		switch gd.Name {
-		case "adj1":
-			adj1 = val
-		case "adj2":
-			adj2 = val
-		}
-	}
-
-	if adj1 == nil && adj2 == nil {
-		return nil
-	}
-
-	a1 := int64(0)
-	a2 := int64(0)
-	if adj1 != nil {
-		a1 = *adj1
-	}
-	if adj2 != nil {
-		a2 = *adj2
 	}
 
 	px := pos.X + pos.Cx/2 + a1*pos.Cx/100000
@@ -570,19 +562,24 @@ func parseGdVal(fmla string) *int64 {
 // resolveArrow はコネクタの矢印情報を解決する
 func resolveArrow(ln *xmlLn) string {
 	if ln == nil {
-		return "none"
+		return ""
 	}
-	return resolveArrowType(ln.HeadEnd, ln.TailEnd)
+	result := resolveArrowType(ln.HeadEnd, ln.TailEnd)
+	if result == "none" {
+		return ""
+	}
+	return result
 }
 
 // loadNotesParagraphs はスライドのノートの段落を取得する
+// ノートの読み込み・パース失敗時はnilを返す（スライド処理は継続する）
 func (f *File) loadNotesParagraphs(slideIdx int) []Paragraph {
 	notesPath := f.notesPath(slideIdx)
 	if notesPath == "" {
 		return nil
 	}
 
-	data, err := readZipFile(f.zr, notesPath)
+	data, err := readZipFile(f.zi, notesPath)
 	if err != nil || data == nil {
 		return nil
 	}

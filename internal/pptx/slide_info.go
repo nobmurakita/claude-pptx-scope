@@ -14,7 +14,7 @@ func (f *File) LoadSlideInfos() ([]SlideInfo, error) {
 		info := SlideInfo{Number: i + 1}
 
 		// スライドXMLを読み込み
-		data, err := readZipFile(f.zr, entry.Path)
+		data, err := readZipFile(f.zi, entry.Path)
 		if err != nil {
 			return nil, fmt.Errorf("スライド %d の読み込みに失敗: %w", i+1, err)
 		}
@@ -92,7 +92,7 @@ func (f *File) hasNotes(slideIdx int) bool {
 		return false
 	}
 
-	data, err := readZipFile(f.zr, notesPath)
+	data, err := readZipFile(f.zi, notesPath)
 	if err != nil || data == nil {
 		return false
 	}

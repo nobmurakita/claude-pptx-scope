@@ -1,14 +1,6 @@
 package pptx
 
 
-// resolveSolidFill は solidFill 要素から色を解決する
-func (ctx *parseContext) resolveSolidFill(fill *xmlSolidFill) string {
-	if fill == nil {
-		return ""
-	}
-	return ctx.resolveSolidFillColor(fill)
-}
-
 // resolveSolidFillColor は solidFill から色文字列を返す
 func (ctx *parseContext) resolveSolidFillColor(fill *xmlSolidFill) string {
 	if fill == nil {

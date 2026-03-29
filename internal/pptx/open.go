@@ -9,10 +9,30 @@ import (
 	"sync"
 )
 
+// zipIndex は ZIP 内のファイルを名前で高速検索するためのインデックス
+type zipIndex struct {
+	files map[string]*zip.File
+}
+
+// newZipIndex は zip.ReadCloser からインデックスを構築する
+func newZipIndex(zr *zip.ReadCloser) *zipIndex {
+	m := make(map[string]*zip.File, len(zr.File))
+	for _, f := range zr.File {
+		m[f.Name] = f
+	}
+	return &zipIndex{files: m}
+}
+
+// Lookup は指定パスのファイルを返す。見つからなければ nil
+func (zi *zipIndex) Lookup(path string) *zip.File {
+	return zi.files[path]
+}
+
 // File はオープンしたPowerPointファイルを表す
 type File struct {
 	Name string // ファイル名（パス除去済み）
 	zr   *zip.ReadCloser
+	zi   *zipIndex
 
 	// presentation.xml からパースした情報
 	slideEntries []slideEntry // sldIdLst の順序
@@ -25,9 +45,8 @@ type File struct {
 
 // slideEntry はスライドのエントリ
 type slideEntry struct {
-	RID    string // リレーションID
-	Path   string // ZIP内のXMLパス（例: "ppt/slides/slide1.xml"）
-	Show   *bool  // show属性（nil=表示、false=非表示）
+	RID  string // リレーションID
+	Path string // ZIP内のXMLパス（例: "ppt/slides/slide1.xml"）
 }
 
 // SlideSize はスライドのサイズ
@@ -51,6 +70,7 @@ func OpenFile(path string) (*File, error) {
 	f := &File{
 		Name: filepath.Base(path),
 		zr:   zr,
+		zi:   newZipIndex(zr),
 	}
 
 	if err := f.loadPresentation(); err != nil {
@@ -82,7 +102,7 @@ func (f *File) GetSlideSize() SlideSize {
 // getTheme はテーマカラーを遅延ロードして返す
 func (f *File) getTheme() *themeColors {
 	f.themeOnce.Do(func() {
-		data, err := readZipFile(f.zr, "ppt/theme/theme1.xml")
+		data, err := readZipFile(f.zi, "ppt/theme/theme1.xml")
 		if err == nil && data != nil {
 			f.theme = parseThemeColors(data)
 		}
@@ -92,7 +112,7 @@ func (f *File) getTheme() *themeColors {
 
 // loadPresentation は presentation.xml をパースする
 func (f *File) loadPresentation() error {
-	data, err := readZipFile(f.zr, "ppt/presentation.xml")
+	data, err := readZipFile(f.zi, "ppt/presentation.xml")
 	if err != nil {
 		return fmt.Errorf("presentation.xml の読み込みに失敗: %w", err)
 	}

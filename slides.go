@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -63,22 +64,24 @@ func runSlides(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func emitSlide(f *pptx.File, enc *jsonEncoder, slideNum int, includeNotes bool, extractDir string) error {
+func emitSlide(f *pptx.File, enc *json.Encoder, slideNum int, includeNotes bool, extractDir string) error {
 	sd, err := f.LoadSlide(slideNum, includeNotes, extractDir)
 	if err != nil {
 		return err
 	}
+	return emitSlideOutput(enc, sd.Number, sd.Title, sd.Shapes, sd.Notes)
+}
 
+func emitSlideOutput(enc *json.Encoder, number int, title string, shapes []pptx.Shape, notes []pptx.Paragraph) error {
 	out := slideOutput{
-		Slide:  sd.Number,
-		Title:  sd.Title,
-		Shapes: sd.Shapes,
-		Notes:  sd.Notes,
+		Slide:  number,
+		Title:  title,
+		Shapes: shapes,
+		Notes:  notes,
 	}
 	if out.Shapes == nil {
 		out.Shapes = []pptx.Shape{}
 	}
-
 	if err := enc.Encode(out); err != nil {
 		return fmt.Errorf("JSON出力エラー: %w", err)
 	}

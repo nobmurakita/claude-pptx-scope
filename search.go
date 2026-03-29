@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/nobmurakita/cc-read-ppt/internal/pptx"
@@ -10,6 +9,7 @@ import (
 
 func init() {
 	searchCmd.Flags().String("text", "", "検索文字列（部分一致、大文字小文字無視）")
+	_ = searchCmd.MarkFlagRequired("text")
 	searchCmd.Flags().Int("slide", 0, "対象スライド番号（1始まり）")
 	searchCmd.Flags().Bool("notes", false, "ノートも検索対象にする")
 	rootCmd.AddCommand(searchCmd)
@@ -27,10 +27,6 @@ func runSearch(cmd *cobra.Command, args []string) error {
 	slideNum, _ := cmd.Flags().GetInt("slide")
 	includeNotes, _ := cmd.Flags().GetBool("notes")
 
-	if textFlag == "" {
-		return fmt.Errorf("--text を指定してください")
-	}
-
 	f, err := pptx.OpenFile(args[0])
 	if err != nil {
 		return err
@@ -44,17 +40,8 @@ func runSearch(cmd *cobra.Command, args []string) error {
 
 	enc := newJSONLWriter(os.Stdout)
 	for _, r := range results {
-		out := slideOutput{
-			Slide:  r.Number,
-			Title:  r.Title,
-			Shapes: r.Shapes,
-			Notes:  r.Notes,
-		}
-		if out.Shapes == nil {
-			out.Shapes = []pptx.Shape{}
-		}
-		if err := enc.Encode(out); err != nil {
-			return fmt.Errorf("JSON出力エラー: %w", err)
+		if err := emitSlideOutput(enc, r.Number, r.Title, r.Shapes, r.Notes); err != nil {
+			return err
 		}
 	}
 
