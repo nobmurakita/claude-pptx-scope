@@ -47,6 +47,7 @@ cc-read-pptx info 基本設計書.pptx
 
 - `slides[].title`: タイトルプレースホルダーのテキスト。存在しない場合は省略
 - `slides[].has_notes`: ノートにテキストがある場合のみ `true`
+- `slides[].has_images`: 画像を含む場合のみ `true`（グループ内も検出）
 - `slides[].hidden`: 非表示スライドの場合のみ `true`
 - `slide_size`: スライドサイズ（EMU単位）
 
