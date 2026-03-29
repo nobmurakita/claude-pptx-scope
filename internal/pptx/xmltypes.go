@@ -1,6 +1,9 @@
 package pptx
 
-import "encoding/xml"
+import (
+	"encoding/xml"
+	"fmt"
+)
 
 // スライドXMLの型定義
 
@@ -16,13 +19,83 @@ type xmlCSld struct {
 	SpTree xmlSpTree `xml:"spTree"`
 }
 
-// xmlSpTree は p:spTree 要素
+// xmlSpTree は p:spTree 要素（子要素をXML出現順に保持する）
 type xmlSpTree struct {
-	Shapes        []xmlSp           `xml:"sp"`
-	GroupShapes   []xmlGrpSp        `xml:"grpSp"`
-	Connectors    []xmlCxnSp        `xml:"cxnSp"`
-	Pictures      []xmlPic          `xml:"pic"`
-	GraphicFrames []xmlGraphicFrame `xml:"graphicFrame"`
+	Children []xmlSpTreeChild
+}
+
+// xmlSpTreeChild は spTree/grpSp の子要素（いずれか1つが非nil）
+type xmlSpTreeChild struct {
+	Sp           *xmlSp
+	CxnSp        *xmlCxnSp
+	Pic          *xmlPic
+	GrpSp        *xmlGrpSp
+	GraphicFrame *xmlGraphicFrame
+}
+
+func (t *xmlSpTree) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	for {
+		tok, err := d.Token()
+		if err != nil {
+			return fmt.Errorf("spTree のパースに失敗: %w", err)
+		}
+		switch el := tok.(type) {
+		case xml.StartElement:
+			child, ok, err := decodeSpTreeChild(d, el)
+			if err != nil {
+				return err
+			}
+			if ok {
+				t.Children = append(t.Children, child)
+			} else {
+				if err := d.Skip(); err != nil {
+					return err
+				}
+			}
+		case xml.EndElement:
+			return nil
+		}
+	}
+}
+
+// decodeSpTreeChild はタグ名に応じて子要素をデコードする
+func decodeSpTreeChild(d *xml.Decoder, el xml.StartElement) (xmlSpTreeChild, bool, error) {
+	var child xmlSpTreeChild
+	switch el.Name.Local {
+	case "sp":
+		var v xmlSp
+		if err := d.DecodeElement(&v, &el); err != nil {
+			return child, false, err
+		}
+		child.Sp = &v
+	case "cxnSp":
+		var v xmlCxnSp
+		if err := d.DecodeElement(&v, &el); err != nil {
+			return child, false, err
+		}
+		child.CxnSp = &v
+	case "pic":
+		var v xmlPic
+		if err := d.DecodeElement(&v, &el); err != nil {
+			return child, false, err
+		}
+		child.Pic = &v
+	case "grpSp":
+		var v xmlGrpSp
+		if err := d.DecodeElement(&v, &el); err != nil {
+			return child, false, err
+		}
+		child.GrpSp = &v
+	case "graphicFrame":
+		var v xmlGraphicFrame
+		if err := d.DecodeElement(&v, &el); err != nil {
+			return child, false, err
+		}
+		child.GraphicFrame = &v
+	default:
+		return child, false, nil
+	}
+	return child, true, nil
 }
 
 // xmlSp は p:sp 要素（通常の図形）
@@ -264,15 +337,47 @@ type xmlBlip struct {
 
 // ---------- グループ ----------
 
-// xmlGrpSp は p:grpSp 要素
+// xmlGrpSp は p:grpSp 要素（子要素をXML出現順に保持する）
 type xmlGrpSp struct {
-	NvGrpSpPr     xmlNvGrpSpPr      `xml:"nvGrpSpPr"`
-	GrpSpPr       xmlGrpSpPr        `xml:"grpSpPr"`
-	Shapes        []xmlSp           `xml:"sp"`
-	GroupShapes   []xmlGrpSp        `xml:"grpSp"`
-	Connectors    []xmlCxnSp        `xml:"cxnSp"`
-	Pictures      []xmlPic          `xml:"pic"`
-	GraphicFrames []xmlGraphicFrame `xml:"graphicFrame"`
+	NvGrpSpPr xmlNvGrpSpPr
+	GrpSpPr   xmlGrpSpPr
+	Children  []xmlSpTreeChild
+}
+
+func (g *xmlGrpSp) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	for {
+		tok, err := d.Token()
+		if err != nil {
+			return fmt.Errorf("grpSp のパースに失敗: %w", err)
+		}
+		switch el := tok.(type) {
+		case xml.StartElement:
+			switch el.Name.Local {
+			case "nvGrpSpPr":
+				if err := d.DecodeElement(&g.NvGrpSpPr, &el); err != nil {
+					return err
+				}
+			case "grpSpPr":
+				if err := d.DecodeElement(&g.GrpSpPr, &el); err != nil {
+					return err
+				}
+			default:
+				child, ok, err := decodeSpTreeChild(d, el)
+				if err != nil {
+					return err
+				}
+				if ok {
+					g.Children = append(g.Children, child)
+				} else {
+					if err := d.Skip(); err != nil {
+						return err
+					}
+				}
+			}
+		case xml.EndElement:
+			return nil
+		}
+	}
 }
 
 type xmlNvGrpSpPr struct {

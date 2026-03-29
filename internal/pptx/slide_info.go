@@ -33,13 +33,13 @@ func (f *File) LoadSlideInfos() ([]SlideInfo, error) {
 		}
 
 		// タイトル取得
-		info.Title = extractTitle(sld.CSld.SpTree)
+		info.Title = extractTitle(sld.CSld.SpTree.Children)
 
 		// ノート有無チェック
 		info.HasNotes = f.hasNotes(i)
 
 		// 画像有無チェック
-		info.HasImages = hasImages(sld.CSld.SpTree)
+		info.HasImages = hasImages(sld.CSld.SpTree.Children)
 
 		infos = append(infos, info)
 	}
@@ -47,15 +47,18 @@ func (f *File) LoadSlideInfos() ([]SlideInfo, error) {
 	return infos, nil
 }
 
-// extractTitle は spTree からタイトルテキストを取得する
-func extractTitle(spTree xmlSpTree) string {
-	for _, sp := range spTree.Shapes {
-		ph := sp.NvSpPr.NvPr.Ph
+// extractTitle は子要素からタイトルテキストを取得する
+func extractTitle(children []xmlSpTreeChild) string {
+	for _, child := range children {
+		if child.Sp == nil {
+			continue
+		}
+		ph := child.Sp.NvSpPr.NvPr.Ph
 		if ph == nil {
 			continue
 		}
 		if ph.Type == "title" || ph.Type == "ctrTitle" {
-			return extractTextFromTxBody(sp.TxBody)
+			return extractTextFromTxBody(child.Sp.TxBody)
 		}
 	}
 	return ""
@@ -88,25 +91,13 @@ func extractParagraphText(p xmlP) string {
 	return sb.String()
 }
 
-// hasImages は spTree 内に画像が存在するかチェックする（グループ内も再帰的に確認）
-func hasImages(spTree xmlSpTree) bool {
-	if len(spTree.Pictures) > 0 {
-		return true
-	}
-	for _, grp := range spTree.GroupShapes {
-		if hasImagesInGroup(grp) {
+// hasImages は子要素内に画像が存在するかチェックする（グループ内も再帰的に確認）
+func hasImages(children []xmlSpTreeChild) bool {
+	for _, child := range children {
+		if child.Pic != nil {
 			return true
 		}
-	}
-	return false
-}
-
-func hasImagesInGroup(grp xmlGrpSp) bool {
-	if len(grp.Pictures) > 0 {
-		return true
-	}
-	for _, sub := range grp.GroupShapes {
-		if hasImagesInGroup(sub) {
+		if child.GrpSp != nil && hasImages(child.GrpSp.Children) {
 			return true
 		}
 	}
@@ -131,12 +122,15 @@ func (f *File) hasNotes(slideIdx int) bool {
 	}
 
 	// body プレースホルダーからテキストを抽出
-	for _, sp := range notes.CSld.SpTree.Shapes {
-		ph := sp.NvSpPr.NvPr.Ph
+	for _, child := range notes.CSld.SpTree.Children {
+		if child.Sp == nil {
+			continue
+		}
+		ph := child.Sp.NvSpPr.NvPr.Ph
 		if ph == nil || ph.Type != "body" {
 			continue
 		}
-		text := extractTextFromTxBody(sp.TxBody)
+		text := extractTextFromTxBody(child.Sp.TxBody)
 		if strings.TrimSpace(text) != "" {
 			return true
 		}

@@ -42,7 +42,7 @@ func (f *File) LoadSlide(slideNum int, includeNotes bool, extractDir string) (*S
 
 	sd := &SlideData{
 		Number: slideNum,
-		Title:  extractTitle(sld.CSld.SpTree),
+		Title:  extractTitle(sld.CSld.SpTree.Children),
 	}
 
 	// 図形をパース
@@ -54,7 +54,7 @@ func (f *File) LoadSlide(slideNum int, includeNotes bool, extractDir string) (*S
 		pptxIDMap:  make(map[int]int),
 	}
 
-	sd.Shapes = ctx.parseSpTree(sld.CSld.SpTree)
+	sd.Shapes = ctx.parseSpTree(sld.CSld.SpTree.Children)
 
 	// コネクタの from/to を解決
 	ctx.resolveConnectors(sd.Shapes)
@@ -112,62 +112,37 @@ type shapeItem struct {
 	phPriority int
 }
 
-// parseSpTree は spTree 内の全要素をパースする
-func (ctx *parseContext) parseSpTree(spTree xmlSpTree) []Shape {
+// parseSpTree は子要素をXML出現順にパースする
+func (ctx *parseContext) parseSpTree(children []xmlSpTreeChild) []Shape {
 	items := make([]shapeItem, 0)
-	order := 0
 
-	// 通常の図形
-	for _, sp := range spTree.Shapes {
-		s := ctx.parseSp(sp)
+	for order, child := range children {
+		var s *Shape
+		var isPH bool
+		var priority int
+
+		switch {
+		case child.Sp != nil:
+			s = ctx.parseSp(*child.Sp)
+			if s != nil {
+				ph := child.Sp.NvSpPr.NvPr.Ph
+				isPH = ph != nil
+				priority = phPriority(ph)
+			}
+		case child.CxnSp != nil:
+			s = ctx.parseCxnSp(*child.CxnSp)
+		case child.Pic != nil:
+			s = ctx.parsePic(*child.Pic)
+		case child.GrpSp != nil:
+			s = ctx.parseGrpSp(*child.GrpSp)
+		case child.GraphicFrame != nil:
+			s = ctx.parseGraphicFrame(*child.GraphicFrame)
+		}
+
 		if s == nil {
 			continue
 		}
-		ph := sp.NvSpPr.NvPr.Ph
-		isPH := ph != nil
-		priority := phPriority(ph)
 		items = append(items, shapeItem{order: order, shape: *s, isPH: isPH, phPriority: priority})
-		order++
-	}
-
-	// コネクタ
-	for _, cxn := range spTree.Connectors {
-		s := ctx.parseCxnSp(cxn)
-		if s == nil {
-			continue
-		}
-		items = append(items, shapeItem{order: order, shape: *s})
-		order++
-	}
-
-	// 画像
-	for _, pic := range spTree.Pictures {
-		s := ctx.parsePic(pic)
-		if s == nil {
-			continue
-		}
-		items = append(items, shapeItem{order: order, shape: *s})
-		order++
-	}
-
-	// グループ
-	for _, grp := range spTree.GroupShapes {
-		s := ctx.parseGrpSp(grp)
-		if s == nil {
-			continue
-		}
-		items = append(items, shapeItem{order: order, shape: *s})
-		order++
-	}
-
-	// テーブル（graphicFrame）
-	for _, gf := range spTree.GraphicFrames {
-		s := ctx.parseGraphicFrame(gf)
-		if s == nil {
-			continue
-		}
-		items = append(items, shapeItem{order: order, shape: *s})
-		order++
 	}
 
 	// ソート: プレースホルダー（優先度順）→ 非プレースホルダー（出現順）
@@ -380,14 +355,7 @@ func (ctx *parseContext) parseGrpSp(grp xmlGrpSp) *Shape {
 		imageCount: ctx.imageCount,
 	}
 
-	childTree := xmlSpTree{
-		Shapes:        grp.Shapes,
-		GroupShapes:   grp.GroupShapes,
-		Connectors:    grp.Connectors,
-		Pictures:      grp.Pictures,
-		GraphicFrames: grp.GraphicFrames,
-	}
-	s.Children = childCtx.parseSpTree(childTree)
+	s.Children = childCtx.parseSpTree(grp.Children)
 
 	// カウンタを同期
 	ctx.nextID = childCtx.nextID
@@ -485,16 +453,19 @@ func (f *File) loadNotesParagraphs(slideIdx int) []Paragraph {
 		return nil
 	}
 
-	for _, sp := range notes.CSld.SpTree.Shapes {
-		ph := sp.NvSpPr.NvPr.Ph
+	for _, child := range notes.CSld.SpTree.Children {
+		if child.Sp == nil {
+			continue
+		}
+		ph := child.Sp.NvSpPr.NvPr.Ph
 		if ph == nil || ph.Type != "body" {
 			continue
 		}
-		if sp.TxBody == nil {
+		if child.Sp.TxBody == nil {
 			continue
 		}
 		ctx := newTextOnlyContext(f)
-		paras := ctx.parseParagraphs(sp.TxBody.Ps)
+		paras := ctx.parseParagraphs(child.Sp.TxBody.Ps)
 		if len(paras) > 0 {
 			return paras
 		}
