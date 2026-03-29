@@ -12,8 +12,7 @@ func (ctx *parseContext) resolveSolidFillColor(fill *xmlSolidFill) string {
 
 	if fill.SrgbClr != nil {
 		color := normalizeHexColor(fill.SrgbClr.Val)
-		color = applyColorTransforms(color, fill.SrgbClr.LumMod, fill.SrgbClr.LumOff, fill.SrgbClr.Tint, fill.SrgbClr.Shade)
-		return color
+		return applyColorTransforms(color, fill.SrgbClr.Transforms)
 	}
 
 	if fill.SchemeClr != nil {
@@ -29,36 +28,28 @@ func (ctx *parseContext) resolveSolidFillColor(fill *xmlSolidFill) string {
 		if base == "" {
 			return ""
 		}
-		base = applyColorTransforms(base, fill.SchemeClr.LumMod, fill.SchemeClr.LumOff, fill.SchemeClr.Tint, fill.SchemeClr.Shade)
-		return base
+		return applyColorTransforms(base, fill.SchemeClr.Transforms)
 	}
 
 	return ""
 }
 
-// applyColorTransforms は色変換を適用する
-func applyColorTransforms(color string, lumMod, lumOff, tint, shade *xmlPercentage) string {
+// applyColorTransforms は色変換をXML出現順に適用する
+func applyColorTransforms(color string, transforms []colorTransform) string {
 	if color == "" {
 		return ""
 	}
-	if tint != nil {
-		t := float64(tint.Val) / 100000.0
-		color = applyTint(color, t)
-	}
-	if shade != nil {
-		t := -(1.0 - float64(shade.Val)/100000.0)
-		color = applyTint(color, t)
-	}
-	if lumMod != nil || lumOff != nil {
-		mod := 1.0
-		off := 0.0
-		if lumMod != nil {
-			mod = float64(lumMod.Val) / 100000.0
+	for _, t := range transforms {
+		switch t.Op {
+		case "tint":
+			color = applyTint(color, float64(t.Val)/100000.0)
+		case "shade":
+			color = applyTint(color, -(1.0-float64(t.Val)/100000.0))
+		case "lumMod":
+			color = applyLuminance(color, float64(t.Val)/100000.0, 0)
+		case "lumOff":
+			color = applyLuminance(color, 1.0, float64(t.Val)/100000.0)
 		}
-		if lumOff != nil {
-			off = float64(lumOff.Val) / 100000.0
-		}
-		color = applyLuminance(color, mod, off)
 	}
 	return color
 }

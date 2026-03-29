@@ -181,22 +181,67 @@ type xmlSolidFill struct {
 	SchemeClr *xmlSchemeClr `xml:"schemeClr"`
 }
 
+// colorTransform は色変換操作（XML出現順を保持する）
+type colorTransform struct {
+	Op  string // "lumMod", "lumOff", "tint", "shade"
+	Val int
+}
+
 // xmlSrgbClr は a:srgbClr 要素
 type xmlSrgbClr struct {
-	Val    string         `xml:"val,attr"`
-	LumMod *xmlPercentage `xml:"lumMod"`
-	LumOff *xmlPercentage `xml:"lumOff"`
-	Tint   *xmlPercentage `xml:"tint"`
-	Shade  *xmlPercentage `xml:"shade"`
+	Val        string
+	Transforms []colorTransform
+}
+
+func (c *xmlSrgbClr) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	for _, attr := range start.Attr {
+		if attr.Name.Local == "val" {
+			c.Val = attr.Value
+		}
+	}
+	return unmarshalColorTransforms(d, &c.Transforms)
 }
 
 // xmlSchemeClr は a:schemeClr 要素
 type xmlSchemeClr struct {
-	Val    string         `xml:"val,attr"`
-	LumMod *xmlPercentage `xml:"lumMod"`
-	LumOff *xmlPercentage `xml:"lumOff"`
-	Tint   *xmlPercentage `xml:"tint"`
-	Shade  *xmlPercentage `xml:"shade"`
+	Val        string
+	Transforms []colorTransform
+}
+
+func (c *xmlSchemeClr) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	for _, attr := range start.Attr {
+		if attr.Name.Local == "val" {
+			c.Val = attr.Value
+		}
+	}
+	return unmarshalColorTransforms(d, &c.Transforms)
+}
+
+// unmarshalColorTransforms は色変換子要素をXML出現順にパースする
+func unmarshalColorTransforms(d *xml.Decoder, transforms *[]colorTransform) error {
+	for {
+		tok, err := d.Token()
+		if err != nil {
+			return err
+		}
+		switch el := tok.(type) {
+		case xml.StartElement:
+			switch el.Name.Local {
+			case "lumMod", "lumOff", "tint", "shade":
+				var pct xmlPercentage
+				if err := d.DecodeElement(&pct, &el); err != nil {
+					return err
+				}
+				*transforms = append(*transforms, colorTransform{Op: el.Name.Local, Val: pct.Val})
+			default:
+				if err := d.Skip(); err != nil {
+					return err
+				}
+			}
+		case xml.EndElement:
+			return nil
+		}
+	}
 }
 
 type xmlPercentage struct {

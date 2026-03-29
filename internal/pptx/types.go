@@ -80,8 +80,8 @@ type RichTextRun struct {
 
 // FontStyle はフォント情報
 type FontStyle struct {
-	Name          string `json:"name,omitempty"`
-	Size          int    `json:"size,omitempty"`
+	Name          string  `json:"name,omitempty"`
+	Size          float64 `json:"size,omitempty"`
 	Bold          bool   `json:"bold,omitempty"`
 	Italic        bool   `json:"italic,omitempty"`
 	Strikethrough bool   `json:"strikethrough,omitempty"`

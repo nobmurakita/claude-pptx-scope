@@ -68,6 +68,38 @@ func TestMapAlignment(t *testing.T) {
 	}
 }
 
+func TestParseParagraphs_AutoNumResetOnNonBullet(t *testing.T) {
+	ctx := newTestContext()
+
+	ps := []xmlP{
+		// autoNum: 1.
+		{PPr: &xmlPPr{BuAutoNum: &xmlBuAutoNum{Type: "arabicPeriod"}}, Rs: []xmlR{{T: "first"}}},
+		// autoNum: 2.
+		{PPr: &xmlPPr{BuAutoNum: &xmlBuAutoNum{Type: "arabicPeriod"}}, Rs: []xmlR{{T: "second"}}},
+		// PPr なし（箇条書き指定なし）→ リセット
+		{Rs: []xmlR{{T: "plain"}}},
+		// リセット後なので 1. から再開
+		{PPr: &xmlPPr{BuAutoNum: &xmlBuAutoNum{Type: "arabicPeriod"}}, Rs: []xmlR{{T: "third"}}},
+	}
+
+	paras := ctx.parseParagraphs(ps)
+	if len(paras) != 4 {
+		t.Fatalf("got %d paragraphs, want 4", len(paras))
+	}
+	if paras[0].Bullet != "1." {
+		t.Errorf("paras[0].Bullet: got %q, want %q", paras[0].Bullet, "1.")
+	}
+	if paras[1].Bullet != "2." {
+		t.Errorf("paras[1].Bullet: got %q, want %q", paras[1].Bullet, "2.")
+	}
+	if paras[2].Bullet != "" {
+		t.Errorf("paras[2].Bullet: got %q, want empty", paras[2].Bullet)
+	}
+	if paras[3].Bullet != "1." {
+		t.Errorf("paras[3].Bullet: got %q, want %q (リセット後)", paras[3].Bullet, "1.")
+	}
+}
+
 func TestIsEmptyFont(t *testing.T) {
 	if !isEmptyFont(&FontStyle{}) {
 		t.Error("empty FontStyle should be detected as empty")

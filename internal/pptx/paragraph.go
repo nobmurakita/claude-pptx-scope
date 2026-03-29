@@ -34,31 +34,28 @@ func (ctx *parseContext) parseParagraphs(ps []xmlP) []Paragraph {
 		}
 
 		// 箇条書き
-		if p.PPr != nil {
-			if p.PPr.BuChar != nil {
-				para.Bullet = p.PPr.BuChar.Char
-				// 箇条書き記号が変わったら自動番号をリセット
-				autoNumCounters = make(map[int]int)
-				lastAutoNumLevel = -1
-			} else if p.PPr.BuAutoNum != nil {
-				an := p.PPr.BuAutoNum
-				// レベルが変わるか、前が自動番号でなければカウンタリセット
-				if level != lastAutoNumLevel {
-					autoNumCounters[level] = 0
-				}
-				startAt := an.StartAt
-				if startAt == 0 {
-					startAt = 1
-				}
-				autoNumCounters[level]++
-				num := startAt + autoNumCounters[level] - 1
-				para.Bullet = formatAutoNum(an.Type, num)
-				lastAutoNumLevel = level
-			} else if p.PPr.BuNone != nil {
-				// 箇条書きなし
-				autoNumCounters = make(map[int]int)
-				lastAutoNumLevel = -1
+		if p.PPr != nil && p.PPr.BuChar != nil {
+			para.Bullet = p.PPr.BuChar.Char
+			autoNumCounters = make(map[int]int)
+			lastAutoNumLevel = -1
+		} else if p.PPr != nil && p.PPr.BuAutoNum != nil {
+			an := p.PPr.BuAutoNum
+			// レベルが変わるか、前が自動番号でなければカウンタリセット
+			if level != lastAutoNumLevel {
+				autoNumCounters[level] = 0
 			}
+			startAt := an.StartAt
+			if startAt == 0 {
+				startAt = 1
+			}
+			autoNumCounters[level]++
+			num := startAt + autoNumCounters[level] - 1
+			para.Bullet = formatAutoNum(an.Type, num)
+			lastAutoNumLevel = level
+		} else {
+			// 箇条書き指定なし（BuNone・PPr なし含む）→ 自動番号をリセット
+			autoNumCounters = make(map[int]int)
+			lastAutoNumLevel = -1
 		}
 
 		// 配置
@@ -143,7 +140,7 @@ func (ctx *parseContext) rprToFont(rpr *xmlRPr) *FontStyle {
 
 	// サイズ（hundredths of point → point）
 	if rpr.Sz > 0 {
-		f.Size = rpr.Sz / 100
+		f.Size = float64(rpr.Sz) / 100.0
 	}
 
 	// 太字
