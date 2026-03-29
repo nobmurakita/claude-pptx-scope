@@ -105,7 +105,7 @@ type shapeItem struct {
 
 // parseSpTree は spTree 内の全要素をパースする
 func (ctx *parseContext) parseSpTree(spTree xmlSpTree) []Shape {
-	var items []shapeItem
+	items := make([]shapeItem, 0)
 	order := 0
 
 	// 通常の図形
@@ -269,7 +269,7 @@ func (ctx *parseContext) parseSp(sp xmlSp) *Shape {
 	// テキスト
 	if sp.TxBody != nil {
 		s.Paragraphs = ctx.parseParagraphs(sp.TxBody.Ps)
-		s.Font, s.Alignment = ctx.extractShapeLevelStyle(sp.TxBody)
+		s.Alignment = ctx.extractShapeLevelAlignment(sp.TxBody)
 	}
 
 	return s

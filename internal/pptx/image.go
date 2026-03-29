@@ -48,6 +48,8 @@ func (ctx *parseContext) extractImage(embedID string, pos *Position) *ImageData 
 	defer outFile.Close()
 
 	if _, err := io.Copy(outFile, rc); err != nil {
+		outFile.Close()
+		os.Remove(outPath)
 		return nil
 	}
 

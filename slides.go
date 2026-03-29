@@ -79,9 +79,6 @@ func emitSlideOutput(enc *json.Encoder, number int, title string, shapes []pptx.
 		Shapes: shapes,
 		Notes:  notes,
 	}
-	if out.Shapes == nil {
-		out.Shapes = []pptx.Shape{}
-	}
 	if err := enc.Encode(out); err != nil {
 		return fmt.Errorf("JSON出力エラー: %w", err)
 	}

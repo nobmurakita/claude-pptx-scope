@@ -254,16 +254,16 @@ func mapAlignment(algn string) string {
 	}
 }
 
-// extractShapeLevelStyle はテキストボディレベルのスタイルを抽出する
-func (ctx *parseContext) extractShapeLevelStyle(txBody *xmlTxBody) (*FontStyle, *Alignment) {
-	var align *Alignment
-	if txBody.BodyPr.Anchor != "" {
-		v := mapVerticalAnchor(txBody.BodyPr.Anchor)
-		if v != "" {
-			align = &Alignment{Vertical: v}
-		}
+// extractShapeLevelAlignment はテキストボディレベルの垂直配置を抽出する
+func (ctx *parseContext) extractShapeLevelAlignment(txBody *xmlTxBody) *Alignment {
+	if txBody.BodyPr.Anchor == "" {
+		return nil
 	}
-	return nil, align
+	v := mapVerticalAnchor(txBody.BodyPr.Anchor)
+	if v == "" {
+		return nil
+	}
+	return &Alignment{Vertical: v}
 }
 
 func mapVerticalAnchor(anchor string) string {
