@@ -5,16 +5,8 @@ import (
 	"strings"
 )
 
-// SearchResult はスライド単位の検索結果
-type SearchResult struct {
-	Number int
-	Title  string
-	Shapes []Shape
-	Notes  []Paragraph
-}
-
 // Search はプレゼンテーション内のテキストを検索する
-func (f *File) Search(query string, slideNum int, includeNotes bool) ([]SearchResult, error) {
+func (f *File) Search(query string, slideNum int, includeNotes bool) ([]SlideData, error) {
 	queryLower := strings.ToLower(query)
 
 	startSlide := 1
@@ -29,7 +21,7 @@ func (f *File) Search(query string, slideNum int, includeNotes bool) ([]SearchRe
 		return nil, fmt.Errorf("スライド番号 %d は範囲外です（1〜%d）", slideNum, len(f.slideEntries))
 	}
 
-	var results []SearchResult
+	var results []SlideData
 
 	for num := startSlide; num <= endSlide; num++ {
 		sd, err := f.LoadSlide(num, includeNotes, "")
@@ -44,13 +36,11 @@ func (f *File) Search(query string, slideNum int, includeNotes bool) ([]SearchRe
 			continue
 		}
 
-		result := SearchResult{
+		result := SlideData{
 			Number: sd.Number,
 			Title:  sd.Title,
 			Shapes: matchedShapes,
-		}
-		if len(matchedNotes) > 0 {
-			result.Notes = matchedNotes
+			Notes:  matchedNotes,
 		}
 		results = append(results, result)
 	}

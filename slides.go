@@ -69,15 +69,15 @@ func emitSlide(f *pptx.File, enc *json.Encoder, slideNum int, includeNotes bool,
 	if err != nil {
 		return err
 	}
-	return emitSlideOutput(enc, sd.Number, sd.Title, sd.Shapes, sd.Notes)
+	return emitSlideData(enc, sd)
 }
 
-func emitSlideOutput(enc *json.Encoder, number int, title string, shapes []pptx.Shape, notes []pptx.Paragraph) error {
+func emitSlideData(enc *json.Encoder, sd *pptx.SlideData) error {
 	out := slideOutput{
-		Slide:  number,
-		Title:  title,
-		Shapes: shapes,
-		Notes:  notes,
+		Slide:  sd.Number,
+		Title:  sd.Title,
+		Shapes: sd.Shapes,
+		Notes:  sd.Notes,
 	}
 	if err := enc.Encode(out); err != nil {
 		return fmt.Errorf("JSON出力エラー: %w", err)

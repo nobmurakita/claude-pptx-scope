@@ -345,6 +345,8 @@ func (ctx *parseContext) parseGrpSp(grp xmlGrpSp) *Shape {
 	}
 
 	// 子要素のパース（サブコンテキストで z を0からリセット）
+	// pptxIDMap は参照共有: 子で登録したIDが親の resolveConnectors からも参照可能
+	// nextID / imageCount は値コピーし、パース後に手動で同期する
 	childCtx := &parseContext{
 		f:          ctx.f,
 		slideRels:  ctx.slideRels,
@@ -385,17 +387,22 @@ func (ctx *parseContext) parseGraphicFrame(gf xmlGraphicFrame) *Shape {
 	s.Position = xfrmToPosition(gf.Xfrm)
 
 	// テーブルデータ（被結合セルは null）
+	// 行を cols 長で事前確保し、各 tc を列位置に1:1でマッピングする。
+	// これにより gridSpan のみで hMerge が省略されたXMLでも行長が cols と一致する。
 	cols := len(tbl.TblGrid.GridCols)
 	var rows [][]*string
 	for _, tr := range tbl.Trs {
-		row := make([]*string, 0, cols)
+		row := make([]*string, cols)
+		colIdx := 0
 		for _, tc := range tr.Tcs {
-			if tc.VMerge == "1" || tc.HMerge == "1" {
-				row = append(row, nil) // 結合で吸収されたセル
-				continue
+			if colIdx >= cols {
+				break
 			}
-			text := extractTextFromTxBody(tc.TxBody)
-			row = append(row, &text)
+			if tc.VMerge != "1" && tc.HMerge != "1" {
+				text := extractTextFromTxBody(tc.TxBody)
+				row[colIdx] = &text
+			}
+			colIdx++
 		}
 		rows = append(rows, row)
 	}
@@ -435,40 +442,17 @@ func (ctx *parseContext) resolveConnectors(shapes []Shape) {
 	}
 }
 
-// loadNotesParagraphs はスライドのノートの段落を取得する
-// ノートの読み込み・パース失敗時はnilを返す（スライド処理は継続する）
+// loadNotesParagraphs はスライドのノートの段落を取得する。
+// ノートの読み込み・パース失敗時はnilを返す（スライド処理は継続する）。
 func (f *File) loadNotesParagraphs(slideIdx int) []Paragraph {
-	notesPath := f.notesPath(slideIdx)
-	if notesPath == "" {
+	txBody := f.findNotesBody(slideIdx)
+	if txBody == nil {
 		return nil
 	}
-
-	data, err := readZipFile(f.zi, notesPath)
-	if err != nil || data == nil {
-		return nil
-	}
-
-	var notes xmlNotes
-	if err := xml.Unmarshal(data, &notes); err != nil {
-		return nil
-	}
-
-	for _, child := range notes.CSld.SpTree.Children {
-		if child.Sp == nil {
-			continue
-		}
-		ph := child.Sp.NvSpPr.NvPr.Ph
-		if ph == nil || ph.Type != "body" {
-			continue
-		}
-		if child.Sp.TxBody == nil {
-			continue
-		}
-		ctx := newTextOnlyContext(f)
-		paras := ctx.parseParagraphs(child.Sp.TxBody.Ps)
-		if len(paras) > 0 {
-			return paras
-		}
+	ctx := newTextOnlyContext(f)
+	paras := ctx.parseParagraphs(txBody.Ps)
+	if len(paras) > 0 {
+		return paras
 	}
 	return nil
 }

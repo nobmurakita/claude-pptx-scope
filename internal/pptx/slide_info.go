@@ -106,22 +106,29 @@ func hasImages(children []xmlSpTreeChild) bool {
 
 // hasNotes はスライドにノートが存在するか確認する
 func (f *File) hasNotes(slideIdx int) bool {
+	txBody := f.findNotesBody(slideIdx)
+	text := extractTextFromTxBody(txBody)
+	return strings.TrimSpace(text) != ""
+}
+
+// findNotesBody はスライドのノートから body プレースホルダーの txBody を取得する。
+// hasNotes と loadNotesParagraphs の共通処理。
+func (f *File) findNotesBody(slideIdx int) *xmlTxBody {
 	notesPath := f.notesPath(slideIdx)
 	if notesPath == "" {
-		return false
+		return nil
 	}
 
 	data, err := readZipFile(f.zi, notesPath)
 	if err != nil || data == nil {
-		return false
+		return nil
 	}
 
 	var notes xmlNotes
 	if err := xml.Unmarshal(data, &notes); err != nil {
-		return false
+		return nil
 	}
 
-	// body プレースホルダーからテキストを抽出
 	for _, child := range notes.CSld.SpTree.Children {
 		if child.Sp == nil {
 			continue
@@ -130,12 +137,9 @@ func (f *File) hasNotes(slideIdx int) bool {
 		if ph == nil || ph.Type != "body" {
 			continue
 		}
-		text := extractTextFromTxBody(child.Sp.TxBody)
-		if strings.TrimSpace(text) != "" {
-			return true
-		}
+		return child.Sp.TxBody
 	}
-	return false
+	return nil
 }
 
 // notesPath はスライドに対応するノートのZIPパスを返す
