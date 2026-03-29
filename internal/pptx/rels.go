@@ -4,8 +4,8 @@ import "encoding/xml"
 
 // xmlRelationships は .rels ファイルの構造
 type xmlRelationships struct {
-	XMLName xml.Name  `xml:"Relationships"`
-	Rels    []xmlRel  `xml:"Relationship"`
+	XMLName xml.Name `xml:"Relationships"`
+	Rels    []xmlRel `xml:"Relationship"`
 }
 
 type xmlRel struct {

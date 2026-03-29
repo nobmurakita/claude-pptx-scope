@@ -12,32 +12,32 @@ type SlideInfo struct {
 
 // Shape は図形の出力データ
 type Shape struct {
-	ID              int          `json:"id"`
-	Type            string       `json:"type"`
-	Name            string       `json:"name,omitempty"`
-	Placeholder     string       `json:"placeholder,omitempty"`
-	Position        *Position    `json:"position,omitempty"`
-	Z               int          `json:"z"`
-	Rotation        float64      `json:"rotation,omitempty"`
-	Flip            string       `json:"flip,omitempty"`
-	Fill            string       `json:"fill,omitempty"`
-	Line            *LineStyle   `json:"line,omitempty"`
-	CalloutPointer  *Point       `json:"callout_pointer,omitempty"`
-	Paragraphs      []Paragraph  `json:"paragraphs,omitempty"`
-	Table           *TableData   `json:"table,omitempty"`
-	Font            *FontStyle   `json:"font,omitempty"`
-	Alignment       *Alignment   `json:"alignment,omitempty"`
+	ID             int         `json:"id"`
+	Type           string      `json:"type"`
+	Name           string      `json:"name,omitempty"`
+	Placeholder    string      `json:"placeholder,omitempty"`
+	Position       *Position   `json:"position,omitempty"`
+	Z              int         `json:"z"`
+	Rotation       float64     `json:"rotation,omitempty"`
+	Flip           string      `json:"flip,omitempty"`
+	Fill           string      `json:"fill,omitempty"`
+	Line           *LineStyle  `json:"line,omitempty"`
+	CalloutPointer *Point      `json:"callout_pointer,omitempty"`
+	Paragraphs     []Paragraph `json:"paragraphs,omitempty"`
+	Table          *TableData  `json:"table,omitempty"`
+	Font           *FontStyle  `json:"font,omitempty"`
+	Alignment      *Alignment  `json:"alignment,omitempty"`
 	// コネクタ
-	From            int          `json:"from,omitempty"`
-	To              int          `json:"to,omitempty"`
-	ConnectorType   string       `json:"connector_type,omitempty"`
-	Arrow           string       `json:"arrow,omitempty"`
-	Label           string       `json:"label,omitempty"`
+	From          int    `json:"from,omitempty"`
+	To            int    `json:"to,omitempty"`
+	ConnectorType string `json:"connector_type,omitempty"`
+	Arrow         string `json:"arrow,omitempty"`
+	Label         string `json:"label,omitempty"`
 	// 画像
-	AltText         string       `json:"alt_text,omitempty"`
-	Image           *ImageData   `json:"image,omitempty"`
+	AltText string     `json:"alt_text,omitempty"`
+	Image   *ImageData `json:"image,omitempty"`
 	// グループ
-	Children        []Shape      `json:"children,omitempty"`
+	Children []Shape `json:"children,omitempty"`
 }
 
 // Position は位置とサイズ
@@ -63,12 +63,12 @@ type LineStyle struct {
 
 // Paragraph は段落
 type Paragraph struct {
-	Text      string         `json:"text"`
-	Bullet    string         `json:"bullet,omitempty"`
-	Level     int            `json:"level,omitempty"`
-	Font      *FontStyle     `json:"font,omitempty"`
-	Alignment *Alignment     `json:"alignment,omitempty"`
-	RichText  []RichTextRun  `json:"rich_text,omitempty"`
+	Text      string        `json:"text"`
+	Bullet    string        `json:"bullet,omitempty"`
+	Level     int           `json:"level,omitempty"`
+	Font      *FontStyle    `json:"font,omitempty"`
+	Alignment *Alignment    `json:"alignment,omitempty"`
+	RichText  []RichTextRun `json:"rich_text,omitempty"`
 }
 
 // RichTextRun はリッチテキストラン

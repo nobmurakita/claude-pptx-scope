@@ -13,7 +13,7 @@ const (
 )
 
 var rootCmd = &cobra.Command{
-	Use:           "cc-read-ppt",
+	Use:           "cc-read-pptx",
 	Short:         "PowerPoint ファイル（.pptx）の内容をAIエージェント向けに読み取るツール",
 	SilenceUsage:  true,
 	SilenceErrors: true,
@@ -24,6 +24,6 @@ func execute() int {
 	if err == nil {
 		return exitOK
 	}
-	fmt.Fprintf(os.Stderr, "cc-read-ppt: %s\n", err)
+	fmt.Fprintf(os.Stderr, "cc-read-pptx: %s\n", err)
 	return exitError
 }

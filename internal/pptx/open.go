@@ -181,9 +181,9 @@ func cleanPath(p string) string {
 
 // xmlPresentation は presentation.xml の構造
 type xmlPresentation struct {
-	XMLName   xml.Name `xml:"presentation"`
-	SldSz     xmlSldSz `xml:"sldSz"`
-	SldIdLst  struct {
+	XMLName  xml.Name `xml:"presentation"`
+	SldSz    xmlSldSz `xml:"sldSz"`
+	SldIdLst struct {
 		SldId []xmlSldId `xml:"sldId"`
 	} `xml:"sldIdLst"`
 }

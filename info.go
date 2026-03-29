@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/nobmurakita/cc-read-ppt/internal/pptx"
+	"github.com/nobmurakita/cc-read-pptx/internal/pptx"
 	"github.com/spf13/cobra"
 )
 
@@ -20,8 +20,8 @@ var infoCmd = &cobra.Command{
 }
 
 type infoOutput struct {
-	File      string           `json:"file"`
-	SlideSize pptx.SlideSize   `json:"slide_size"`
+	File      string            `json:"file"`
+	SlideSize pptx.SlideSize    `json:"slide_size"`
 	Slides    []slideInfoOutput `json:"slides"`
 }
 

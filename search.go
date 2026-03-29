@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/nobmurakita/cc-read-ppt/internal/pptx"
+	"github.com/nobmurakita/cc-read-pptx/internal/pptx"
 	"github.com/spf13/cobra"
 )
 

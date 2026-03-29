@@ -20,17 +20,17 @@ func parseThemeColors(data []byte) *themeColors {
 	var theme struct {
 		ThemeElements struct {
 			ClrScheme struct {
-				Dk1    xmlThemeColor `xml:"dk1"`
-				Lt1    xmlThemeColor `xml:"lt1"`
-				Dk2    xmlThemeColor `xml:"dk2"`
-				Lt2    xmlThemeColor `xml:"lt2"`
-				Accent1 xmlThemeColor `xml:"accent1"`
-				Accent2 xmlThemeColor `xml:"accent2"`
-				Accent3 xmlThemeColor `xml:"accent3"`
-				Accent4 xmlThemeColor `xml:"accent4"`
-				Accent5 xmlThemeColor `xml:"accent5"`
-				Accent6 xmlThemeColor `xml:"accent6"`
-				Hlink   xmlThemeColor `xml:"hlink"`
+				Dk1      xmlThemeColor `xml:"dk1"`
+				Lt1      xmlThemeColor `xml:"lt1"`
+				Dk2      xmlThemeColor `xml:"dk2"`
+				Lt2      xmlThemeColor `xml:"lt2"`
+				Accent1  xmlThemeColor `xml:"accent1"`
+				Accent2  xmlThemeColor `xml:"accent2"`
+				Accent3  xmlThemeColor `xml:"accent3"`
+				Accent4  xmlThemeColor `xml:"accent4"`
+				Accent5  xmlThemeColor `xml:"accent5"`
+				Accent6  xmlThemeColor `xml:"accent6"`
+				Hlink    xmlThemeColor `xml:"hlink"`
 				FolHlink xmlThemeColor `xml:"folHlink"`
 			} `xml:"clrScheme"`
 		} `xml:"themeElements"`
@@ -77,4 +77,3 @@ func extractThemeColorValue(tc xmlThemeColor) string {
 	}
 	return ""
 }
-

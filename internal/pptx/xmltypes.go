@@ -6,9 +6,9 @@ import "encoding/xml"
 
 // xmlSlide は p:sld 要素
 type xmlSlide struct {
-	XMLName xml.Name    `xml:"sld"`
-	Show    string      `xml:"show,attr"`
-	CSld    xmlCSld     `xml:"cSld"`
+	XMLName xml.Name `xml:"sld"`
+	Show    string   `xml:"show,attr"`
+	CSld    xmlCSld  `xml:"cSld"`
 }
 
 // xmlCSld は p:cSld 要素
@@ -18,17 +18,17 @@ type xmlCSld struct {
 
 // xmlSpTree は p:spTree 要素
 type xmlSpTree struct {
-	Shapes      []xmlSp      `xml:"sp"`
-	GroupShapes []xmlGrpSp   `xml:"grpSp"`
-	Connectors  []xmlCxnSp   `xml:"cxnSp"`
-	Pictures    []xmlPic     `xml:"pic"`
+	Shapes        []xmlSp           `xml:"sp"`
+	GroupShapes   []xmlGrpSp        `xml:"grpSp"`
+	Connectors    []xmlCxnSp        `xml:"cxnSp"`
+	Pictures      []xmlPic          `xml:"pic"`
 	GraphicFrames []xmlGraphicFrame `xml:"graphicFrame"`
 }
 
 // xmlSp は p:sp 要素（通常の図形）
 type xmlSp struct {
-	NvSpPr xmlNvSpPr `xml:"nvSpPr"`
-	SpPr   xmlSpPr   `xml:"spPr"`
+	NvSpPr xmlNvSpPr  `xml:"nvSpPr"`
+	SpPr   xmlSpPr    `xml:"spPr"`
 	TxBody *xmlTxBody `xml:"txBody"`
 }
 
@@ -58,9 +58,9 @@ type xmlPh struct {
 
 // xmlSpPr は p:spPr 要素（図形のプロパティ）
 type xmlSpPr struct {
-	Xfrm     *xmlXfrm    `xml:"xfrm"`
-	PrstGeom *xmlPrstGeom `xml:"prstGeom"`
-	CustGeom *struct{}    `xml:"custGeom"`
+	Xfrm      *xmlXfrm      `xml:"xfrm"`
+	PrstGeom  *xmlPrstGeom  `xml:"prstGeom"`
+	CustGeom  *struct{}     `xml:"custGeom"`
 	SolidFill *xmlSolidFill `xml:"solidFill"`
 	NoFill    *struct{}     `xml:"noFill"`
 	Ln        *xmlLn        `xml:"ln"`
@@ -87,8 +87,8 @@ type xmlExt struct {
 
 // xmlPrstGeom は a:prstGeom 要素
 type xmlPrstGeom struct {
-	Prst string       `xml:"prst,attr"`
-	AvLst *xmlAvLst   `xml:"avLst"`
+	Prst  string    `xml:"prst,attr"`
+	AvLst *xmlAvLst `xml:"avLst"`
 }
 
 // xmlAvLst は a:avLst 要素（調整ハンドル）
@@ -104,13 +104,13 @@ type xmlGd struct {
 
 // xmlSolidFill は a:solidFill 要素
 type xmlSolidFill struct {
-	SrgbClr *xmlSrgbClr `xml:"srgbClr"`
+	SrgbClr   *xmlSrgbClr   `xml:"srgbClr"`
 	SchemeClr *xmlSchemeClr `xml:"schemeClr"`
 }
 
 // xmlSrgbClr は a:srgbClr 要素
 type xmlSrgbClr struct {
-	Val    string  `xml:"val,attr"`
+	Val    string         `xml:"val,attr"`
 	LumMod *xmlPercentage `xml:"lumMod"`
 	LumOff *xmlPercentage `xml:"lumOff"`
 	Tint   *xmlPercentage `xml:"tint"`
@@ -119,7 +119,7 @@ type xmlSrgbClr struct {
 
 // xmlSchemeClr は a:schemeClr 要素
 type xmlSchemeClr struct {
-	Val    string  `xml:"val,attr"`
+	Val    string         `xml:"val,attr"`
 	LumMod *xmlPercentage `xml:"lumMod"`
 	LumOff *xmlPercentage `xml:"lumOff"`
 	Tint   *xmlPercentage `xml:"tint"`
@@ -162,20 +162,20 @@ type xmlBodyPr struct {
 
 // xmlP は a:p 要素（段落）
 type xmlP struct {
-	PPr  *xmlPPr  `xml:"pPr"`
-	Rs   []xmlR   `xml:"r"`
-	Fld  []xmlFld `xml:"fld"`
-	EndParaRPr *xmlRPr `xml:"endParaRPr"`
+	PPr        *xmlPPr  `xml:"pPr"`
+	Rs         []xmlR   `xml:"r"`
+	Fld        []xmlFld `xml:"fld"`
+	EndParaRPr *xmlRPr  `xml:"endParaRPr"`
 }
 
 // xmlPPr は a:pPr 要素（段落プロパティ）
 type xmlPPr struct {
-	Lvl      int    `xml:"lvl,attr"`
-	Algn     string `xml:"algn,attr"`
-	BuNone   *struct{} `xml:"buNone"`
-	BuChar   *xmlBuChar `xml:"buChar"`
+	Lvl       int           `xml:"lvl,attr"`
+	Algn      string        `xml:"algn,attr"`
+	BuNone    *struct{}     `xml:"buNone"`
+	BuChar    *xmlBuChar    `xml:"buChar"`
 	BuAutoNum *xmlBuAutoNum `xml:"buAutoNum"`
-	DefRPr   *xmlRPr `xml:"defRPr"`
+	DefRPr    *xmlRPr       `xml:"defRPr"`
 }
 
 type xmlBuChar struct {
@@ -201,16 +201,16 @@ type xmlFld struct {
 
 // xmlRPr は a:rPr / a:endParaRPr 要素（ランプロパティ）
 type xmlRPr struct {
-	Lang    string `xml:"lang,attr"`
-	Sz      int    `xml:"sz,attr"`
-	B       string `xml:"b,attr"`
-	I       string `xml:"i,attr"`
-	U       string `xml:"u,attr"`
-	Strike  string `xml:"strike,attr"`
+	Lang      string        `xml:"lang,attr"`
+	Sz        int           `xml:"sz,attr"`
+	B         string        `xml:"b,attr"`
+	I         string        `xml:"i,attr"`
+	U         string        `xml:"u,attr"`
+	Strike    string        `xml:"strike,attr"`
 	SolidFill *xmlSolidFill `xml:"solidFill"`
-	Latin   *xmlFont `xml:"latin"`
-	Ea      *xmlFont `xml:"ea"`
-	Cs      *xmlFont `xml:"cs"`
+	Latin     *xmlFont      `xml:"latin"`
+	Ea        *xmlFont      `xml:"ea"`
+	Cs        *xmlFont      `xml:"cs"`
 }
 
 type xmlFont struct {
@@ -227,12 +227,12 @@ type xmlCxnSp struct {
 }
 
 type xmlNvCxnSpPr struct {
-	CNvPr    xmlCNvPr    `xml:"cNvPr"`
+	CNvPr      xmlCNvPr      `xml:"cNvPr"`
 	CNvCxnSpPr xmlCNvCxnSpPr `xml:"cNvCxnSpPr"`
 }
 
 type xmlCNvCxnSpPr struct {
-	StCxn *xmlCxnRef `xml:"stCxn"`
+	StCxn  *xmlCxnRef `xml:"stCxn"`
 	EndCxn *xmlCxnRef `xml:"endCxn"`
 }
 
@@ -245,7 +245,7 @@ type xmlCxnRef struct {
 
 // xmlPic は p:pic 要素
 type xmlPic struct {
-	NvPicPr xmlNvPicPr `xml:"nvPicPr"`
+	NvPicPr  xmlNvPicPr  `xml:"nvPicPr"`
 	BlipFill xmlBlipFill `xml:"blipFill"`
 	SpPr     xmlSpPr     `xml:"spPr"`
 }
@@ -266,12 +266,12 @@ type xmlBlip struct {
 
 // xmlGrpSp は p:grpSp 要素
 type xmlGrpSp struct {
-	NvGrpSpPr xmlNvGrpSpPr `xml:"nvGrpSpPr"`
-	GrpSpPr   xmlGrpSpPr   `xml:"grpSpPr"`
-	Shapes      []xmlSp      `xml:"sp"`
-	GroupShapes []xmlGrpSp   `xml:"grpSp"`
-	Connectors  []xmlCxnSp   `xml:"cxnSp"`
-	Pictures    []xmlPic     `xml:"pic"`
+	NvGrpSpPr     xmlNvGrpSpPr      `xml:"nvGrpSpPr"`
+	GrpSpPr       xmlGrpSpPr        `xml:"grpSpPr"`
+	Shapes        []xmlSp           `xml:"sp"`
+	GroupShapes   []xmlGrpSp        `xml:"grpSp"`
+	Connectors    []xmlCxnSp        `xml:"cxnSp"`
+	Pictures      []xmlPic          `xml:"pic"`
 	GraphicFrames []xmlGraphicFrame `xml:"graphicFrame"`
 }
 
@@ -284,10 +284,10 @@ type xmlGrpSpPr struct {
 }
 
 type xmlGrpXfrm struct {
-	Off    xmlOff `xml:"off"`
-	Ext    xmlExt `xml:"ext"`
-	ChOff  xmlOff `xml:"chOff"`
-	ChExt  xmlExt `xml:"chExt"`
+	Off   xmlOff `xml:"off"`
+	Ext   xmlExt `xml:"ext"`
+	ChOff xmlOff `xml:"chOff"`
+	ChExt xmlExt `xml:"chExt"`
 }
 
 // ---------- テーブル ----------
@@ -308,8 +308,8 @@ type xmlGraphic struct {
 }
 
 type xmlGraphicData struct {
-	URI string   `xml:"uri,attr"`
-	Tbl *xmlTbl  `xml:"tbl"`
+	URI string  `xml:"uri,attr"`
+	Tbl *xmlTbl `xml:"tbl"`
 }
 
 // xmlTbl は a:tbl 要素
@@ -327,15 +327,15 @@ type xmlGridCol struct {
 }
 
 type xmlTr struct {
-	H  int64   `xml:"h,attr"`
+	H   int64   `xml:"h,attr"`
 	Tcs []xmlTc `xml:"tc"`
 }
 
 type xmlTc struct {
-	GridSpan int       `xml:"gridSpan,attr"`
-	RowSpan  int       `xml:"rowSpan,attr"`
-	VMerge   string    `xml:"vMerge,attr"`
-	HMerge   string    `xml:"hMerge,attr"`
+	GridSpan int        `xml:"gridSpan,attr"`
+	RowSpan  int        `xml:"rowSpan,attr"`
+	VMerge   string     `xml:"vMerge,attr"`
+	HMerge   string     `xml:"hMerge,attr"`
 	TxBody   *xmlTxBody `xml:"txBody"`
 }
 

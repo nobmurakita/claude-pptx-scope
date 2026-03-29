@@ -1,6 +1,5 @@
 package pptx
 
-
 // resolveSolidFillColor は solidFill から色文字列を返す
 func (ctx *parseContext) resolveSolidFillColor(fill *xmlSolidFill) string {
 	if fill == nil {
@@ -125,4 +124,3 @@ func schemeClrToThemeIndex(val string) int {
 		return -1
 	}
 }
-

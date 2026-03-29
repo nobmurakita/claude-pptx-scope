@@ -1,11 +1,11 @@
 ---
-name: cc-read-ppt
+name: cc-read-pptx
 description: PowerPointファイル（.pptx）を読み取る。プレゼン資料、設計書、フローチャート、提案書の内容確認・データ抽出時に使用する。
 user-invocable: false
-allowed-tools: Bash(cc-read-ppt *)
+allowed-tools: Bash(cc-read-pptx *)
 ---
 
-# cc-read-ppt
+# cc-read-pptx
 
 PowerPointファイル（.pptx）の内容をCLIから出力するツール。
 
@@ -25,7 +25,7 @@ PowerPointファイル（.pptx）の内容をCLIから出力するツール。
 ### info
 
 ```bash
-cc-read-ppt info <file>
+cc-read-pptx info <file>
 ```
 
 出力例:
@@ -41,7 +41,7 @@ cc-read-ppt info <file>
 ### slides
 
 ```bash
-cc-read-ppt slides [options] <file>
+cc-read-pptx slides [options] <file>
 ```
 
 | オプション | 説明 | デフォルト |
@@ -106,7 +106,7 @@ cc-read-ppt slides [options] <file>
 ### search
 
 ```bash
-cc-read-ppt search [options] <file>
+cc-read-pptx search [options] <file>
 ```
 
 | オプション | 説明 | デフォルト |
@@ -118,7 +118,7 @@ cc-read-ppt search [options] <file>
 出力形式は `slides` と同じJSONL。マッチしたスライドのみ出力し、図形内ではマッチした段落のみを含める。テーブルはいずれかのセルにヒットした場合テーブル全体を出力する。結果なしでも正常終了（終了コード 0）する。
 
 ```bash
-cc-read-ppt search --text "データ" example.pptx
+cc-read-pptx search --text "データ" example.pptx
 ```
 
 ```jsonl

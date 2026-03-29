@@ -74,10 +74,10 @@ type parseContext struct {
 	slideRels  map[string]string
 	slidePath  string
 	extractDir string
-	nextID     int          // 連番ID
-	pptxIDMap  map[int]int  // PowerPoint図形ID → 連番ID
-	nextZ      int          // z-order カウンタ
-	imageCount int          // 画像カウンタ
+	nextID     int         // 連番ID
+	pptxIDMap  map[int]int // PowerPoint図形ID → 連番ID
+	nextZ      int         // z-order カウンタ
+	imageCount int         // 画像カウンタ
 }
 
 func (ctx *parseContext) allocID(pptxID int) int {
