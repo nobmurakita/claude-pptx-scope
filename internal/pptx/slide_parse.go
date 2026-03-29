@@ -92,6 +92,29 @@ func newTextOnlyContext(f *File) *parseContext {
 	}
 }
 
+// newChildContext はグループの子要素パース用のサブコンテキストを生成する。
+// pptxIDMap は参照共有: 子で登録したIDが親の resolveConnectors からも参照可能。
+// カウンタ類は値コピーされ、パース後に syncFromChild で同期する。
+func (ctx *parseContext) newChildContext() *parseContext {
+	return &parseContext{
+		f:          ctx.f,
+		slideRels:  ctx.slideRels,
+		slidePath:  ctx.slidePath,
+		extractDir: ctx.extractDir,
+		nextID:     ctx.nextID,
+		nextZ:      ctx.nextZ,
+		pptxIDMap:  ctx.pptxIDMap,
+		imageCount: ctx.imageCount,
+	}
+}
+
+// syncFromChild は子コンテキストのカウンタを親に同期する
+func (ctx *parseContext) syncFromChild(child *parseContext) {
+	ctx.nextID = child.nextID
+	ctx.nextZ = child.nextZ
+	ctx.imageCount = child.imageCount
+}
+
 func (ctx *parseContext) allocID(pptxID int) int {
 	ctx.nextID++
 	id := ctx.nextID
@@ -145,16 +168,17 @@ func (ctx *parseContext) parseSpTree(children []xmlSpTreeChild) []Shape {
 		if s == nil {
 			continue
 		}
+		// z-order はXML出現順（PowerPointの描画順）を反映する
+		s.Z = ctx.allocZ()
 		items = append(items, shapeItem{order: order, shape: *s, isPH: isPH, phPriority: priority})
 	}
 
 	// ソート: プレースホルダー（優先度順）→ 非プレースホルダー（出現順）
+	// 出力順序はプレースホルダー優先だが、z-order は元のXML出現順を保持する
 	sortShapeItems(items)
 
-	// z-order とIDを割り当て
 	shapes := make([]Shape, 0, len(items))
 	for _, item := range items {
-		item.shape.Z = ctx.allocZ()
 		shapes = append(shapes, item.shape)
 	}
 
@@ -343,24 +367,10 @@ func (ctx *parseContext) parseGrpSp(grp xmlGrpSp) *Shape {
 		}
 	}
 
-	// 子要素のパース（サブコンテキストで z を0からリセット）
-	// pptxIDMap は参照共有: 子で登録したIDが親の resolveConnectors からも参照可能
-	// nextID / imageCount は値コピーし、パース後に手動で同期する
-	childCtx := &parseContext{
-		f:          ctx.f,
-		slideRels:  ctx.slideRels,
-		slidePath:  ctx.slidePath,
-		extractDir: ctx.extractDir,
-		nextID:     ctx.nextID,
-		pptxIDMap:  ctx.pptxIDMap,
-		imageCount: ctx.imageCount,
-	}
-
+	// 子要素のパース
+	childCtx := ctx.newChildContext()
 	s.Children = childCtx.parseSpTree(grp.Children)
-
-	// カウンタを同期
-	ctx.nextID = childCtx.nextID
-	ctx.imageCount = childCtx.imageCount
+	ctx.syncFromChild(childCtx)
 
 	if len(s.Children) == 0 {
 		return nil
@@ -397,46 +407,25 @@ func (ctx *parseContext) parseGraphicFrame(gf xmlGraphicFrame) *Shape {
 
 	for _, tr := range tbl.Trs {
 		row := make([]*string, cols)
-		if len(tr.Tcs) == cols {
-			// 標準レイアウト: 各 tc が1列に1:1対応（hMerge/vMerge 含む）
-			for i, tc := range tr.Tcs {
-				if tc.VMerge != "1" && tc.HMerge != "1" {
-					text := extractTextFromTxBody(tc.TxBody)
-					row[i] = &text
-				}
-				if tc.RowSpan > 1 {
-					span := tc.GridSpan
-					if span < 1 {
-						span = 1
-					}
-					rowSpans = append(rowSpans, rowSpanArea{
-						row: len(rows), col: i, rowSpan: tc.RowSpan, colSpan: span,
-					})
-				}
+		colIdx := 0
+		for _, tc := range tr.Tcs {
+			if colIdx >= cols {
+				break
 			}
-		} else {
-			// 非標準レイアウト: hMerge が省略され tc 数 < cols の場合、
-			// gridSpan で列位置を計算する
-			colIdx := 0
-			for _, tc := range tr.Tcs {
-				if colIdx >= cols {
-					break
-				}
-				if tc.VMerge != "1" {
-					text := extractTextFromTxBody(tc.TxBody)
-					row[colIdx] = &text
-				}
-				span := tc.GridSpan
-				if span < 1 {
-					span = 1
-				}
-				if tc.RowSpan > 1 {
-					rowSpans = append(rowSpans, rowSpanArea{
-						row: len(rows), col: colIdx, rowSpan: tc.RowSpan, colSpan: span,
-					})
-				}
-				colIdx += span
+			if tc.VMerge != "1" && tc.HMerge != "1" {
+				text := extractTextFromTxBody(tc.TxBody)
+				row[colIdx] = &text
 			}
+			span := tc.GridSpan
+			if span < 1 {
+				span = 1
+			}
+			if tc.RowSpan > 1 {
+				rowSpans = append(rowSpans, rowSpanArea{
+					row: len(rows), col: colIdx, rowSpan: tc.RowSpan, colSpan: span,
+				})
+			}
+			colIdx += span
 		}
 		rows = append(rows, row)
 	}

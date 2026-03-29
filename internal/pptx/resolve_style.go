@@ -6,7 +6,6 @@ func (ctx *parseContext) resolveSolidFillColor(fill *xmlSolidFill) string {
 		return ""
 	}
 
-	// newTextOnlyContext 等で f が未設定の場合に備えた防御ガード
 	if ctx.f == nil {
 		return ""
 	}
