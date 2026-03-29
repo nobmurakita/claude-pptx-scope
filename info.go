@@ -43,7 +43,7 @@ func runInfo(cmd *cobra.Command, args []string) error {
 		Slides:    infos,
 	}
 
-	enc := newJSONLWriter(os.Stdout)
+	enc := newJSONEncoder(os.Stdout)
 	if err := enc.Encode(out); err != nil {
 		return fmt.Errorf("JSON出力エラー: %w", err)
 	}

@@ -48,7 +48,7 @@ func runSearch(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	enc := newJSONLWriter(os.Stdout)
+	enc := newJSONEncoder(os.Stdout)
 	for i := range results {
 		if err := emitSlideData(enc, &results[i]); err != nil {
 			return err

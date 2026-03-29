@@ -44,6 +44,10 @@ func runSlides(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("--extract-images フラグの解析エラー: %w", err)
 	}
 
+	if slideNum < 0 {
+		return fmt.Errorf("--slide には1以上の値を指定してください")
+	}
+
 	f, err := pptx.OpenFile(args[0])
 	if err != nil {
 		return err
@@ -57,7 +61,7 @@ func runSlides(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	enc := newJSONLWriter(os.Stdout)
+	enc := newJSONEncoder(os.Stdout)
 
 	if slideNum > 0 {
 		// 特定のスライド

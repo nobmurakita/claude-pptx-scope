@@ -37,8 +37,11 @@ func (f *File) LoadSlide(slideNum int, includeNotes bool, extractDir string) (*S
 		return nil, fmt.Errorf("スライド %d のパースに失敗: %w", slideNum, err)
 	}
 
-	// スライドのリレーション（画像用）
-	slideRels, _ := loadRels(f, slideRelsPath(entry.Path))
+	// スライドのリレーション（画像・コネクタ用）
+	slideRels, err := loadRels(f, slideRelsPath(entry.Path))
+	if err != nil {
+		return nil, fmt.Errorf("スライド %d のリレーション読み込みに失敗: %w", slideNum, err)
+	}
 
 	sd := &SlideData{
 		Number: slideNum,
@@ -197,15 +200,11 @@ func phPriority(ph *xmlPh) int {
 func (ctx *parseContext) parseSp(sp xmlSp) *Shape {
 	ph := sp.NvSpPr.NvPr.Ph
 
-	// テキストが空でプレースホルダーでもない図形はスキップ
+	// テキスト・塗りつぶし・枠線のいずれもない図形はスキップ（プレースホルダー含む）
 	hasText := hasTextContent(sp.TxBody)
 	hasFill := sp.SpPr.SolidFill != nil
 	hasLine := sp.SpPr.Ln != nil && sp.SpPr.Ln.NoFill == nil
-	if !hasText && ph == nil && !hasFill && !hasLine {
-		return nil
-	}
-	// 空のプレースホルダーもスキップ
-	if !hasText && ph != nil && !hasFill && !hasLine {
+	if !hasText && !hasFill && !hasLine {
 		return nil
 	}
 

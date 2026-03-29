@@ -5,8 +5,8 @@ import (
 	"io"
 )
 
-// newJSONLWriter は JSONL 出力用のエンコーダを生成する
-func newJSONLWriter(w io.Writer) *json.Encoder {
+// newJSONEncoder は JSON 出力用のエンコーダを生成する
+func newJSONEncoder(w io.Writer) *json.Encoder {
 	enc := json.NewEncoder(w)
 	enc.SetEscapeHTML(false)
 	return enc
