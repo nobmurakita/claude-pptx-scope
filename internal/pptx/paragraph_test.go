@@ -100,6 +100,39 @@ func TestParseParagraphs_AutoNumResetOnNonBullet(t *testing.T) {
 	}
 }
 
+func TestToLowerAlpha(t *testing.T) {
+	tests := []struct {
+		n    int
+		want string
+	}{
+		{1, "a"},
+		{26, "z"},
+		{27, "aa"},
+		{28, "ab"},
+		{52, "az"},
+		{53, "ba"},
+		{702, "zz"},
+		{703, "aaa"},
+	}
+	for _, tt := range tests {
+		got := toLowerAlpha(tt.n)
+		if got != tt.want {
+			t.Errorf("toLowerAlpha(%d) = %q, want %q", tt.n, got, tt.want)
+		}
+	}
+}
+
+func TestToLowerAlpha_Invalid(t *testing.T) {
+	got := toLowerAlpha(0)
+	if got != "0" {
+		t.Errorf("toLowerAlpha(0) = %q, want %q", got, "0")
+	}
+	got = toLowerAlpha(-1)
+	if got != "-1" {
+		t.Errorf("toLowerAlpha(-1) = %q, want %q", got, "-1")
+	}
+}
+
 func TestIsEmptyFont(t *testing.T) {
 	if !isEmptyFont(&FontStyle{}) {
 		t.Error("empty FontStyle should be detected as empty")

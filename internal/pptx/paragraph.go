@@ -209,10 +209,18 @@ func formatAutoNum(numType string, num int) string {
 }
 
 func toLowerAlpha(n int) string {
-	if n < 1 || n > 26 {
+	if n < 1 {
 		return fmt.Sprintf("%d", n)
 	}
-	return string(rune('a' + n - 1))
+	var buf [8]byte
+	i := len(buf)
+	for n > 0 {
+		n--
+		i--
+		buf[i] = byte('a' + n%26)
+		n /= 26
+	}
+	return string(buf[i:])
 }
 
 func toUpperAlpha(n int) string {

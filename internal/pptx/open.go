@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"encoding/xml"
 	"fmt"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -94,9 +95,9 @@ func (f *File) SlideCount() int {
 	return len(f.slideEntries)
 }
 
-// resolveSlideNums はスライド番号のスライスを検証し、対象番号リストを返す。
+// ResolveSlideNums はスライド番号のスライスを検証し、対象番号リストを返す。
 // 空スライスの場合は全スライドを返す。
-func (f *File) resolveSlideNums(slideNums []int) ([]int, error) {
+func (f *File) ResolveSlideNums(slideNums []int) ([]int, error) {
 	if len(slideNums) == 0 {
 		all := make([]int, len(f.slideEntries))
 		for i := range all {
@@ -190,20 +191,12 @@ func resolveRelTarget(basePath, target string) string {
 	return cleanPath(combined)
 }
 
-// cleanPath はパス内の ".." を解決する
+// cleanPath はパス内の ".." や "." を解決する
 func cleanPath(p string) string {
-	parts := strings.Split(p, "/")
-	var result []string
-	for _, part := range parts {
-		if part == ".." {
-			if len(result) > 0 {
-				result = result[:len(result)-1]
-			}
-		} else if part != "." && part != "" {
-			result = append(result, part)
-		}
+	if p == "" {
+		return ""
 	}
-	return strings.Join(result, "/")
+	return path.Clean(p)
 }
 
 // xmlPresentation は presentation.xml の構造

@@ -38,17 +38,17 @@ func runSlides(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("--notes フラグの解析エラー: %w", err)
 	}
-	for _, n := range slideNums {
-		if n < 1 {
-			return fmt.Errorf("--slide には1以上の値を指定してください")
-		}
-	}
 
 	f, err := pptx.OpenFile(args[0])
 	if err != nil {
 		return err
 	}
 	defer f.Close()
+
+	targets, err := f.ResolveSlideNums(slideNums)
+	if err != nil {
+		return err
+	}
 
 	// 画像抽出用の一時ディレクトリを作成
 	extractDir, err := os.MkdirTemp("", "cc-read-pptx-images-*")
@@ -58,18 +58,8 @@ func runSlides(cmd *cobra.Command, args []string) error {
 
 	enc := newJSONEncoder(os.Stdout)
 
-	if len(slideNums) > 0 {
-		for _, n := range slideNums {
-			if err := emitSlide(f, enc, n, includeNotes, extractDir); err != nil {
-				return err
-			}
-		}
-		return nil
-	}
-
-	// 全スライド
-	for i := 1; i <= f.SlideCount(); i++ {
-		if err := emitSlide(f, enc, i, includeNotes, extractDir); err != nil {
+	for _, n := range targets {
+		if err := emitSlide(f, enc, n, includeNotes, extractDir); err != nil {
 			return err
 		}
 	}

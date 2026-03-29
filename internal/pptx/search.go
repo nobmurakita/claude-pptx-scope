@@ -8,7 +8,7 @@ import (
 func (f *File) Search(query string, slideNums []int, includeNotes bool) ([]SlideData, error) {
 	queryLower := strings.ToLower(query)
 
-	targets, err := f.resolveSlideNums(slideNums)
+	targets, err := f.ResolveSlideNums(slideNums)
 	if err != nil {
 		return nil, err
 	}
