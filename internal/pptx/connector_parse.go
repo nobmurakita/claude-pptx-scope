@@ -16,7 +16,7 @@ func (ctx *parseContext) parseCxnSp(cxn xmlCxnSp) *Shape {
 	}
 
 	// 位置
-	s.Position = xfrmToPosition(cxn.SpPr.Xfrm)
+	s.Pos = xfrmToPosition(cxn.SpPr.Xfrm)
 
 	// 枠線
 	s.Line = ctx.resolveLine(cxn.SpPr.Ln)

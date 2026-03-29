@@ -7,38 +7,32 @@ import (
 	"strings"
 )
 
-// extractImage は画像をファイルに抽出しメタデータを返す
-func (ctx *parseContext) extractImage(embedID string, pos *Position) *ImageData {
+// extractImage は画像をファイルに抽出しパスを返す
+func (ctx *parseContext) extractImage(embedID string) string {
 	// リレーション未解決時は画像なしで継続する（スライド処理を止めない）
 	if ctx.slideRels == nil {
-		return nil
+		return ""
 	}
 	target, ok := ctx.slideRels[embedID]
 	if !ok {
-		return nil
+		return ""
 	}
 
 	// ZIP内のパスを解決
 	mediaPath := resolveRelTarget(pathDir(ctx.slidePath), target)
 
 	// ZIP内のファイルを開く（メディアファイルが欠損していてもスライド処理は継続する）
-	rc, size, err := openZipFile(ctx.f.zi, mediaPath)
+	rc, _, err := openZipFile(ctx.f.zi, mediaPath)
 	if err != nil || rc == nil {
-		return nil
+		return ""
 	}
 	defer rc.Close()
 
-	// ファイル拡張子から形式を判定
-	ext := strings.ToLower(filepath.Ext(mediaPath))
-	format := strings.TrimPrefix(ext, ".")
-	if format == "jpg" {
-		format = "jpeg"
-	}
-
 	// 抽出先ファイルを作成（一意なファイル名を自動生成）
+	ext := strings.ToLower(filepath.Ext(mediaPath))
 	outFile, err := os.CreateTemp(ctx.extractDir, "image_*"+ext)
 	if err != nil {
-		return nil
+		return ""
 	}
 	outPath := outFile.Name()
 	writeOK := false
@@ -51,25 +45,12 @@ func (ctx *parseContext) extractImage(embedID string, pos *Position) *ImageData 
 
 	// コピー・フラッシュ失敗時も画像なしで継続する（defer で一時ファイルを削除）
 	if _, err := io.Copy(outFile, rc); err != nil {
-		return nil
+		return ""
 	}
 	if err := outFile.Close(); err != nil {
-		return nil
+		return ""
 	}
 	writeOK = true
 
-	// サイズ（EMU → ピクセル）
-	width, height := 0, 0
-	if pos != nil {
-		width = int(pos.Cx / 9525)
-		height = int(pos.Cy / 9525)
-	}
-
-	return &ImageData{
-		Format: format,
-		Width:  width,
-		Height: height,
-		Size:   size,
-		Path:   outPath,
-	}
+	return outPath
 }

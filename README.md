@@ -58,7 +58,7 @@ cc-read-pptx slides --slide 1 基本設計書.pptx
 ```
 
 ```jsonl
-{"slide":1,"title":"基本設計書","shapes":[{"id":1,"type":"rect","placeholder":"ctrTitle","position":{"x":685800,"y":2286000,"cx":7772400,"cy":1470025},"z":0,"paragraphs":[{"text":"基本設計書","font":{"name":"メイリオ","size":36,"bold":true}}]},{"id":2,"type":"rect","placeholder":"subTitle","position":{"x":1371600,"y":3886200,"cx":6400800,"cy":1752600},"z":1,"paragraphs":[{"text":"2025年4月版"}]}]}
+{"slide":1,"title":"基本設計書","shapes":[{"id":1,"type":"rect","placeholder":"ctrTitle","pos":{"x":685800,"y":2286000,"w":7772400,"h":1470025},"z":0,"paragraphs":[{"text":"基本設計書","font":{"name":"メイリオ","size":36,"bold":true}}]},{"id":2,"type":"rect","placeholder":"subTitle","pos":{"x":1371600,"y":3886200,"w":6400800,"h":1752600},"z":1,"paragraphs":[{"text":"2025年4月版"}]}]}
 ```
 
 1スライドにつき1行のJSONオブジェクト（JSONL形式）。`--slide` 未指定時は全スライドを順番に出力する。
@@ -70,23 +70,23 @@ cc-read-pptx slides --slide 2 進捗_20200108.pptx
 ```
 
 ```jsonl
-{"slide":2,"shapes":[{"id":1,"type":"table","name":"表 1","position":{"x":457200,"y":1600200,"cx":8229600,"cy":3000000},"z":0,"table":{"cols":3,"rows":[["項目","説明","備考"],["機能A","データ取得","必須"]]}}]}
+{"slide":2,"shapes":[{"id":1,"type":"table","name":"表 1","pos":{"x":457200,"y":1600200,"w":8229600,"h":3000000},"z":0,"table":{"cols":3,"rows":[["項目","説明","備考"],["機能A","データ取得","必須"]]}}]}
 ```
 
 コネクタ:
 
 ```jsonl
-{"id":20,"type":"connector","name":"直線矢印コネクタ 52","position":{"x":3530458,"y":2689356,"cx":296133,"cy":4992},"z":19,"line":{"color":"#007CD5","style":"solid","width":3},"from":3,"to":4,"connector_type":"straightConnector1","arrow":"end"}
+{"id":20,"type":"connector","name":"直線矢印コネクタ 52","pos":{"x":3530458,"y":2689356,"w":296133,"h":4992},"z":19,"line":{"color":"#007CD5","style":"solid","width":3},"from":3,"to":4,"connector_type":"straightConnector1","arrow":"end"}
 ```
 
-画像を抽出する場合:
+画像は一時ディレクトリに自動抽出される:
 
 ```bash
-cc-read-pptx slides --slide 7 --extract-images 設計書.pptx
+cc-read-pptx slides --slide 7 設計書.pptx
 ```
 
 ```jsonl
-{"id":5,"type":"picture","name":"図 1","position":{"x":1000000,"y":1000000,"cx":5000000,"cy":3000000},"z":4,"alt_text":"構成図","image":{"format":"png","width":640,"height":480,"size":45230,"path":"/tmp/cc-read-pptx-images-123456/image_abc.png"}}
+{"id":5,"type":"picture","name":"図 1","pos":{"x":1000000,"y":1000000,"w":5000000,"h":3000000},"z":4,"alt_text":"構成図","image_path":"/tmp/cc-read-pptx-images-123456/image_abc.png"}
 ```
 
 ノート付き:
@@ -103,9 +103,8 @@ cc-read-pptx slides --slide 1 --notes 資料.pptx
 
 | オプション | 説明 | デフォルト |
 |-----------|------|-----------|
-| `--slide` | 対象スライド番号（1始まり） | 全スライド |
+| `--slide` | 対象スライド番号（1始まり、複数指定可: `--slide 1,3`） | 全スライド |
 | `--notes` | ノートも出力する | OFF |
-| `--extract-images` | 画像を一時ディレクトリに抽出する | OFF（`image` フィールド省略） |
 
 ### search — テキストを検索
 
@@ -114,7 +113,7 @@ cc-read-pptx search --text "データ" 基本設計書.pptx
 ```
 
 ```jsonl
-{"slide":2,"title":"システム構成","shapes":[{"id":3,"type":"rect","name":"テキストボックス 1","position":{"x":1000000,"y":2000000,"cx":3000000,"cy":500000},"z":2,"paragraphs":[{"text":"データフロー図"}]}]}
+{"slide":2,"title":"システム構成","shapes":[{"id":3,"type":"rect","name":"テキストボックス 1","pos":{"x":1000000,"y":2000000,"w":3000000,"h":500000},"z":2,"paragraphs":[{"text":"データフロー図"}]}]}
 ```
 
 マッチしたスライドのみ出力し、図形内ではマッチした段落のみを含める。テーブルはいずれかのセルにヒットした場合テーブル全体を出力する。結果なしでも正常終了（終了コード 0）する。
@@ -124,7 +123,7 @@ cc-read-pptx search --text "データ" 基本設計書.pptx
 | オプション | 説明 | デフォルト |
 |-----------|------|-----------|
 | `--text` | 検索文字列（部分一致、大文字小文字無視） | 必須 |
-| `--slide` | 対象スライド番号 | 全スライド |
+| `--slide` | 対象スライド番号（複数指定可） | 全スライド |
 | `--notes` | ノートも検索対象にする | OFF |
 
 ## 図形種別
@@ -135,6 +134,6 @@ cc-read-pptx search --text "データ" 基本設計書.pptx
 | コネクタ | `connector` | `from`/`to` で接続先の図形IDを参照 |
 | グループ | `group` | `children` に子要素の配列 |
 | テーブル | `table` | `table` フィールドに `cols` と `rows` |
-| 画像 | `picture` | `--extract-images` 未指定時は `image` フィールドを省略 |
+| 画像 | `picture` | 画像は一時ディレクトリに自動抽出される |
 
 出力フィールドの詳細は [DESIGN.md](DESIGN.md) を参照。

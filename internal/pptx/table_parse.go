@@ -14,7 +14,7 @@ func (ctx *parseContext) parseGraphicFrame(gf xmlGraphicFrame) *Shape {
 	}
 
 	// 位置
-	s.Position = xfrmToPosition(gf.Xfrm)
+	s.Pos = xfrmToPosition(gf.Xfrm)
 
 	// テーブルデータ（被結合セルは null）
 	s.Table = parseTableData(tbl)

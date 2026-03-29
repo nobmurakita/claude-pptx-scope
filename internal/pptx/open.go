@@ -94,6 +94,24 @@ func (f *File) SlideCount() int {
 	return len(f.slideEntries)
 }
 
+// resolveSlideNums はスライド番号のスライスを検証し、対象番号リストを返す。
+// 空スライスの場合は全スライドを返す。
+func (f *File) resolveSlideNums(slideNums []int) ([]int, error) {
+	if len(slideNums) == 0 {
+		all := make([]int, len(f.slideEntries))
+		for i := range all {
+			all[i] = i + 1
+		}
+		return all, nil
+	}
+	for _, n := range slideNums {
+		if n < 1 || n > len(f.slideEntries) {
+			return nil, fmt.Errorf("スライド番号 %d は範囲外です（1〜%d）", n, len(f.slideEntries))
+		}
+	}
+	return slideNums, nil
+}
+
 // GetSlideSize はスライドサイズを返す
 func (f *File) GetSlideSize() SlideSize {
 	return f.slideSize

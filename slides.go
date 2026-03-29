@@ -10,9 +10,8 @@ import (
 )
 
 func init() {
-	slidesCmd.Flags().Int("slide", 0, "対象スライド番号（1始まり）")
+	slidesCmd.Flags().IntSlice("slide", nil, "対象スライド番号（1始まり、複数指定可: --slide 1,3）")
 	slidesCmd.Flags().Bool("notes", false, "ノートも出力する")
-	slidesCmd.Flags().Bool("extract-images", false, "画像を一時ディレクトリに抽出する")
 	rootCmd.AddCommand(slidesCmd)
 }
 
@@ -31,7 +30,7 @@ type slideOutput struct {
 }
 
 func runSlides(cmd *cobra.Command, args []string) error {
-	slideNum, err := cmd.Flags().GetInt("slide")
+	slideNums, err := cmd.Flags().GetIntSlice("slide")
 	if err != nil {
 		return fmt.Errorf("--slide フラグの解析エラー: %w", err)
 	}
@@ -39,13 +38,10 @@ func runSlides(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("--notes フラグの解析エラー: %w", err)
 	}
-	extractImages, err := cmd.Flags().GetBool("extract-images")
-	if err != nil {
-		return fmt.Errorf("--extract-images フラグの解析エラー: %w", err)
-	}
-
-	if slideNum < 0 {
-		return fmt.Errorf("--slide には1以上の値を指定してください")
+	for _, n := range slideNums {
+		if n < 1 {
+			return fmt.Errorf("--slide には1以上の値を指定してください")
+		}
 	}
 
 	f, err := pptx.OpenFile(args[0])
@@ -55,20 +51,20 @@ func runSlides(cmd *cobra.Command, args []string) error {
 	defer f.Close()
 
 	// 画像抽出用の一時ディレクトリを作成
-	var extractDir string
-	if extractImages {
-		dir, err := os.MkdirTemp("", "cc-read-pptx-images-*")
-		if err != nil {
-			return fmt.Errorf("一時ディレクトリの作成エラー: %w", err)
-		}
-		extractDir = dir
+	extractDir, err := os.MkdirTemp("", "cc-read-pptx-images-*")
+	if err != nil {
+		return fmt.Errorf("一時ディレクトリの作成エラー: %w", err)
 	}
 
 	enc := newJSONEncoder(os.Stdout)
 
-	if slideNum > 0 {
-		// 特定のスライド
-		return emitSlide(f, enc, slideNum, includeNotes, extractDir)
+	if len(slideNums) > 0 {
+		for _, n := range slideNums {
+			if err := emitSlide(f, enc, n, includeNotes, extractDir); err != nil {
+				return err
+			}
+		}
+		return nil
 	}
 
 	// 全スライド

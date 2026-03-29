@@ -17,7 +17,7 @@ type Shape struct {
 	Type           string      `json:"type"`
 	Name           string      `json:"name,omitempty"`
 	Placeholder    string      `json:"placeholder,omitempty"`
-	Position       *Position   `json:"position,omitempty"`
+	Pos            *Position   `json:"pos,omitempty"`
 	Z              int         `json:"z"`
 	Rotation       float64     `json:"rotation,omitempty"`
 	Flip           string      `json:"flip,omitempty"`
@@ -35,8 +35,8 @@ type Shape struct {
 	Arrow         string `json:"arrow,omitempty"`
 	Label         string `json:"label,omitempty"`
 	// 画像
-	AltText string     `json:"alt_text,omitempty"`
-	Image   *ImageData `json:"image,omitempty"`
+	AltText   string `json:"alt_text,omitempty"`
+	ImagePath string `json:"image_path,omitempty"`
 	// グループ
 	Children []Shape `json:"children,omitempty"`
 }
@@ -45,8 +45,8 @@ type Shape struct {
 type Position struct {
 	X  int64 `json:"x"`
 	Y  int64 `json:"y"`
-	Cx int64 `json:"cx"`
-	Cy int64 `json:"cy"`
+	W  int64 `json:"w"`
+	H  int64 `json:"h"`
 }
 
 // Point は座標
@@ -101,11 +101,3 @@ type TableData struct {
 	Rows [][]*string  `json:"rows"`
 }
 
-// ImageData は画像メタデータ
-type ImageData struct {
-	Format string `json:"format"`
-	Width  int    `json:"width"`
-	Height int    `json:"height"`
-	Size   int64  `json:"size"`
-	Path   string `json:"path"`
-}

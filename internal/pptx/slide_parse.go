@@ -252,7 +252,7 @@ func (ctx *parseContext) parseSp(sp xmlSp) *Shape {
 	}
 
 	// 位置
-	s.Position = xfrmToPosition(sp.SpPr.Xfrm)
+	s.Pos = xfrmToPosition(sp.SpPr.Xfrm)
 
 	// 回転・反転
 	if sp.SpPr.Xfrm != nil {
@@ -267,7 +267,7 @@ func (ctx *parseContext) parseSp(sp xmlSp) *Shape {
 	s.Line = ctx.resolveLine(sp.SpPr.Ln)
 
 	// 吹き出しポインタ
-	s.CalloutPointer = resolveCalloutPointer(sp.SpPr.PrstGeom, s.Position)
+	s.CalloutPointer = resolveCalloutPointer(sp.SpPr.PrstGeom, s.Pos)
 
 	// テキスト
 	if sp.TxBody != nil {
@@ -291,11 +291,11 @@ func (ctx *parseContext) parsePic(pic xmlPic) *Shape {
 	s.AltText = pic.NvPicPr.CNvPr.Descr
 
 	// 位置
-	s.Position = xfrmToPosition(pic.SpPr.Xfrm)
+	s.Pos = xfrmToPosition(pic.SpPr.Xfrm)
 
 	// 画像の抽出（extractDir が指定されている場合のみ）
 	if ctx.extractDir != "" && pic.BlipFill.Blip.Embed != "" {
-		s.Image = ctx.extractImage(pic.BlipFill.Blip.Embed, s.Position)
+		s.ImagePath = ctx.extractImage(pic.BlipFill.Blip.Embed)
 	}
 
 	return s
@@ -311,11 +311,11 @@ func (ctx *parseContext) parseGrpSp(grp xmlGrpSp) *Shape {
 
 	// グループの位置
 	if grp.GrpSpPr.Xfrm != nil {
-		s.Position = &Position{
-			X:  grp.GrpSpPr.Xfrm.Off.X,
-			Y:  grp.GrpSpPr.Xfrm.Off.Y,
-			Cx: grp.GrpSpPr.Xfrm.Ext.Cx,
-			Cy: grp.GrpSpPr.Xfrm.Ext.Cy,
+		s.Pos = &Position{
+			X: grp.GrpSpPr.Xfrm.Off.X,
+			Y: grp.GrpSpPr.Xfrm.Off.Y,
+			W: grp.GrpSpPr.Xfrm.Ext.Cx,
+			H: grp.GrpSpPr.Xfrm.Ext.Cy,
 		}
 	}
 

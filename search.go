@@ -11,7 +11,7 @@ import (
 func init() {
 	searchCmd.Flags().String("text", "", "検索文字列（部分一致、大文字小文字無視）")
 	_ = searchCmd.MarkFlagRequired("text")
-	searchCmd.Flags().Int("slide", 0, "対象スライド番号（1始まり）")
+	searchCmd.Flags().IntSlice("slide", nil, "対象スライド番号（1始まり、複数指定可: --slide 1,3）")
 	searchCmd.Flags().Bool("notes", false, "ノートも検索対象にする")
 	rootCmd.AddCommand(searchCmd)
 }
@@ -28,7 +28,7 @@ func runSearch(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("--text フラグの解析エラー: %w", err)
 	}
-	slideNum, err := cmd.Flags().GetInt("slide")
+	slideNums, err := cmd.Flags().GetIntSlice("slide")
 	if err != nil {
 		return fmt.Errorf("--slide フラグの解析エラー: %w", err)
 	}
@@ -43,7 +43,7 @@ func runSearch(cmd *cobra.Command, args []string) error {
 	}
 	defer f.Close()
 
-	results, err := f.Search(textFlag, slideNum, includeNotes)
+	results, err := f.Search(textFlag, slideNums, includeNotes)
 	if err != nil {
 		return err
 	}

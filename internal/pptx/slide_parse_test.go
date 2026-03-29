@@ -210,11 +210,11 @@ func TestParseSp_TextOnly(t *testing.T) {
 	if s.Name != "テキスト1" {
 		t.Errorf("Name: got %q, want %q", s.Name, "テキスト1")
 	}
-	if s.Position == nil {
-		t.Fatal("Position がnil")
+	if s.Pos == nil {
+		t.Fatal("Pos がnil")
 	}
-	if s.Position.X != 100 || s.Position.Y != 200 {
-		t.Errorf("Position: got (%d,%d), want (100,200)", s.Position.X, s.Position.Y)
+	if s.Pos.X != 100 || s.Pos.Y != 200 {
+		t.Errorf("Pos: got (%d,%d), want (100,200)", s.Pos.X, s.Pos.Y)
 	}
 	if len(s.Paragraphs) != 1 || s.Paragraphs[0].Text != "Hello" {
 		t.Errorf("Paragraphs: got %v", s.Paragraphs)
@@ -482,12 +482,12 @@ func TestParsePic(t *testing.T) {
 	if s.AltText != "テスト画像" {
 		t.Errorf("AltText: got %q, want %q", s.AltText, "テスト画像")
 	}
-	if s.Position.X != 500 || s.Position.Cx != 700 {
-		t.Errorf("Position: got (%d,%d), want (500,700)", s.Position.X, s.Position.Cx)
+	if s.Pos.X != 500 || s.Pos.W != 700 {
+		t.Errorf("Pos: got (%d,%d), want (500,700)", s.Pos.X, s.Pos.W)
 	}
-	// extractDir が空なので Image は nil
-	if s.Image != nil {
-		t.Error("extractDir が空の場合 Image はnilであるべき")
+	// extractDir が空なので ImagePath は空
+	if s.ImagePath != "" {
+		t.Error("extractDir が空の場合 ImagePath は空であるべき")
 	}
 }
 
@@ -527,8 +527,8 @@ func TestParseGrpSp(t *testing.T) {
 	if s.Type != "group" {
 		t.Errorf("Type: got %q, want %q", s.Type, "group")
 	}
-	if s.Position.X != 10 || s.Position.Cy != 400 {
-		t.Errorf("Position: got (%d,%d), want (10,400)", s.Position.X, s.Position.Cy)
+	if s.Pos.X != 10 || s.Pos.H != 400 {
+		t.Errorf("Pos: got (%d,%d), want (10,400)", s.Pos.X, s.Pos.H)
 	}
 	if len(s.Children) != 1 {
 		t.Fatalf("Children: got %d, want 1", len(s.Children))

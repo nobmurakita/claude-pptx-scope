@@ -1,29 +1,21 @@
 package pptx
 
 import (
-	"fmt"
 	"strings"
 )
 
 // Search はプレゼンテーション内のテキストを検索する
-func (f *File) Search(query string, slideNum int, includeNotes bool) ([]SlideData, error) {
+func (f *File) Search(query string, slideNums []int, includeNotes bool) ([]SlideData, error) {
 	queryLower := strings.ToLower(query)
 
-	startSlide := 1
-	endSlide := len(f.slideEntries)
-	if slideNum > 0 {
-		if slideNum > len(f.slideEntries) {
-			return nil, fmt.Errorf("スライド番号 %d は範囲外です（1〜%d）", slideNum, len(f.slideEntries))
-		}
-		startSlide = slideNum
-		endSlide = slideNum
-	} else if slideNum < 0 {
-		return nil, fmt.Errorf("スライド番号 %d は範囲外です（1〜%d）", slideNum, len(f.slideEntries))
+	targets, err := f.resolveSlideNums(slideNums)
+	if err != nil {
+		return nil, err
 	}
 
 	var results []SlideData
 
-	for num := startSlide; num <= endSlide; num++ {
+	for _, num := range targets {
 		sd, err := f.LoadSlide(num, includeNotes, "")
 		if err != nil {
 			return nil, err

@@ -13,19 +13,18 @@ PowerPointファイル（.pptx）の内容をCLIから出力するツール。
 
 ```
 1. info   → スライド一覧を確認し対象スライドを特定
-2. slides → スライドの内容を取得（has_images: true があれば --extract-images を付ける）
-3.          → 画像があれば出力の image.path を Read で確認し、一時ディレクトリを削除
+2. slides → スライドの内容を取得（画像は一時ディレクトリに自動抽出される）
+3.          → 画像があれば出力の image_path を Read で確認し、一時ディレクトリを削除
 4. search → 特定テキストの検索（slides より効率的）
 ```
 
 基本的には `info` → `slides` で内容を把握する。特定のキーワードを探す場合は `search` が効率的。
-図形の書式情報（フォント・色・枠線）は常に出力される。
+図形の書式情報（フォント・色・枠線）は常に出力される。画像は一時ディレクトリに自動抽出される。
 
-**画像の確認手順:** `info` の結果で `has_images: true` のスライドがある場合、以下の手順で画像を確認すること:
+**画像の確認手順:** 出力に `image_path` がある場合:
 
-1. `slides` コマンドに `--extract-images` を付けて実行する（一時ディレクトリが自動作成される）
-2. 出力の `image.path` を Read ツールで読み、画像の内容を確認する
-3. 確認が終わったら `image.path` の親ディレクトリを削除する
+1. `image_path` を Read ツールで読み、画像の内容を確認する
+2. 確認が終わったら `image_path` の親ディレクトリを削除する
 
 ## コマンドリファレンス
 
@@ -54,13 +53,12 @@ cc-read-pptx slides [options] <file>
 
 | オプション | 説明 | デフォルト |
 |-----------|------|-----------|
-| `--slide <number>` | 対象スライド番号（1始まり） | 全スライド |
+| `--slide <number,...>` | 対象スライド番号（1始まり、複数指定可: `--slide 1,3`） | 全スライド |
 | `--notes` | ノートも出力する | OFF |
-| `--extract-images` | 画像を一時ディレクトリに抽出 | OFF（`image` フィールド省略） |
 
 出力例:
 ```jsonl
-{"slide":1,"title":"基本設計書","shapes":[{"id":1,"type":"rect","placeholder":"ctrTitle","position":{"x":685800,"y":2286000,"cx":7772400,"cy":1470025},"z":0,"alignment":{"vertical":"center"},"paragraphs":[{"text":"基本設計書","font":{"name":"メイリオ","size":36,"bold":true,"color":"#333333"},"alignment":{"horizontal":"center"}}]}]}
+{"slide":1,"title":"基本設計書","shapes":[{"id":1,"type":"rect","placeholder":"ctrTitle","pos":{"x":685800,"y":2286000,"w":7772400,"h":1470025},"z":0,"alignment":{"vertical":"center"},"paragraphs":[{"text":"基本設計書","font":{"name":"メイリオ","size":36,"bold":true,"color":"#333333"},"alignment":{"horizontal":"center"}}]}]}
 {"slide":2,"title":"目次","shapes":[{"id":1,"type":"rect","placeholder":"title","z":0,"paragraphs":[{"text":"目次"}]},{"id":2,"type":"rect","placeholder":"body","z":1,"paragraphs":[{"text":"システム概要","bullet":"1."},{"text":"機能一覧","bullet":"2."}]}]}
 ```
 
@@ -72,14 +70,14 @@ cc-read-pptx slides [options] <file>
 - コネクタ: `type` は常に `"connector"`。`from`/`to` で接続先の図形IDを参照。`connector_type` でコネクタ形状、`arrow` で矢印の位置
 - グループ: `type` は `"group"`。`children` に子要素の配列
 - テーブル: `type` は `"table"`。`table` フィールドに `cols`（列数）と `rows`（行データ配列）。結合で吸収されたセルは `null`
-- 画像: `type` は `"picture"`。`--extract-images` 未指定時は `image` フィールドを省略
+- 画像: `type` は `"picture"`。画像は一時ディレクトリに自動抽出される
 
 **図形の主なフィールド:**
 
 - `id`: スライド内の連番ID（1始まり）
 - `placeholder`: プレースホルダー種別（`title`, `ctrTitle`, `subTitle`, `body` 等）。プレースホルダーでなければ省略
 - `name`: 図形名。プレースホルダーの場合は省略
-- `position`: 位置とサイズ（`x`, `y`, `cx`, `cy`。EMU単位）
+- `pos`: 位置とサイズ（`x`, `y`, `w`, `h`。EMU単位）
 - `z`: Z-order（0始まり、大きいほど前面）
 - `fill`: 塗りつぶし色（`#RRGGBB`）
 - `line`: 枠線情報（`color`, `style`, `width`）
@@ -97,15 +95,15 @@ cc-read-pptx slides [options] <file>
 **テーブルの出力例:**
 
 ```json
-{"id":4,"type":"table","name":"表 1","position":{"x":457200,"y":1600200,"cx":8229600,"cy":3000000},"z":3,"table":{"cols":3,"rows":[["項目","説明","備考"],["機能A",null,"必須"]]}}
+{"id":4,"type":"table","name":"表 1","pos":{"x":457200,"y":1600200,"w":8229600,"h":3000000},"z":3,"table":{"cols":3,"rows":[["項目","説明","備考"],["機能A",null,"必須"]]}}
 ```
 
 **画像の確認方法:**
 
-`--extract-images` で抽出後、出力の `image.path` を Read ツールで読むことで画像の中身を視覚的に確認できる。
+画像は一時ディレクトリに自動抽出される。出力の `image_path` を Read ツールで読むことで画像の中身を視覚的に確認できる。
 
 ```jsonl
-{"id":5,"type":"picture","name":"図 1","position":{"x":1000000,"y":1000000,"cx":5000000,"cy":3000000},"z":4,"alt_text":"システム構成図","image":{"format":"png","width":640,"height":480,"size":45230,"path":"/tmp/cc-read-pptx-images-123456/image_abc.png"}}
+{"id":5,"type":"picture","name":"図 1","pos":{"x":1000000,"y":1000000,"w":5000000,"h":3000000},"z":4,"alt_text":"システム構成図","image_path":"/tmp/cc-read-pptx-images-123456/image_abc.png"}
 ```
 
 **ノート（`--notes` 指定時）:**
@@ -121,7 +119,7 @@ cc-read-pptx search [options] <file>
 | オプション | 説明 | デフォルト |
 |-----------|------|-----------|
 | `--text <text>` | 検索文字列（部分一致、大文字小文字無視） | 必須 |
-| `--slide <number>` | 対象スライド番号 | 全スライド |
+| `--slide <number,...>` | 対象スライド番号（複数指定可） | 全スライド |
 | `--notes` | ノートも検索対象にする | OFF |
 
 出力形式は `slides` と同じJSONL。マッチしたスライドのみ出力し、図形内ではマッチした段落のみを含める。テーブルはいずれかのセルにヒットした場合テーブル全体を出力する。結果なしでも正常終了（終了コード 0）する。
@@ -131,5 +129,5 @@ cc-read-pptx search --text "データ" example.pptx
 ```
 
 ```jsonl
-{"slide":2,"title":"システム構成","shapes":[{"id":3,"type":"rect","name":"テキストボックス 1","position":{"x":1000000,"y":2000000,"cx":3000000,"cy":500000},"z":2,"paragraphs":[{"text":"データフロー図"}]}]}
+{"slide":2,"title":"システム構成","shapes":[{"id":3,"type":"rect","name":"テキストボックス 1","pos":{"x":1000000,"y":2000000,"w":3000000,"h":500000},"z":2,"paragraphs":[{"text":"データフロー図"}]}]}
 ```

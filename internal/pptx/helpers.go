@@ -6,10 +6,10 @@ func xfrmToPosition(xfrm *xmlXfrm) *Position {
 		return nil
 	}
 	return &Position{
-		X:  xfrm.Off.X,
-		Y:  xfrm.Off.Y,
-		Cx: xfrm.Ext.Cx,
-		Cy: xfrm.Ext.Cy,
+		X: xfrm.Off.X,
+		Y: xfrm.Off.Y,
+		W: xfrm.Ext.Cx,
+		H: xfrm.Ext.Cy,
 	}
 }
 
