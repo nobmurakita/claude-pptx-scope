@@ -35,8 +35,8 @@ type Shape struct {
 	Arrow         string `json:"arrow,omitempty"`
 	Label         string `json:"label,omitempty"`
 	// 画像
-	AltText   string `json:"alt_text,omitempty"`
-	ImagePath string `json:"image_path,omitempty"`
+	AltText string `json:"alt_text,omitempty"`
+	ImageID string `json:"image_id,omitempty"`
 	// グループ
 	Children []Shape `json:"children,omitempty"`
 }

@@ -15,7 +15,7 @@ type SlideData struct {
 }
 
 // LoadSlide は指定スライドの内容をパースする
-func (f *File) LoadSlide(slideNum int, includeNotes bool, extractDir string) (*SlideData, error) {
+func (f *File) LoadSlide(slideNum int, includeNotes bool) (*SlideData, error) {
 	idx := slideNum - 1
 	if idx < 0 || idx >= len(f.slideEntries) {
 		return nil, fmt.Errorf("スライド番号 %d は範囲外です（1〜%d）", slideNum, len(f.slideEntries))
@@ -49,11 +49,10 @@ func (f *File) LoadSlide(slideNum int, includeNotes bool, extractDir string) (*S
 
 	// 図形をパース
 	ctx := &parseContext{
-		f:          f,
-		slideRels:  slideRels,
-		slidePath:  entry.Path,
-		extractDir: extractDir,
-		pptxIDMap:  make(map[int]int),
+		f:         f,
+		slideRels: slideRels,
+		slidePath: entry.Path,
+		pptxIDMap: make(map[int]int),
 	}
 
 	sd.Shapes = ctx.parseSpTree(sld.CSld.SpTree.Children)
@@ -71,13 +70,12 @@ func (f *File) LoadSlide(slideNum int, includeNotes bool, extractDir string) (*S
 
 // parseContext はスライドパース中のコンテキスト
 type parseContext struct {
-	f          *File
-	slideRels  map[string]string
-	slidePath  string
-	extractDir string
-	nextID     int         // 連番ID
-	pptxIDMap  map[int]int // PowerPoint図形ID → 連番ID
-	nextZ int // z-order カウンタ
+	f         *File
+	slideRels map[string]string
+	slidePath string
+	nextID    int         // 連番ID
+	pptxIDMap map[int]int // PowerPoint図形ID → 連番ID
+	nextZ     int         // z-order カウンタ
 }
 
 // newTextOnlyContext はテキスト解析専用の parseContext を生成する。
@@ -95,10 +93,9 @@ func newTextOnlyContext(f *File) *parseContext {
 // カウンタ類は値コピーされ、パース後に syncFromChild で同期する。
 func (ctx *parseContext) newChildContext() *parseContext {
 	return &parseContext{
-		f:          ctx.f,
-		slideRels:  ctx.slideRels,
-		slidePath:  ctx.slidePath,
-		extractDir: ctx.extractDir,
+		f:         ctx.f,
+		slideRels: ctx.slideRels,
+		slidePath: ctx.slidePath,
 		nextID:    ctx.nextID,
 		nextZ:     ctx.nextZ,
 		pptxIDMap: ctx.pptxIDMap,
@@ -293,9 +290,9 @@ func (ctx *parseContext) parsePic(pic xmlPic) *Shape {
 	// 位置
 	s.Pos = xfrmToPosition(pic.SpPr.Xfrm)
 
-	// 画像の抽出（extractDir が指定されている場合のみ）
-	if ctx.extractDir != "" && pic.BlipFill.Blip.Embed != "" {
-		s.ImagePath = ctx.extractImage(pic.BlipFill.Blip.Embed)
+	// 画像IDの解決
+	if pic.BlipFill.Blip.Embed != "" {
+		s.ImageID = ctx.resolveImagePath(pic.BlipFill.Blip.Embed)
 	}
 
 	return s

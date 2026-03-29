@@ -79,14 +79,14 @@ cc-read-pptx slides --slide 2 進捗_20200108.pptx
 {"id":20,"type":"connector","name":"直線矢印コネクタ 52","pos":{"x":3530458,"y":2689356,"w":296133,"h":4992},"z":19,"line":{"color":"#007CD5","style":"solid","width":3},"from":3,"to":4,"connector_type":"straightConnector1","arrow":"end"}
 ```
 
-画像は一時ディレクトリに自動抽出される:
+画像は `image_id` で識別され、`image` サブコマンドで個別に取得できる:
 
 ```bash
 cc-read-pptx slides --slide 7 設計書.pptx
 ```
 
 ```jsonl
-{"id":5,"type":"picture","name":"図 1","pos":{"x":1000000,"y":1000000,"w":5000000,"h":3000000},"z":4,"alt_text":"構成図","image_path":"/tmp/cc-read-pptx-images-123456/image_abc.png"}
+{"id":5,"type":"picture","name":"図 1","pos":{"x":1000000,"y":1000000,"w":5000000,"h":3000000},"z":4,"alt_text":"構成図","image_id":"ppt/media/image1.png"}
 ```
 
 ノート付き:
@@ -105,6 +105,14 @@ cc-read-pptx slides --slide 1 --notes 資料.pptx
 |-----------|------|-----------|
 | `--slide` | 対象スライド番号（1始まり、複数指定可: `--slide 1,3`） | 全スライド |
 | `--notes` | ノートも出力する | OFF |
+
+### image — 画像を取得
+
+```bash
+cc-read-pptx image 設計書.pptx ppt/media/image1.png /tmp/img.png
+```
+
+`slides` 出力の `image_id` を指定して、画像をファイルに保存する。
 
 ### search — テキストを検索
 
@@ -134,6 +142,6 @@ cc-read-pptx search --text "データ" 基本設計書.pptx
 | コネクタ | `connector` | `from`/`to` で接続先の図形IDを参照 |
 | グループ | `group` | `children` に子要素の配列 |
 | テーブル | `table` | `table` フィールドに `cols` と `rows` |
-| 画像 | `picture` | 画像は一時ディレクトリに自動抽出される |
+| 画像 | `picture` | `image_id` で `image` サブコマンドにより取得可能 |
 
 出力フィールドの詳細は [DESIGN.md](DESIGN.md) を参照。

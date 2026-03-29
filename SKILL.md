@@ -2,7 +2,7 @@
 name: cc-read-pptx
 description: PowerPointファイル（.pptx）を読み取る。プレゼン資料、設計書、フローチャート、提案書の内容確認・データ抽出時に使用する。
 user-invocable: false
-allowed-tools: Bash(cc-read-pptx *)
+allowed-tools: Bash(cc-read-pptx *), Read
 ---
 
 # cc-read-pptx
@@ -13,18 +13,20 @@ PowerPointファイル（.pptx）の内容をCLIから出力するツール。
 
 ```
 1. info   → スライド一覧を確認し対象スライドを特定
-2. slides → スライドの内容を取得（画像は一時ディレクトリに自動抽出される）
-3.          → 画像があれば出力の image_path を Read で確認し、一時ディレクトリを削除
+2. slides → スライドの内容を取得
+3. image  → 必要な画像を個別に取得して確認
 4. search → 特定テキストの検索（slides より効率的）
 ```
 
 基本的には `info` → `slides` で内容を把握する。特定のキーワードを探す場合は `search` が効率的。
-図形の書式情報（フォント・色・枠線）は常に出力される。画像は一時ディレクトリに自動抽出される。
+図形の書式情報（フォント・色・枠線）は常に出力される。
 
-**画像の確認手順:** 出力に `image_path` がある場合:
+**画像の確認手順:** 出力に `image_id` がある場合:
 
-1. `image_path` を Read ツールで読み、画像の内容を確認する
-2. 確認が終わったら `image_path` の親ディレクトリを削除する
+1. `image` サブコマンドでファイルに保存する: `cc-read-pptx image <file> <image_id> <output>`
+   - `<output>` は重複しない一時ファイルパスを生成して指定する（拡張子は `image_id` に合わせる）
+2. Read ツールで保存したファイルを読み、画像の内容を確認する
+3. 確認が終わったら画像を削除する
 
 ## コマンドリファレンス
 
@@ -70,7 +72,7 @@ cc-read-pptx slides [options] <file>
 - コネクタ: `type` は常に `"connector"`。`from`/`to` で接続先の図形IDを参照。`connector_type` でコネクタ形状、`arrow` で矢印の位置
 - グループ: `type` は `"group"`。`children` に子要素の配列
 - テーブル: `type` は `"table"`。`table` フィールドに `cols`（列数）と `rows`（行データ配列）。結合で吸収されたセルは `null`
-- 画像: `type` は `"picture"`。画像は一時ディレクトリに自動抽出される
+- 画像: `type` は `"picture"`。`image_id` で `image` サブコマンドにより画像を取得可能
 
 **図形の主なフィールド:**
 
@@ -100,15 +102,31 @@ cc-read-pptx slides [options] <file>
 
 **画像の確認方法:**
 
-画像は一時ディレクトリに自動抽出される。出力の `image_path` を Read ツールで読むことで画像の中身を視覚的に確認できる。
+出力の `image_id` を使い、`image` サブコマンドで画像のバイナリを取得できる。
 
 ```jsonl
-{"id":5,"type":"picture","name":"図 1","pos":{"x":1000000,"y":1000000,"w":5000000,"h":3000000},"z":4,"alt_text":"システム構成図","image_path":"/tmp/cc-read-pptx-images-123456/image_abc.png"}
+{"id":5,"type":"picture","name":"図 1","pos":{"x":1000000,"y":1000000,"w":5000000,"h":3000000},"z":4,"alt_text":"システム構成図","image_id":"ppt/media/image1.png"}
+```
+
+```bash
+cc-read-pptx image example.pptx ppt/media/image1.png <output>
 ```
 
 **ノート（`--notes` 指定時）:**
 
 `notes` フィールドに段落の配列が追加される。`paragraphs` と同じ構造。
+
+### image
+
+```bash
+cc-read-pptx image <file> <image_id> <output>
+```
+
+`slides` 出力の `image_id`（ZIP内のメディアパス）を指定して、画像をファイルに保存する。
+
+```bash
+cc-read-pptx image example.pptx ppt/media/image1.png <output>
+```
 
 ### search
 

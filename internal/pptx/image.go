@@ -1,15 +1,10 @@
 package pptx
 
-import (
-	"io"
-	"os"
-	"path/filepath"
-	"strings"
-)
+import "io"
 
-// extractImage は画像をファイルに抽出しパスを返す
-func (ctx *parseContext) extractImage(embedID string) string {
-	// リレーション未解決時は画像なしで継続する（スライド処理を止めない）
+// resolveImagePath はリレーションIDからZIP内の画像パスを解決する。
+// 解決できない場合は空文字列を返す（スライド処理を止めない）。
+func (ctx *parseContext) resolveImagePath(embedID string) string {
 	if ctx.slideRels == nil {
 		return ""
 	}
@@ -17,40 +12,17 @@ func (ctx *parseContext) extractImage(embedID string) string {
 	if !ok {
 		return ""
 	}
+	return resolveRelTarget(pathDir(ctx.slidePath), target)
+}
 
-	// ZIP内のパスを解決
-	mediaPath := resolveRelTarget(pathDir(ctx.slidePath), target)
-
-	// ZIP内のファイルを開く（メディアファイルが欠損していてもスライド処理は継続する）
-	rc, _, err := openZipFile(ctx.f.zi, mediaPath)
-	if err != nil || rc == nil {
-		return ""
+// ExtractImage はZIP内の画像をwに書き出す。
+func (f *File) ExtractImage(mediaPath string, w io.Writer) error {
+	rc, _, err := openZipFile(f.zi, mediaPath)
+	if err != nil {
+		return err
 	}
 	defer rc.Close()
 
-	// 抽出先ファイルを作成（一意なファイル名を自動生成）
-	ext := strings.ToLower(filepath.Ext(mediaPath))
-	outFile, err := os.CreateTemp(ctx.extractDir, "image_*"+ext)
-	if err != nil {
-		return ""
-	}
-	outPath := outFile.Name()
-	writeOK := false
-	defer func() {
-		if !writeOK {
-			outFile.Close()
-			os.Remove(outPath)
-		}
-	}()
-
-	// コピー・フラッシュ失敗時も画像なしで継続する（defer で一時ファイルを削除）
-	if _, err := io.Copy(outFile, rc); err != nil {
-		return ""
-	}
-	if err := outFile.Close(); err != nil {
-		return ""
-	}
-	writeOK = true
-
-	return outPath
+	_, err = io.Copy(w, rc)
+	return err
 }

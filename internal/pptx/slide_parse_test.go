@@ -485,9 +485,9 @@ func TestParsePic(t *testing.T) {
 	if s.Pos.X != 500 || s.Pos.W != 700 {
 		t.Errorf("Pos: got (%d,%d), want (500,700)", s.Pos.X, s.Pos.W)
 	}
-	// extractDir が空なので ImagePath は空
-	if s.ImagePath != "" {
-		t.Error("extractDir が空の場合 ImagePath は空であるべき")
+	// slideRels が未設定なので ImageID は空
+	if s.ImageID != "" {
+		t.Error("slideRels が未設定の場合 ImageID は空であるべき")
 	}
 }
 

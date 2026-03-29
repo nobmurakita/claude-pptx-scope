@@ -50,24 +50,18 @@ func runSlides(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// 画像抽出用の一時ディレクトリを作成
-	extractDir, err := os.MkdirTemp("", "cc-read-pptx-images-*")
-	if err != nil {
-		return fmt.Errorf("一時ディレクトリの作成エラー: %w", err)
-	}
-
 	enc := newJSONEncoder(os.Stdout)
 
 	for _, n := range targets {
-		if err := emitSlide(f, enc, n, includeNotes, extractDir); err != nil {
+		if err := emitSlide(f, enc, n, includeNotes); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func emitSlide(f *pptx.File, enc *json.Encoder, slideNum int, includeNotes bool, extractDir string) error {
-	sd, err := f.LoadSlide(slideNum, includeNotes, extractDir)
+func emitSlide(f *pptx.File, enc *json.Encoder, slideNum int, includeNotes bool) error {
+	sd, err := f.LoadSlide(slideNum, includeNotes)
 	if err != nil {
 		return err
 	}

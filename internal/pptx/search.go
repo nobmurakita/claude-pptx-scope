@@ -16,7 +16,7 @@ func (f *File) Search(query string, slideNums []int, includeNotes bool) ([]Slide
 	var results []SlideData
 
 	for _, num := range targets {
-		sd, err := f.LoadSlide(num, includeNotes, "")
+		sd, err := f.LoadSlide(num, includeNotes)
 		if err != nil {
 			return nil, err
 		}
