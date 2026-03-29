@@ -31,9 +31,18 @@ type slideOutput struct {
 }
 
 func runSlides(cmd *cobra.Command, args []string) error {
-	slideNum, _ := cmd.Flags().GetInt("slide")
-	includeNotes, _ := cmd.Flags().GetBool("notes")
-	extractDir, _ := cmd.Flags().GetString("extract-images")
+	slideNum, err := cmd.Flags().GetInt("slide")
+	if err != nil {
+		return fmt.Errorf("--slide フラグの解析エラー: %w", err)
+	}
+	includeNotes, err := cmd.Flags().GetBool("notes")
+	if err != nil {
+		return fmt.Errorf("--notes フラグの解析エラー: %w", err)
+	}
+	extractDir, err := cmd.Flags().GetString("extract-images")
+	if err != nil {
+		return fmt.Errorf("--extract-images フラグの解析エラー: %w", err)
+	}
 
 	f, err := pptx.OpenFile(args[0])
 	if err != nil {

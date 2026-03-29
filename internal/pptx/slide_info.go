@@ -150,7 +150,7 @@ func (f *File) notesPath(slideIdx int) string {
 	entry := f.slideEntries[slideIdx]
 	// スライドの .rels からノートのリレーションを探す
 	relsPath := slideRelsPath(entry.Path)
-	rels := loadRelsTyped(f, relsPath)
+	rels, _ := loadRelsTyped(f, relsPath)
 	for _, r := range rels {
 		if strings.HasSuffix(r.Type, "/notesSlide") {
 			return resolveRelTarget(pathDir(entry.Path), r.Target)

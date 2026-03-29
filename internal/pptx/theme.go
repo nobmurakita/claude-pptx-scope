@@ -1,6 +1,9 @@
 package pptx
 
-import "encoding/xml"
+import (
+	"encoding/xml"
+	"fmt"
+)
 
 // themeColors はテーマカラーのマッピング
 type themeColors struct {
@@ -15,8 +18,9 @@ func (tc *themeColors) Get(idx int) string {
 	return tc.colors[idx]
 }
 
-// parseThemeColors は theme1.xml からテーマカラーをパースする
-func parseThemeColors(data []byte) *themeColors {
+// parseThemeColors は theme1.xml からテーマカラーをパースする。
+// パース失敗時はエラーを返す。
+func parseThemeColors(data []byte) (*themeColors, error) {
 	var theme struct {
 		ThemeElements struct {
 			ClrScheme struct {
@@ -36,7 +40,7 @@ func parseThemeColors(data []byte) *themeColors {
 		} `xml:"themeElements"`
 	}
 	if err := xml.Unmarshal(data, &theme); err != nil {
-		return nil
+		return nil, fmt.Errorf("テーマXMLのパースに失敗: %w", err)
 	}
 
 	cs := theme.ThemeElements.ClrScheme
@@ -55,7 +59,7 @@ func parseThemeColors(data []byte) *themeColors {
 			tc.colors[i] = c
 		}
 	}
-	return tc
+	return tc, nil
 }
 
 type xmlThemeColor struct {

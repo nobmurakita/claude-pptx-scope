@@ -38,7 +38,7 @@ func (f *File) LoadSlide(slideNum int, includeNotes bool, extractDir string) (*S
 	}
 
 	// スライドのリレーション（画像用）
-	slideRels := loadRels(f, slideRelsPath(entry.Path))
+	slideRels, _ := loadRels(f, slideRelsPath(entry.Path))
 
 	sd := &SlideData{
 		Number: slideNum,
@@ -446,7 +446,7 @@ func (ctx *parseContext) parseGraphicFrame(gf xmlGraphicFrame) *Shape {
 	// （標準XMLでは vMerge で既に null だが、vMerge 省略時のフォールバック）
 	for _, rs := range rowSpans {
 		for r := rs.row + 1; r < rs.row+rs.rowSpan && r < len(rows); r++ {
-			for c := rs.col; c < rs.col+rs.colSpan && c < cols; c++ {
+			for c := rs.col; c < rs.col+rs.colSpan && c < cols && c < len(rows[r]); c++ {
 				rows[r][c] = nil
 			}
 		}

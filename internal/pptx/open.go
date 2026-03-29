@@ -99,13 +99,19 @@ func (f *File) GetSlideSize() SlideSize {
 	return f.slideSize
 }
 
-// getTheme はテーマカラーを遅延ロードして返す
+// getTheme はテーマカラーを遅延ロードして返す。
+// テーマファイルが存在しない場合や読み込み失敗時は nil を返す。
 func (f *File) getTheme() *themeColors {
 	f.themeOnce.Do(func() {
 		data, err := readZipFile(f.zi, "ppt/theme/theme1.xml")
-		if err == nil && data != nil {
-			f.theme = parseThemeColors(data)
+		if err != nil || data == nil {
+			return
 		}
+		tc, err := parseThemeColors(data)
+		if err != nil {
+			return
+		}
+		f.theme = tc
 	})
 	return f.theme
 }
@@ -132,9 +138,12 @@ func (f *File) loadPresentation() error {
 	}
 
 	// リレーション読み込み
-	rels := loadRels(f, "ppt/_rels/presentation.xml.rels")
+	rels, err := loadRels(f, "ppt/_rels/presentation.xml.rels")
+	if err != nil {
+		return fmt.Errorf("presentation.xml.rels の読み込みに失敗: %w", err)
+	}
 	if rels == nil {
-		return fmt.Errorf("presentation.xml.rels の読み込みに失敗")
+		return fmt.Errorf("presentation.xml.rels が見つかりません")
 	}
 
 	// sldIdLst からスライドエントリを構築

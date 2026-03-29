@@ -45,17 +45,22 @@ func (ctx *parseContext) extractImage(embedID string, pos *Position) *ImageData 
 	if err != nil {
 		return nil
 	}
+	writeOK := false
+	defer func() {
+		if !writeOK {
+			outFile.Close()
+			os.Remove(outPath)
+		}
+	}()
 
 	if _, err := io.Copy(outFile, rc); err != nil {
-		outFile.Close()
-		os.Remove(outPath)
 		return nil
 	}
 	// 書き込み系の Close はフラッシュを伴うためエラーを確認する
 	if err := outFile.Close(); err != nil {
-		os.Remove(outPath)
 		return nil
 	}
+	writeOK = true
 
 	// サイズ（EMU → ピクセル）
 	width, height := 0, 0

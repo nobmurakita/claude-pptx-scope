@@ -1,6 +1,9 @@
 package pptx
 
-import "encoding/xml"
+import (
+	"encoding/xml"
+	"fmt"
+)
 
 // xmlRelationships は .rels ファイルの構造
 type xmlRelationships struct {
@@ -14,24 +17,28 @@ type xmlRel struct {
 	Target string `xml:"Target,attr"`
 }
 
-// loadRels は指定パスの .rels をパースしてIDからTargetへのマップを返す
-func loadRels(f *File, relsPath string) map[string]string {
+// loadRels は指定パスの .rels をパースしてIDからTargetへのマップを返す。
+// ファイルが存在しない場合は nil を返す。パースエラー時もエラーを伝播する。
+func loadRels(f *File, relsPath string) (map[string]string, error) {
 	var rels xmlRelationships
 	if err := decodeZipXML(f.zi, relsPath, &rels); err != nil {
-		return nil
+		return nil, fmt.Errorf("%s のパースに失敗: %w", relsPath, err)
+	}
+	if len(rels.Rels) == 0 {
+		return nil, nil
 	}
 	m := make(map[string]string, len(rels.Rels))
 	for _, r := range rels.Rels {
 		m[r.ID] = r.Target
 	}
-	return m
+	return m, nil
 }
 
-// loadRelsTyped は指定パスの .rels をパースしてリレーション一覧を返す
-func loadRelsTyped(f *File, relsPath string) []xmlRel {
+// loadRelsTyped は指定パスの .rels をパースしてリレーション一覧を返す。
+func loadRelsTyped(f *File, relsPath string) ([]xmlRel, error) {
 	var rels xmlRelationships
 	if err := decodeZipXML(f.zi, relsPath, &rels); err != nil {
-		return nil
+		return nil, fmt.Errorf("%s のパースに失敗: %w", relsPath, err)
 	}
-	return rels.Rels
+	return rels.Rels, nil
 }
