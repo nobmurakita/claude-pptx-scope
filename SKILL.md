@@ -66,7 +66,7 @@ cc-read-pptx slides [options] <file>
 - シェイプ: `rect`, `roundRect`, `ellipse`, `flowChartProcess`, `flowChartDecision` 等（`a:prstGeom` の `prst` 属性値）
 - コネクタ: `type` は常に `"connector"`。`from`/`to` で接続先の図形IDを参照。`connector_type` でコネクタ形状、`arrow` で矢印の位置
 - グループ: `type` は `"group"`。`children` に子要素の配列
-- テーブル: `type` は `"table"`。`table` フィールドに `cols`（列数）と `rows`（行データ配列）
+- テーブル: `type` は `"table"`。`table` フィールドに `cols`（列数）と `rows`（行データ配列）。結合で吸収されたセルは `null`
 - 画像: `type` は `"picture"`。`--extract-images` 未指定時はスキップされる
 
 **図形の主なフィールド:**
@@ -91,7 +91,7 @@ cc-read-pptx slides [options] <file>
 **テーブルの出力例:**
 
 ```json
-{"id":4,"type":"table","name":"表 1","position":{"x":457200,"y":1600200,"cx":8229600,"cy":3000000},"z":3,"table":{"cols":3,"rows":[["項目","説明","備考"],["機能A","データ取得","必須"]]}}
+{"id":4,"type":"table","name":"表 1","position":{"x":457200,"y":1600200,"cx":8229600,"cy":3000000},"z":3,"table":{"cols":3,"rows":[["項目","説明","備考"],["機能A",null,"必須"]]}}
 ```
 
 **画像の確認方法:**

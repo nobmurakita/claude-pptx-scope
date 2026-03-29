@@ -97,8 +97,8 @@ type Alignment struct {
 
 // TableData はテーブルデータ
 type TableData struct {
-	Cols int        `json:"cols"`
-	Rows [][]string `json:"rows"`
+	Cols int          `json:"cols"`
+	Rows [][]*string  `json:"rows"`
 }
 
 // ImageData は画像メタデータ

@@ -417,17 +417,18 @@ func (ctx *parseContext) parseGraphicFrame(gf xmlGraphicFrame) *Shape {
 	// 位置
 	s.Position = xfrmToPosition(gf.Xfrm)
 
-	// テーブルデータ（結合セルはスキップ）
+	// テーブルデータ（被結合セルは null）
 	cols := len(tbl.TblGrid.GridCols)
-	var rows [][]string
+	var rows [][]*string
 	for _, tr := range tbl.Trs {
-		row := make([]string, 0, cols)
+		row := make([]*string, 0, cols)
 		for _, tc := range tr.Tcs {
 			if tc.VMerge == "1" || tc.HMerge == "1" {
-				continue // 結合で吸収されたセルをスキップ
+				row = append(row, nil) // 結合で吸収されたセル
+				continue
 			}
 			text := extractTextFromTxBody(tc.TxBody)
-			row = append(row, text)
+			row = append(row, &text)
 		}
 		rows = append(rows, row)
 	}
