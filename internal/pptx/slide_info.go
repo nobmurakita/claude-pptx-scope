@@ -119,6 +119,7 @@ func (f *File) findNotesBody(slideIdx int) *xmlTxBody {
 		return nil
 	}
 
+	// ノートの読み込み・パース失敗はスライド処理に影響させない
 	data, err := readZipFile(f.zi, notesPath)
 	if err != nil || data == nil {
 		return nil

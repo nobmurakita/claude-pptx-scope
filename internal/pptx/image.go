@@ -10,6 +10,7 @@ import (
 
 // extractImage は画像をファイルに抽出しメタデータを返す
 func (ctx *parseContext) extractImage(embedID string, pos *Position) *ImageData {
+	// リレーション未解決時は画像なしで継続する（スライド処理を止めない）
 	if ctx.slideRels == nil {
 		return nil
 	}
@@ -53,10 +54,10 @@ func (ctx *parseContext) extractImage(embedID string, pos *Position) *ImageData 
 		}
 	}()
 
+	// コピー・フラッシュ失敗時も画像なしで継続する（defer で一時ファイルを削除）
 	if _, err := io.Copy(outFile, rc); err != nil {
 		return nil
 	}
-	// 書き込み系の Close はフラッシュを伴うためエラーを確認する
 	if err := outFile.Close(); err != nil {
 		return nil
 	}
