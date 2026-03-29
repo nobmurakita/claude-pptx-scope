@@ -59,7 +59,6 @@ func TestNewChildContext(t *testing.T) {
 	ctx := newTestContext()
 	ctx.nextID = 5
 	ctx.nextZ = 3
-	ctx.imageCount = 2
 	ctx.allocID(100) // nextID=6, pptxIDMap[100]=6
 
 	child := ctx.newChildContext()
@@ -83,12 +82,10 @@ func TestSyncFromChild(t *testing.T) {
 	ctx := newTestContext()
 	ctx.nextID = 5
 	ctx.nextZ = 3
-	ctx.imageCount = 1
 
 	child := ctx.newChildContext()
 	child.nextID = 10
 	child.nextZ = 7
-	child.imageCount = 3
 
 	ctx.syncFromChild(child)
 
@@ -97,9 +94,6 @@ func TestSyncFromChild(t *testing.T) {
 	}
 	if ctx.nextZ != 7 {
 		t.Errorf("syncFromChild nextZ: got %d, want 7", ctx.nextZ)
-	}
-	if ctx.imageCount != 3 {
-		t.Errorf("syncFromChild imageCount: got %d, want 3", ctx.imageCount)
 	}
 }
 

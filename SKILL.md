@@ -18,9 +18,13 @@ PowerPointファイル（.pptx）の内容をCLIから出力するツール。
 ```
 
 基本的には `info` → `slides` で内容を把握する。特定のキーワードを探す場合は `search` が効率的。
-図形の書式情報（フォント・色・枠線）は常に出力される。画像を確認するには `--extract-images <dir>` で抽出し、出力の `image.path` を Read ツールで読む。
+図形の書式情報（フォント・色・枠線）は常に出力される。画像を確認するには `--extract-images` で抽出し、出力の `image.path` を Read ツールで読む。
 
-**重要:** `info` の結果で `has_images: true` のスライドがある場合、`slides` コマンドには必ず `--extract-images /tmp/pptx_images` を付けること。抽出後は出力の `image.path` を Read ツールで読み、画像の内容を確認すること。
+**重要:** `info` の結果で `has_images: true` のスライドがある場合、以下の手順で画像を確認すること:
+
+1. `slides` コマンドに `--extract-images` を付けて実行する（一時ディレクトリが自動作成される）
+2. 出力の `image.path` を Read ツールで読み、画像の内容を確認する
+3. 確認が終わったら `image.path` の親ディレクトリを削除する
 
 ## コマンドリファレンス
 
@@ -51,7 +55,7 @@ cc-read-pptx slides [options] <file>
 |-----------|------|-----------|
 | `--slide <number>` | 対象スライド番号（1始まり） | 全スライド |
 | `--notes` | ノートも出力する | OFF |
-| `--extract-images <dir>` | 画像を指定ディレクトリに抽出 | OFF（`image` フィールド省略） |
+| `--extract-images` | 画像を一時ディレクトリに抽出 | OFF（`image` フィールド省略） |
 
 出力例:
 ```jsonl
@@ -100,7 +104,7 @@ cc-read-pptx slides [options] <file>
 `--extract-images` で抽出後、出力の `image.path` を Read ツールで読むことで画像の中身を視覚的に確認できる。
 
 ```jsonl
-{"id":5,"type":"picture","name":"図 1","position":{"x":1000000,"y":1000000,"cx":5000000,"cy":3000000},"z":4,"alt_text":"システム構成図","image":{"format":"png","width":640,"height":480,"size":45230,"path":"/tmp/imgs/image_1.png"}}
+{"id":5,"type":"picture","name":"図 1","position":{"x":1000000,"y":1000000,"cx":5000000,"cy":3000000},"z":4,"alt_text":"システム構成図","image":{"format":"png","width":640,"height":480,"size":45230,"path":"/tmp/cc-read-pptx-images-123456/image_abc.png"}}
 ```
 
 **ノート（`--notes` 指定時）:**

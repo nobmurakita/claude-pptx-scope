@@ -77,8 +77,7 @@ type parseContext struct {
 	extractDir string
 	nextID     int         // 連番ID
 	pptxIDMap  map[int]int // PowerPoint図形ID → 連番ID
-	nextZ      int         // z-order カウンタ
-	imageCount int         // 画像カウンタ
+	nextZ int // z-order カウンタ
 }
 
 // newTextOnlyContext はテキスト解析専用の parseContext を生成する。
@@ -100,10 +99,9 @@ func (ctx *parseContext) newChildContext() *parseContext {
 		slideRels:  ctx.slideRels,
 		slidePath:  ctx.slidePath,
 		extractDir: ctx.extractDir,
-		nextID:     ctx.nextID,
-		nextZ:      ctx.nextZ,
-		pptxIDMap:  ctx.pptxIDMap,
-		imageCount: ctx.imageCount,
+		nextID:    ctx.nextID,
+		nextZ:     ctx.nextZ,
+		pptxIDMap: ctx.pptxIDMap,
 	}
 }
 
@@ -111,7 +109,6 @@ func (ctx *parseContext) newChildContext() *parseContext {
 func (ctx *parseContext) syncFromChild(child *parseContext) {
 	ctx.nextID = child.nextID
 	ctx.nextZ = child.nextZ
-	ctx.imageCount = child.imageCount
 }
 
 func (ctx *parseContext) allocID(pptxID int) int {

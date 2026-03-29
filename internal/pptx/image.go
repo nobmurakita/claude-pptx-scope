@@ -1,7 +1,6 @@
 package pptx
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -36,16 +35,12 @@ func (ctx *parseContext) extractImage(embedID string, pos *Position) *ImageData 
 		format = "jpeg"
 	}
 
-	// 抽出先パス
-	ctx.imageCount++
-	outName := fmt.Sprintf("image_%d%s", ctx.imageCount, ext)
-	outPath := filepath.Join(ctx.extractDir, outName)
-
-	// ファイルに書き出し（書き出し失敗時は画像メタデータなしで継続する）
-	outFile, err := os.Create(outPath)
+	// 抽出先ファイルを作成（一意なファイル名を自動生成）
+	outFile, err := os.CreateTemp(ctx.extractDir, "image_*"+ext)
 	if err != nil {
 		return nil
 	}
+	outPath := outFile.Name()
 	writeOK := false
 	defer func() {
 		if !writeOK {

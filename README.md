@@ -82,11 +82,11 @@ cc-read-pptx slides --slide 2 進捗_20200108.pptx
 画像を抽出する場合:
 
 ```bash
-cc-read-pptx slides --slide 7 --extract-images /tmp/images 設計書.pptx
+cc-read-pptx slides --slide 7 --extract-images 設計書.pptx
 ```
 
 ```jsonl
-{"id":5,"type":"picture","name":"図 1","position":{"x":1000000,"y":1000000,"cx":5000000,"cy":3000000},"z":4,"alt_text":"構成図","image":{"format":"png","width":640,"height":480,"size":45230,"path":"/tmp/images/image_1.png"}}
+{"id":5,"type":"picture","name":"図 1","position":{"x":1000000,"y":1000000,"cx":5000000,"cy":3000000},"z":4,"alt_text":"構成図","image":{"format":"png","width":640,"height":480,"size":45230,"path":"/tmp/cc-read-pptx-images-123456/image_abc.png"}}
 ```
 
 ノート付き:
@@ -105,7 +105,7 @@ cc-read-pptx slides --slide 1 --notes 資料.pptx
 |-----------|------|-----------|
 | `--slide` | 対象スライド番号（1始まり） | 全スライド |
 | `--notes` | ノートも出力する | OFF |
-| `--extract-images` | 画像を指定ディレクトリに抽出する | OFF（`image` フィールド省略） |
+| `--extract-images` | 画像を一時ディレクトリに抽出する | OFF（`image` フィールド省略） |
 
 ### search — テキストを検索
 

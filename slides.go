@@ -12,7 +12,7 @@ import (
 func init() {
 	slidesCmd.Flags().Int("slide", 0, "対象スライド番号（1始まり）")
 	slidesCmd.Flags().Bool("notes", false, "ノートも出力する")
-	slidesCmd.Flags().String("extract-images", "", "画像を抽出するディレクトリ")
+	slidesCmd.Flags().Bool("extract-images", false, "画像を一時ディレクトリに抽出する")
 	rootCmd.AddCommand(slidesCmd)
 }
 
@@ -39,7 +39,7 @@ func runSlides(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("--notes フラグの解析エラー: %w", err)
 	}
-	extractDir, err := cmd.Flags().GetString("extract-images")
+	extractImages, err := cmd.Flags().GetBool("extract-images")
 	if err != nil {
 		return fmt.Errorf("--extract-images フラグの解析エラー: %w", err)
 	}
@@ -54,11 +54,14 @@ func runSlides(cmd *cobra.Command, args []string) error {
 	}
 	defer f.Close()
 
-	// 画像抽出ディレクトリの作成
-	if extractDir != "" {
-		if err := os.MkdirAll(extractDir, 0755); err != nil {
-			return fmt.Errorf("ディレクトリの作成エラー: %w", err)
+	// 画像抽出用の一時ディレクトリを作成
+	var extractDir string
+	if extractImages {
+		dir, err := os.MkdirTemp("", "cc-read-pptx-images-*")
+		if err != nil {
+			return fmt.Errorf("一時ディレクトリの作成エラー: %w", err)
 		}
+		extractDir = dir
 	}
 
 	enc := newJSONEncoder(os.Stdout)
