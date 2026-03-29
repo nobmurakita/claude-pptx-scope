@@ -20,17 +20,9 @@ var infoCmd = &cobra.Command{
 }
 
 type infoOutput struct {
-	File      string            `json:"file"`
-	SlideSize pptx.SlideSize    `json:"slide_size"`
-	Slides    []slideInfoOutput `json:"slides"`
-}
-
-type slideInfoOutput struct {
-	Number    int    `json:"number"`
-	Title     string `json:"title,omitempty"`
-	HasNotes  bool   `json:"has_notes,omitempty"`
-	HasImages bool   `json:"has_images,omitempty"`
-	Hidden    bool   `json:"hidden,omitempty"`
+	File      string           `json:"file"`
+	SlideSize pptx.SlideSize   `json:"slide_size"`
+	Slides    []pptx.SlideInfo `json:"slides"`
 }
 
 func runInfo(cmd *cobra.Command, args []string) error {
@@ -45,21 +37,10 @@ func runInfo(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	slides := make([]slideInfoOutput, len(infos))
-	for i, info := range infos {
-		slides[i] = slideInfoOutput{
-			Number:    info.Number,
-			Title:     info.Title,
-			HasNotes:  info.HasNotes,
-			HasImages: info.HasImages,
-			Hidden:    info.Hidden,
-		}
-	}
-
 	out := infoOutput{
 		File:      f.Name,
 		SlideSize: f.GetSlideSize(),
-		Slides:    slides,
+		Slides:    infos,
 	}
 
 	enc := newJSONLWriter(os.Stdout)

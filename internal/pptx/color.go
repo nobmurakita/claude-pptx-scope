@@ -18,11 +18,7 @@ func normalizeHexColor(c string) string {
 		c = c[2:]
 	}
 	if len(c) != 6 {
-		if len(c) > 6 {
-			c = c[len(c)-6:]
-		} else {
-			return "#" + strings.ToUpper(c)
-		}
+		return ""
 	}
 	return "#" + strings.ToUpper(c)
 }

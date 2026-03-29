@@ -1,6 +1,9 @@
 package pptx
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 // SearchResult はスライド単位の検索結果
 type SearchResult struct {
@@ -22,6 +25,8 @@ func (f *File) Search(query string, slideNum int, includeNotes bool) ([]SearchRe
 		}
 		startSlide = slideNum
 		endSlide = slideNum
+	} else if slideNum < 0 {
+		return nil, fmt.Errorf("スライド番号 %d は範囲外です（1〜%d）", slideNum, len(f.slideEntries))
 	}
 
 	var results []SearchResult

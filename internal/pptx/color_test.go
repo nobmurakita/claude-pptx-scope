@@ -13,7 +13,7 @@ func TestNormalizeHexColor(t *testing.T) {
 		{"4472C4", "#4472C4"},
 		{"#4472C4", "#4472C4"},
 		{"#FF4472C4", "#4472C4"},
-		{"abc", "#ABC"},
+		{"abc", ""},
 		{"", ""},
 	}
 	for _, tt := range tests {
