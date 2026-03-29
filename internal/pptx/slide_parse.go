@@ -387,24 +387,69 @@ func (ctx *parseContext) parseGraphicFrame(gf xmlGraphicFrame) *Shape {
 	s.Position = xfrmToPosition(gf.Xfrm)
 
 	// テーブルデータ（被結合セルは null）
-	// 行を cols 長で事前確保し、各 tc を列位置に1:1でマッピングする。
-	// これにより gridSpan のみで hMerge が省略されたXMLでも行長が cols と一致する。
 	cols := len(tbl.TblGrid.GridCols)
 	var rows [][]*string
+
+	// rowSpan による被結合セルを後のパスで null にするための記録
+	type rowSpanArea struct {
+		row, col, rowSpan, colSpan int
+	}
+	var rowSpans []rowSpanArea
+
 	for _, tr := range tbl.Trs {
 		row := make([]*string, cols)
-		colIdx := 0
-		for _, tc := range tr.Tcs {
-			if colIdx >= cols {
-				break
+		if len(tr.Tcs) == cols {
+			// 標準レイアウト: 各 tc が1列に1:1対応（hMerge/vMerge 含む）
+			for i, tc := range tr.Tcs {
+				if tc.VMerge != "1" && tc.HMerge != "1" {
+					text := extractTextFromTxBody(tc.TxBody)
+					row[i] = &text
+				}
+				if tc.RowSpan > 1 {
+					span := tc.GridSpan
+					if span < 1 {
+						span = 1
+					}
+					rowSpans = append(rowSpans, rowSpanArea{
+						row: len(rows), col: i, rowSpan: tc.RowSpan, colSpan: span,
+					})
+				}
 			}
-			if tc.VMerge != "1" && tc.HMerge != "1" {
-				text := extractTextFromTxBody(tc.TxBody)
-				row[colIdx] = &text
+		} else {
+			// 非標準レイアウト: hMerge が省略され tc 数 < cols の場合、
+			// gridSpan で列位置を計算する
+			colIdx := 0
+			for _, tc := range tr.Tcs {
+				if colIdx >= cols {
+					break
+				}
+				if tc.VMerge != "1" {
+					text := extractTextFromTxBody(tc.TxBody)
+					row[colIdx] = &text
+				}
+				span := tc.GridSpan
+				if span < 1 {
+					span = 1
+				}
+				if tc.RowSpan > 1 {
+					rowSpans = append(rowSpans, rowSpanArea{
+						row: len(rows), col: colIdx, rowSpan: tc.RowSpan, colSpan: span,
+					})
+				}
+				colIdx += span
 			}
-			colIdx++
 		}
 		rows = append(rows, row)
+	}
+
+	// rowSpan による被結合セルを null にする
+	// （標準XMLでは vMerge で既に null だが、vMerge 省略時のフォールバック）
+	for _, rs := range rowSpans {
+		for r := rs.row + 1; r < rs.row+rs.rowSpan && r < len(rows); r++ {
+			for c := rs.col; c < rs.col+rs.colSpan && c < cols; c++ {
+				rows[r][c] = nil
+			}
+		}
 	}
 
 	s.Table = &TableData{

@@ -11,8 +11,6 @@ func (ctx *parseContext) resolveSolidFillColor(fill *xmlSolidFill) string {
 		return ""
 	}
 
-	tc := ctx.f.getTheme()
-
 	if fill.SrgbClr != nil {
 		color := normalizeHexColor(fill.SrgbClr.Val)
 		color = applyColorTransforms(color, fill.SrgbClr.LumMod, fill.SrgbClr.LumOff, fill.SrgbClr.Tint, fill.SrgbClr.Shade)
@@ -20,6 +18,10 @@ func (ctx *parseContext) resolveSolidFillColor(fill *xmlSolidFill) string {
 	}
 
 	if fill.SchemeClr != nil {
+		tc := ctx.f.getTheme()
+		if tc == nil {
+			return ""
+		}
 		idx := schemeClrToThemeIndex(fill.SchemeClr.Val)
 		if idx < 0 {
 			return ""
