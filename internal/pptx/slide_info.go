@@ -79,14 +79,31 @@ func extractTextFromTxBody(txBody *xmlTxBody) string {
 	return strings.Join(parts, " ")
 }
 
-// extractParagraphText は段落からプレーンテキストを結合する
+// extractParagraphText は段落からプレーンテキストを結合する。
+// a:br は改行、テキストランとフィールドはXML出現順に結合する。
 func extractParagraphText(p xmlP) string {
-	var sb strings.Builder
-	for _, r := range p.Rs {
-		sb.WriteString(r.T)
+	// Elements が空の場合は Rs/Fld から直接取得（テスト互換）
+	if len(p.Elements) == 0 {
+		var sb strings.Builder
+		for _, r := range p.Rs {
+			sb.WriteString(r.T)
+		}
+		for _, fld := range p.Fld {
+			sb.WriteString(fld.T)
+		}
+		return sb.String()
 	}
-	for _, fld := range p.Fld {
-		sb.WriteString(fld.T)
+
+	var sb strings.Builder
+	for _, elem := range p.Elements {
+		switch {
+		case elem.R != nil:
+			sb.WriteString(elem.R.T)
+		case elem.Br:
+			sb.WriteByte('\n')
+		case elem.Fld != nil:
+			sb.WriteString(elem.Fld.T)
+		}
 	}
 	return sb.String()
 }

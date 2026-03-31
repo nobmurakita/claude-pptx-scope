@@ -353,12 +353,71 @@ type xmlBodyPr struct {
 	Anchor string `xml:"anchor,attr"`
 }
 
-// xmlP は a:p 要素（段落）
+// xmlP は a:p 要素（段落）。子要素をXML出現順に保持する。
 type xmlP struct {
-	PPr        *xmlPPr  `xml:"pPr"`
-	Rs         []xmlR   `xml:"r"`
-	Fld        []xmlFld `xml:"fld"`
-	EndParaRPr *xmlRPr  `xml:"endParaRPr"`
+	PPr        *xmlPPr
+	Rs         []xmlR   // 後方互換用（Elementsからも参照可能）
+	Fld        []xmlFld // 後方互換用
+	EndParaRPr *xmlRPr
+	Elements   []xmlParagraphElement // 出現順の要素リスト（r, br, fld）
+}
+
+// xmlParagraphElement は段落の子要素（いずれか1つが非nil）
+type xmlParagraphElement struct {
+	R   *xmlR
+	Br  bool // a:br 要素
+	Fld *xmlFld
+}
+
+func (p *xmlP) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	for {
+		tok, err := d.Token()
+		if err != nil {
+			return fmt.Errorf("a:p のパースに失敗: %w", err)
+		}
+		switch el := tok.(type) {
+		case xml.StartElement:
+			switch el.Name.Local {
+			case "pPr":
+				var v xmlPPr
+				if err := d.DecodeElement(&v, &el); err != nil {
+					return err
+				}
+				p.PPr = &v
+			case "r":
+				var v xmlR
+				if err := d.DecodeElement(&v, &el); err != nil {
+					return err
+				}
+				p.Rs = append(p.Rs, v)
+				p.Elements = append(p.Elements, xmlParagraphElement{R: &v})
+			case "br":
+				p.Elements = append(p.Elements, xmlParagraphElement{Br: true})
+				if err := d.Skip(); err != nil {
+					return err
+				}
+			case "fld":
+				var v xmlFld
+				if err := d.DecodeElement(&v, &el); err != nil {
+					return err
+				}
+				p.Fld = append(p.Fld, v)
+				p.Elements = append(p.Elements, xmlParagraphElement{Fld: &v})
+			case "endParaRPr":
+				var v xmlRPr
+				if err := d.DecodeElement(&v, &el); err != nil {
+					return err
+				}
+				p.EndParaRPr = &v
+			default:
+				if err := d.Skip(); err != nil {
+					return err
+				}
+			}
+		case xml.EndElement:
+			return nil
+		}
+	}
 }
 
 // xmlPPr は a:pPr 要素（段落プロパティ）

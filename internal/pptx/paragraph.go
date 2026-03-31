@@ -117,7 +117,8 @@ func resolveBullet(ppr *xmlPPr, level int, inherited *inheritedStyle) (buChar *x
 // level は段落のインデントレベル、inherited は継承スタイル（フォント補完用）。
 // 戻り値: font（段落統一フォント）, link（段落統一リンク）, richText（書式/リンクが異なる場合）
 func (ctx *parseContext) parseRunStyles(p xmlP, level int, inherited *inheritedStyle) (*FontStyle, *HyperlinkData, []RichTextRun) {
-	runs := p.Rs
+	// テキストランのみを抽出（a:br はリッチテキストモードでのみ使用）
+	runs := collectTextRuns(p)
 	if len(runs) == 0 {
 		// ランがなくても継承からフォント情報を取得できる場合がある
 		font := ctx.applyInheritedFont(nil, level, inherited)
@@ -128,55 +129,106 @@ func (ctx *parseContext) parseRunStyles(p xmlP, level int, inherited *inheritedS
 	}
 
 	// 単一ランの場合はフォント情報+リンクのみ
-	if len(runs) == 1 {
-		font := ctx.rprToFont(runs[0].RPr)
+	if len(runs) == 1 && runs[0].R != nil {
+		font := ctx.rprToFont(runs[0].R.RPr)
 		font = ctx.applyInheritedFont(font, level, inherited)
 		if font != nil && isEmptyFont(font) {
 			font = nil
 		}
-		link := ctx.resolveRunHyperlink(runs[0].RPr)
+		link := ctx.resolveRunHyperlink(runs[0].R.RPr)
 		return font, link, nil
 	}
 
-	// 複数ランの場合: すべて同じ書式・リンクならフォント+リンク情報のみ
+	// 複数要素の場合: すべて同じ書式・リンクで改行なしならフォント+リンク情報のみ
+	hasBr := false
 	allSame := true
-	firstFont := ctx.rprToFont(runs[0].RPr)
-	firstFont = ctx.applyInheritedFont(firstFont, level, inherited)
-	firstLink := ctx.resolveRunHyperlink(runs[0].RPr)
-	for i := 1; i < len(runs); i++ {
-		f := ctx.rprToFont(runs[i].RPr)
+	var firstFont *FontStyle
+	var firstLink *HyperlinkData
+	firstSet := false
+	for _, elem := range runs {
+		if elem.Br {
+			hasBr = true
+			continue
+		}
+		var rpr *xmlRPr
+		if elem.R != nil {
+			rpr = elem.R.RPr
+		} else if elem.Fld != nil {
+			rpr = elem.Fld.RPr
+		}
+		f := ctx.rprToFont(rpr)
 		f = ctx.applyInheritedFont(f, level, inherited)
-		l := ctx.resolveRunHyperlink(runs[i].RPr)
-		if !fontsEqual(firstFont, f) || !linksEqual(firstLink, l) {
+		l := ctx.resolveRunHyperlink(rpr)
+		if !firstSet {
+			firstFont = f
+			firstLink = l
+			firstSet = true
+		} else if !fontsEqual(firstFont, f) || !linksEqual(firstLink, l) {
 			allSame = false
 			break
 		}
 	}
 
-	if allSame {
+	if allSame && !hasBr {
 		if firstFont != nil && isEmptyFont(firstFont) {
 			firstFont = nil
 		}
 		return firstFont, firstLink, nil
 	}
 
-	// 書式またはリンクが異なるランがある場合: リッチテキスト
+	// 書式・リンクが異なるか改行を含む場合: リッチテキスト
 	richText := make([]RichTextRun, 0, len(runs))
-	for _, r := range runs {
-		if r.T == "" {
+	for _, elem := range runs {
+		if elem.Br {
+			richText = append(richText, RichTextRun{Text: "\n"})
 			continue
 		}
-		rt := RichTextRun{Text: r.T}
-		font := ctx.rprToFont(r.RPr)
+		var text string
+		var rpr *xmlRPr
+		if elem.R != nil {
+			text = elem.R.T
+			rpr = elem.R.RPr
+		} else if elem.Fld != nil {
+			text = elem.Fld.T
+			rpr = elem.Fld.RPr
+		}
+		if text == "" {
+			continue
+		}
+		rt := RichTextRun{Text: text}
+		font := ctx.rprToFont(rpr)
 		font = ctx.applyInheritedFont(font, level, inherited)
 		if font != nil && !isEmptyFont(font) {
 			rt.Font = font
 		}
-		rt.Link = ctx.resolveRunHyperlink(r.RPr)
+		rt.Link = ctx.resolveRunHyperlink(rpr)
 		richText = append(richText, rt)
 	}
 
 	return nil, nil, richText
+}
+
+// collectTextRuns は段落からテキストに関係する要素（r, br, fld）を出現順で返す。
+// Elements が空の場合は Rs から構築する（テスト互換）。
+func collectTextRuns(p xmlP) []xmlParagraphElement {
+	if len(p.Elements) > 0 {
+		var result []xmlParagraphElement
+		for _, elem := range p.Elements {
+			if elem.R != nil || elem.Br || elem.Fld != nil {
+				result = append(result, elem)
+			}
+		}
+		return result
+	}
+	// フォールバック: Rs/Fld から構築
+	result := make([]xmlParagraphElement, 0, len(p.Rs)+len(p.Fld))
+	for i := range p.Rs {
+		result = append(result, xmlParagraphElement{R: &p.Rs[i]})
+	}
+	for i := range p.Fld {
+		result = append(result, xmlParagraphElement{Fld: &p.Fld[i]})
+	}
+	return result
 }
 
 // resolveRunHyperlink はランの rPr からハイパーリンクを解決する
