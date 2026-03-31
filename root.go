@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/nobmurakita/cc-read-pptx/internal/cmd"
 	"github.com/spf13/cobra"
 )
 
@@ -17,6 +18,15 @@ var rootCmd = &cobra.Command{
 	Short:         "PowerPoint ファイル（.pptx）の内容をAIエージェント向けに読み取るツール",
 	SilenceUsage:  true,
 	SilenceErrors: true,
+}
+
+func init() {
+	rootCmd.AddCommand(
+		cmd.NewInfoCmd(),
+		cmd.NewSlidesCmd(),
+		cmd.NewSearchCmd(),
+		cmd.NewImageCmd(),
+	)
 }
 
 func execute() int {

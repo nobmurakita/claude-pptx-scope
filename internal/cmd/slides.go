@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"encoding/json"
@@ -9,17 +9,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func init() {
-	slidesCmd.Flags().IntSlice("slide", nil, "対象スライド番号（1始まり、複数指定可: --slide 1,3）")
-	slidesCmd.Flags().Bool("notes", false, "ノートも出力する")
-	rootCmd.AddCommand(slidesCmd)
-}
-
-var slidesCmd = &cobra.Command{
-	Use:   "slides <file>",
-	Short: "スライドの内容をJSONL形式で出力する",
-	Args:  cobra.ExactArgs(1),
-	RunE:  runSlides,
+// NewSlidesCmd は slides サブコマンドを生成する
+func NewSlidesCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "slides <file>",
+		Short: "スライドの内容をJSONL形式で出力する",
+		Args:  cobra.ExactArgs(1),
+		RunE:  runSlides,
+	}
+	cmd.Flags().IntSlice("slide", nil, "対象スライド番号（1始まり、複数指定可: --slide 1,3）")
+	cmd.Flags().Bool("notes", false, "ノートも出力する")
+	return cmd
 }
 
 type slideOutput struct {
@@ -50,7 +50,7 @@ func runSlides(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	enc := newJSONEncoder(os.Stdout)
+	enc := newJSONLWriter(os.Stdout)
 
 	for _, n := range targets {
 		if err := emitSlide(f, enc, n, includeNotes); err != nil {

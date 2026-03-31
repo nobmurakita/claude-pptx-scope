@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"fmt"
@@ -8,19 +8,19 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func init() {
-	searchCmd.Flags().String("text", "", "検索文字列（部分一致、大文字小文字無視）")
-	_ = searchCmd.MarkFlagRequired("text")
-	searchCmd.Flags().IntSlice("slide", nil, "対象スライド番号（1始まり、複数指定可: --slide 1,3）")
-	searchCmd.Flags().Bool("notes", false, "ノートも検索対象にする")
-	rootCmd.AddCommand(searchCmd)
-}
-
-var searchCmd = &cobra.Command{
-	Use:   "search <file>",
-	Short: "プレゼンテーション内のテキストを検索する",
-	Args:  cobra.ExactArgs(1),
-	RunE:  runSearch,
+// NewSearchCmd は search サブコマンドを生成する
+func NewSearchCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "search <file>",
+		Short: "プレゼンテーション内のテキストを検索する",
+		Args:  cobra.ExactArgs(1),
+		RunE:  runSearch,
+	}
+	cmd.Flags().String("text", "", "検索文字列（部分一致、大文字小文字無視）")
+	_ = cmd.MarkFlagRequired("text")
+	cmd.Flags().IntSlice("slide", nil, "対象スライド番号（1始まり、複数指定可: --slide 1,3）")
+	cmd.Flags().Bool("notes", false, "ノートも検索対象にする")
+	return cmd
 }
 
 func runSearch(cmd *cobra.Command, args []string) error {
@@ -48,7 +48,7 @@ func runSearch(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	enc := newJSONEncoder(os.Stdout)
+	enc := newJSONLWriter(os.Stdout)
 	for i := range results {
 		if err := emitSlideData(enc, &results[i]); err != nil {
 			return err

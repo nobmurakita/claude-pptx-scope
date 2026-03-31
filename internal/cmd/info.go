@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"fmt"
@@ -8,15 +8,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func init() {
-	rootCmd.AddCommand(infoCmd)
-}
-
-var infoCmd = &cobra.Command{
-	Use:   "info <file>",
-	Short: "ファイルの概要（スライド一覧、スライドサイズ）を表示する",
-	Args:  cobra.ExactArgs(1),
-	RunE:  runInfo,
+// NewInfoCmd は info サブコマンドを生成する
+func NewInfoCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "info <file>",
+		Short: "ファイルの概要（スライド一覧、スライドサイズ）を表示する",
+		Args:  cobra.ExactArgs(1),
+		RunE:  runInfo,
+	}
 }
 
 type infoOutput struct {
@@ -43,7 +42,7 @@ func runInfo(cmd *cobra.Command, args []string) error {
 		Slides:    infos,
 	}
 
-	enc := newJSONEncoder(os.Stdout)
+	enc := newJSONLWriter(os.Stdout)
 	if err := enc.Encode(out); err != nil {
 		return fmt.Errorf("JSON出力エラー: %w", err)
 	}
