@@ -116,6 +116,7 @@ type xmlCNvPr struct {
 	ID         int            `xml:"id,attr"`
 	Name       string         `xml:"name,attr"`
 	Descr      string         `xml:"descr,attr"`
+	Hidden     bool           `xml:"hidden,attr"`
 	HlinkClick *xmlHlinkClick `xml:"hlinkClick"`
 }
 

@@ -239,6 +239,10 @@ func phPriority(ph *xmlPh) int {
 
 // parseSp は通常の図形をパースする
 func (ctx *parseContext) parseSp(sp xmlSp) *Shape {
+	if sp.NvSpPr.CNvPr.Hidden {
+		return nil
+	}
+
 	ph := sp.NvSpPr.NvPr.Ph
 
 	// プレースホルダーの継承スタイルを解決
@@ -319,6 +323,10 @@ func (ctx *parseContext) parseSp(sp xmlSp) *Shape {
 
 // parsePic は画像をパースする
 func (ctx *parseContext) parsePic(pic xmlPic) *Shape {
+	if pic.NvPicPr.CNvPr.Hidden {
+		return nil
+	}
+
 	s := &Shape{
 		ID:   ctx.allocID(pic.NvPicPr.CNvPr.ID),
 		Type: "picture",
@@ -344,6 +352,10 @@ func (ctx *parseContext) parsePic(pic xmlPic) *Shape {
 
 // parseGrpSp はグループをパースする
 func (ctx *parseContext) parseGrpSp(grp xmlGrpSp) *Shape {
+	if grp.NvGrpSpPr.CNvPr.Hidden {
+		return nil
+	}
+
 	s := &Shape{
 		ID:   ctx.allocID(grp.NvGrpSpPr.CNvPr.ID),
 		Type: "group",

@@ -4,6 +4,10 @@ import "strings"
 
 // parseCxnSp はコネクタをパースする
 func (ctx *parseContext) parseCxnSp(cxn xmlCxnSp) *Shape {
+	if cxn.NvCxnSpPr.CNvPr.Hidden {
+		return nil
+	}
+
 	s := &Shape{
 		ID:   ctx.allocID(cxn.NvCxnSpPr.CNvPr.ID),
 		Type: "connector",

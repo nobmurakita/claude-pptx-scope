@@ -2,6 +2,10 @@ package pptx
 
 // parseGraphicFrame はテーブル等のgraphicFrameをパースする
 func (ctx *parseContext) parseGraphicFrame(gf xmlGraphicFrame) *Shape {
+	if gf.NvGraphicFramePr.CNvPr.Hidden {
+		return nil
+	}
+
 	tbl := gf.Graphic.GraphicData.Tbl
 	if tbl == nil {
 		return nil // テーブル以外のgraphicFrameはスキップ
