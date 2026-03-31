@@ -263,6 +263,9 @@ func (ctx *parseContext) parseSp(sp xmlSp) *Shape {
 		ID: ctx.allocID(sp.NvSpPr.CNvPr.ID),
 	}
 
+	// 図形全体のハイパーリンク
+	s.Link = ctx.resolveHyperlink(sp.NvSpPr.CNvPr.HlinkClick)
+
 	// 図形種別
 	if sp.SpPr.PrstGeom != nil {
 		s.Type = sp.SpPr.PrstGeom.Prst
@@ -322,6 +325,9 @@ func (ctx *parseContext) parsePic(pic xmlPic) *Shape {
 		Name: pic.NvPicPr.CNvPr.Name,
 	}
 
+	// 図形全体のハイパーリンク
+	s.Link = ctx.resolveHyperlink(pic.NvPicPr.CNvPr.HlinkClick)
+
 	// 代替テキスト
 	s.AltText = pic.NvPicPr.CNvPr.Descr
 
@@ -366,6 +372,33 @@ func (ctx *parseContext) parseGrpSp(grp xmlGrpSp) *Shape {
 	return s
 }
 
+
+// resolveHyperlink は xmlHlinkClick からハイパーリンク情報を解決する
+func (ctx *parseContext) resolveHyperlink(hlink *xmlHlinkClick) *HyperlinkData {
+	if hlink == nil || hlink.RID == "" {
+		return nil
+	}
+	if ctx.slideRels == nil {
+		return nil
+	}
+	target, ok := ctx.slideRels[hlink.RID]
+	if !ok || target == "" {
+		return nil
+	}
+
+	// スライド内リンク（action が ppaction://hlinksldjump の場合）
+	if hlink.Action == "ppaction://hlinksldjump" {
+		slidePath := resolveRelTarget(pathDir(ctx.slidePath), target)
+		slideNum := ctx.f.slidePathToNum(slidePath)
+		if slideNum > 0 {
+			return &HyperlinkData{Slide: slideNum}
+		}
+		return nil
+	}
+
+	// 外部リンク
+	return &HyperlinkData{URL: target}
+}
 
 // loadNotesParagraphs はスライドのノートの段落を取得する。
 // ノートの読み込み・パース失敗時はnilを返す（スライド処理は継続する）。

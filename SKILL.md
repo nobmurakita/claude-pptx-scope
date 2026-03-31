@@ -83,8 +83,9 @@ cc-read-pptx slides [options] <file>
 - `z`: Z-order（0始まり、大きいほど前面）
 - `fill`: 塗りつぶし色（`#RRGGBB`）
 - `line`: 枠線情報（`color`, `style`, `width`。`width` はEMU単位）
+- `link`: ハイパーリンク（`url` で外部URL、`slide` でスライド内リンクのスライド番号）
 - `alignment`: テキストの垂直配置（`vertical` フィールド）。デフォルトの場合は省略
-- `paragraphs`: 段落の配列。各段落に `text`, `bullet`, `level`, `font`, `alignment`, `rich_text`。`font.size` はEMU単位
+- `paragraphs`: 段落の配列。各段落に `text`, `bullet`, `level`, `font`, `alignment`, `link`, `rich_text`。`font.size` はEMU単位
 - `callout_pointer`: 吹き出しのポインタ位置（`x`, `y`。EMU単位）
 
 **コネクタの追加フィールド:**

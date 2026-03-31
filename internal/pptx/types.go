@@ -34,6 +34,8 @@ type Shape struct {
 	ConnectorType string `json:"connector_type,omitempty"`
 	Arrow         string `json:"arrow,omitempty"`
 	Label         string `json:"label,omitempty"`
+	// ハイパーリンク（図形全体に設定されたリンク）
+	Link *HyperlinkData `json:"link,omitempty"`
 	// 画像
 	AltText string `json:"alt_text,omitempty"`
 	ImageID string `json:"image_id,omitempty"`
@@ -64,18 +66,26 @@ type LineStyle struct {
 
 // Paragraph は段落
 type Paragraph struct {
-	Text      string        `json:"text"`
-	Bullet    string        `json:"bullet,omitempty"`
-	Level     int           `json:"level,omitempty"`
-	Font      *FontStyle    `json:"font,omitempty"`
-	Alignment *Alignment    `json:"alignment,omitempty"`
-	RichText  []RichTextRun `json:"rich_text,omitempty"`
+	Text      string         `json:"text"`
+	Bullet    string         `json:"bullet,omitempty"`
+	Level     int            `json:"level,omitempty"`
+	Font      *FontStyle     `json:"font,omitempty"`
+	Alignment *Alignment     `json:"alignment,omitempty"`
+	Link      *HyperlinkData `json:"link,omitempty"`
+	RichText  []RichTextRun  `json:"rich_text,omitempty"`
 }
 
 // RichTextRun はリッチテキストラン
 type RichTextRun struct {
-	Text string     `json:"text"`
-	Font *FontStyle `json:"font,omitempty"`
+	Text string         `json:"text"`
+	Font *FontStyle     `json:"font,omitempty"`
+	Link *HyperlinkData `json:"link,omitempty"`
+}
+
+// HyperlinkData はハイパーリンク情報
+type HyperlinkData struct {
+	URL   string `json:"url,omitempty"`   // 外部URL（http://, https://, mailto: 等）
+	Slide int    `json:"slide,omitempty"` // スライド内リンクのスライド番号
 }
 
 // FontStyle はフォント情報

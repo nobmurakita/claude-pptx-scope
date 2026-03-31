@@ -84,6 +84,16 @@ cc-read-pptx slides --slide 7 設計書.pptx
 {"id":5,"type":"picture","name":"図 1","pos":{"x":1000000,"y":1000000,"w":5000000,"h":3000000},"z":4,"alt_text":"構成図","image_id":"ppt/media/image1.png"}
 ```
 
+ハイパーリンク（外部URL・スライド内リンク）:
+
+```jsonl
+{"id":2,"type":"rect","placeholder":"body","z":1,"paragraphs":[{"text":"はじめに","link":{"slide":4}},{"text":"背景","link":{"slide":5}}]}
+```
+
+```jsonl
+{"text":"詳細はこちら","rich_text":[{"text":"アーキテクチャ草案","link":{"url":"https://example.com"}},{"text":"を参照"}]}
+```
+
 ノート付き:
 
 ```bash

@@ -139,6 +139,17 @@ func (f *File) getTheme() *themeColors {
 	return f.theme
 }
 
+// slidePathToNum はZIP内のスライドパスからスライド番号（1始まり）を返す。
+// 見つからない場合は 0 を返す。
+func (f *File) slidePathToNum(slidePath string) int {
+	for i, entry := range f.slideEntries {
+		if entry.Path == slidePath {
+			return i + 1
+		}
+	}
+	return 0
+}
+
 // getInheritCache はレイアウト/マスター継承キャッシュを遅延初期化して返す
 func (f *File) getInheritCache() *inheritCache {
 	f.inheritOnce.Do(func() {

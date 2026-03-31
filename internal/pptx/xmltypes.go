@@ -113,9 +113,10 @@ type xmlNvSpPr struct {
 
 // xmlCNvPr は p:cNvPr 要素
 type xmlCNvPr struct {
-	ID    int    `xml:"id,attr"`
-	Name  string `xml:"name,attr"`
-	Descr string `xml:"descr,attr"`
+	ID         int            `xml:"id,attr"`
+	Name       string         `xml:"name,attr"`
+	Descr      string         `xml:"descr,attr"`
+	HlinkClick *xmlHlinkClick `xml:"hlinkClick"`
 }
 
 // xmlNvPr は p:nvPr 要素
@@ -393,16 +394,23 @@ type xmlFld struct {
 
 // xmlRPr は a:rPr / a:endParaRPr 要素（ランプロパティ）
 type xmlRPr struct {
-	Lang      string        `xml:"lang,attr"`
-	Sz        int           `xml:"sz,attr"`
-	B         string        `xml:"b,attr"`
-	I         string        `xml:"i,attr"`
-	U         string        `xml:"u,attr"`
-	Strike    string        `xml:"strike,attr"`
-	SolidFill *xmlSolidFill `xml:"solidFill"`
-	Latin     *xmlFont      `xml:"latin"`
-	Ea        *xmlFont      `xml:"ea"`
-	Cs        *xmlFont      `xml:"cs"`
+	Lang      string         `xml:"lang,attr"`
+	Sz        int            `xml:"sz,attr"`
+	B         string         `xml:"b,attr"`
+	I         string         `xml:"i,attr"`
+	U         string         `xml:"u,attr"`
+	Strike    string         `xml:"strike,attr"`
+	SolidFill *xmlSolidFill  `xml:"solidFill"`
+	Latin     *xmlFont       `xml:"latin"`
+	Ea        *xmlFont       `xml:"ea"`
+	Cs        *xmlFont       `xml:"cs"`
+	HlinkClick *xmlHlinkClick `xml:"hlinkClick"`
+}
+
+// xmlHlinkClick は a:hlinkClick 要素
+type xmlHlinkClick struct {
+	RID    string `xml:"http://schemas.openxmlformats.org/officeDocument/2006/relationships id,attr"`
+	Action string `xml:"action,attr"`
 }
 
 type xmlFont struct {

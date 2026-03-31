@@ -262,6 +262,77 @@ func TestParseSp_FillOnly(t *testing.T) {
 	}
 }
 
+func TestResolveHyperlink_ExternalURL(t *testing.T) {
+	ctx := newTestContext()
+	ctx.slideRels = map[string]string{
+		"rId1": "https://example.com",
+	}
+	ctx.slidePath = "ppt/slides/slide1.xml"
+
+	link := ctx.resolveHyperlink(&xmlHlinkClick{RID: "rId1"})
+	if link == nil {
+		t.Fatal("link should not be nil")
+	}
+	if link.URL != "https://example.com" {
+		t.Errorf("URL: got %q, want %q", link.URL, "https://example.com")
+	}
+	if link.Slide != 0 {
+		t.Errorf("Slide: got %d, want 0", link.Slide)
+	}
+}
+
+func TestResolveHyperlink_SlideJump(t *testing.T) {
+	ctx := newTestContext()
+	ctx.f.slideEntries = []slideEntry{
+		{Path: "ppt/slides/slide1.xml"},
+		{Path: "ppt/slides/slide2.xml"},
+		{Path: "ppt/slides/slide3.xml"},
+	}
+	ctx.slideRels = map[string]string{
+		"rId1": "../slides/slide3.xml",
+	}
+	ctx.slidePath = "ppt/slides/slide1.xml"
+
+	link := ctx.resolveHyperlink(&xmlHlinkClick{
+		RID:    "rId1",
+		Action: "ppaction://hlinksldjump",
+	})
+	if link == nil {
+		t.Fatal("link should not be nil")
+	}
+	if link.Slide != 3 {
+		t.Errorf("Slide: got %d, want 3", link.Slide)
+	}
+}
+
+func TestResolveHyperlink_Nil(t *testing.T) {
+	ctx := newTestContext()
+	if ctx.resolveHyperlink(nil) != nil {
+		t.Error("nil hlink should return nil")
+	}
+	if ctx.resolveHyperlink(&xmlHlinkClick{}) != nil {
+		t.Error("empty RID should return nil")
+	}
+}
+
+func TestSlidePathToNum(t *testing.T) {
+	f := &File{
+		slideEntries: []slideEntry{
+			{Path: "ppt/slides/slide1.xml"},
+			{Path: "ppt/slides/slide2.xml"},
+		},
+	}
+	if f.slidePathToNum("ppt/slides/slide1.xml") != 1 {
+		t.Error("slide1.xml should be slide 1")
+	}
+	if f.slidePathToNum("ppt/slides/slide2.xml") != 2 {
+		t.Error("slide2.xml should be slide 2")
+	}
+	if f.slidePathToNum("ppt/slides/slide99.xml") != 0 {
+		t.Error("unknown path should return 0")
+	}
+}
+
 func TestParseSp_Placeholder(t *testing.T) {
 	ctx := newTestContext()
 

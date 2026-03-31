@@ -133,6 +133,28 @@ func TestToLowerAlpha_Invalid(t *testing.T) {
 	}
 }
 
+func TestLinksEqual(t *testing.T) {
+	if !linksEqual(nil, nil) {
+		t.Error("nil == nil should be true")
+	}
+	if linksEqual(nil, &HyperlinkData{URL: "https://example.com"}) {
+		t.Error("nil != non-nil should be false")
+	}
+	a := &HyperlinkData{URL: "https://example.com"}
+	b := &HyperlinkData{URL: "https://example.com"}
+	if !linksEqual(a, b) {
+		t.Error("identical URLs should be equal")
+	}
+	c := &HyperlinkData{Slide: 3}
+	d := &HyperlinkData{Slide: 3}
+	if !linksEqual(c, d) {
+		t.Error("identical slides should be equal")
+	}
+	if linksEqual(a, c) {
+		t.Error("URL != Slide should be false")
+	}
+}
+
 func TestIsEmptyFont(t *testing.T) {
 	if !isEmptyFont(&FontStyle{}) {
 		t.Error("empty FontStyle should be detected as empty")
