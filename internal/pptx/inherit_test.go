@@ -60,7 +60,7 @@ func TestResolveInheritedXfrm_SlideNil_LayoutHasValue(t *testing.T) {
 	}
 
 	ph := &xmlPh{Type: "title"}
-	is := resolveInheritedStyle(ph, nil, layout, master)
+	is := resolveInheritedStyle(ph, nil, layout, master, nil)
 
 	if is == nil {
 		t.Fatal("inheritedStyle が nil")
@@ -85,7 +85,7 @@ func TestResolveInheritedXfrm_LayoutNil_MasterHasValue(t *testing.T) {
 	}
 
 	ph := &xmlPh{Type: "title"}
-	is := resolveInheritedStyle(ph, nil, layout, master)
+	is := resolveInheritedStyle(ph, nil, layout, master, nil)
 
 	if is == nil || is.xfrm == nil {
 		t.Fatal("マスターから xfrm が継承されていない")
@@ -228,7 +228,7 @@ func TestResolveInheritedBullet_ExplicitOverride(t *testing.T) {
 }
 
 func TestResolveInheritedStyle_NilPh(t *testing.T) {
-	is := resolveInheritedStyle(nil, nil, nil, nil)
+	is := resolveInheritedStyle(nil, nil, nil, nil, nil)
 	if is != nil {
 		t.Errorf("ph が nil の場合は nil を返すべき")
 	}
@@ -236,9 +236,31 @@ func TestResolveInheritedStyle_NilPh(t *testing.T) {
 
 func TestResolveInheritedStyle_NilLayoutMaster(t *testing.T) {
 	ph := &xmlPh{Type: "title"}
-	is := resolveInheritedStyle(ph, nil, nil, nil)
+	is := resolveInheritedStyle(ph, nil, nil, nil, nil)
 	if is == nil {
 		t.Fatal("nil layout/master でも inheritedStyle は返されるべき")
+	}
+}
+
+func TestResolveInheritedStyle_DefaultTextStyle(t *testing.T) {
+	defaultTextStyle := &xmlLstStyle{
+		Lvl1pPr: &xmlLvlPPr{
+			DefRPr: &xmlRPr{Sz: 1800, Latin: &xmlFont{Typeface: "Arial"}},
+		},
+	}
+
+	ph := &xmlPh{Type: "body"}
+	is := resolveInheritedStyle(ph, nil, nil, nil, defaultTextStyle)
+
+	if is == nil {
+		t.Fatal("inheritedStyle が nil")
+	}
+	if len(is.lstStyles) != 1 {
+		t.Fatalf("lstStyles の数: got %d, want 1", len(is.lstStyles))
+	}
+	ppr := is.lstStyles[0].GetLevel(0)
+	if ppr == nil || ppr.DefRPr == nil || ppr.DefRPr.Sz != 1800 {
+		t.Errorf("defaultTextStyle からフォントサイズが継承されるべき")
 	}
 }
 

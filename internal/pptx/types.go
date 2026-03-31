@@ -28,6 +28,8 @@ type Shape struct {
 	Table          *TableData  `json:"table,omitempty"`
 	Font           *FontStyle  `json:"font,omitempty"`
 	Alignment      *Alignment  `json:"alignment,omitempty"`
+	// テキストマージン（bodyPr の lIns/rIns/tIns/bIns）
+	TextMargin *TextMargin `json:"text_margin,omitempty"`
 	// コネクタ
 	From          int    `json:"from,omitempty"`
 	To            int    `json:"to,omitempty"`
@@ -69,6 +71,8 @@ type Paragraph struct {
 	Text      string         `json:"text"`
 	Bullet    string         `json:"bullet,omitempty"`
 	Level     int            `json:"level,omitempty"`
+	MarginL   *int64         `json:"margin_left,omitempty"`
+	Indent    *int64         `json:"indent,omitempty"`
 	Font      *FontStyle     `json:"font,omitempty"`
 	StyleRef  int            `json:"s,omitempty"`
 	Alignment *Alignment     `json:"alignment,omitempty"`
@@ -107,9 +111,23 @@ type Alignment struct {
 	Vertical   string `json:"vertical,omitempty"`
 }
 
+// TextMargin はテキストボディの内部マージン（EMU単位）
+type TextMargin struct {
+	Left   *int64 `json:"left,omitempty"`
+	Right  *int64 `json:"right,omitempty"`
+	Top    *int64 `json:"top,omitempty"`
+	Bottom *int64 `json:"bottom,omitempty"`
+}
+
 // TableData はテーブルデータ
 type TableData struct {
-	Cols int          `json:"cols"`
-	Rows [][]*string  `json:"rows"`
+	Cols int            `json:"cols"`
+	Rows [][]*TableCell `json:"rows"`
+}
+
+// TableCell はテーブルのセル
+type TableCell struct {
+	Text       string      `json:"text"`
+	Paragraphs []Paragraph `json:"paragraphs,omitempty"`
 }
 

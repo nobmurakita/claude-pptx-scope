@@ -29,14 +29,14 @@ func TestFilterShapesByText(t *testing.T) {
 }
 
 func TestFilterShapesByText_Table(t *testing.T) {
-	cell := func(s string) *string { return &s }
+	cell := func(s string) *TableCell { return &TableCell{Text: s} }
 	shapes := []Shape{
 		{
 			ID:   1,
 			Type: "table",
 			Table: &TableData{
 				Cols: 2,
-				Rows: [][]*string{
+				Rows: [][]*TableCell{
 					{cell("Alpha"), cell("Beta")},
 					{cell("Gamma"), nil},
 				},

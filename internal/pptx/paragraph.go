@@ -63,6 +63,9 @@ func (ctx *parseContext) parseParagraphs(ps []xmlP, inherited *inheritedStyle) [
 			lastAutoNumLevel = -1
 		}
 
+		// 段落インデント（marL/indent）
+		para.MarginL, para.Indent = resolveParaIndent(p.PPr, level, inherited)
+
 		// 配置（デフォルトの左揃えは省略）
 		if p.PPr != nil && p.PPr.Algn != "" && p.PPr.Algn != "l" {
 			para.Alignment = &Alignment{Horizontal: mapAlignment(p.PPr.Algn)}
@@ -451,6 +454,80 @@ func mapAlignment(algn string) string {
 	default:
 		return algn
 	}
+}
+
+// resolveParaIndent は段落の marL と indent を解決する。
+// スライド上の pPr を優先し、なければ継承チェーンから取得する。
+func resolveParaIndent(ppr *xmlPPr, level int, inherited *inheritedStyle) (marL *int64, indent *int64) {
+	// スライド上で明示指定されていれば優先
+	if ppr != nil {
+		marL = ppr.MarL
+		indent = ppr.Indent
+	}
+
+	// 継承チェーンから補完
+	if inherited != nil {
+		for _, ls := range inherited.lstStyles {
+			if lvlPPr := ls.GetLevel(level); lvlPPr != nil {
+				if marL == nil && lvlPPr.MarL != nil {
+					marL = lvlPPr.MarL
+				}
+				if indent == nil && lvlPPr.Indent != nil {
+					indent = lvlPPr.Indent
+				}
+				if marL != nil && indent != nil {
+					break
+				}
+			}
+		}
+	}
+
+	// 値が0の場合は省略（デフォルト）
+	if marL != nil && *marL == 0 {
+		marL = nil
+	}
+	if indent != nil && *indent == 0 {
+		indent = nil
+	}
+
+	return marL, indent
+}
+
+// extractTextMargin は bodyPr からテキストマージンを抽出する。
+// OOXML のデフォルト値（91440, 91440, 45720, 45720）と同じ場合は省略する。
+func extractTextMargin(bodyPr xmlBodyPr) *TextMargin {
+	l := bodyPr.LIns
+	r := bodyPr.RIns
+	t := bodyPr.TIns
+	b := bodyPr.BIns
+
+	// すべて未指定ならデフォルト → 省略
+	if l == nil && r == nil && t == nil && b == nil {
+		return nil
+	}
+
+	// デフォルト値（EMU: left=91440, right=91440, top=45720, bottom=45720）
+	isDefault := func(v *int64, def int64) bool {
+		return v == nil || *v == def
+	}
+	if isDefault(l, 91440) && isDefault(r, 91440) && isDefault(t, 45720) && isDefault(b, 45720) {
+		return nil
+	}
+
+	tm := &TextMargin{}
+	if l != nil {
+		tm.Left = l
+	}
+	if r != nil {
+		tm.Right = r
+	}
+	if t != nil {
+		tm.Top = t
+	}
+	if b != nil {
+		tm.Bottom = b
+	}
+	return tm
 }
 
 // extractShapeLevelAlignment はテキストボディレベルの垂直配置を抽出する。

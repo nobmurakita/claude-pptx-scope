@@ -39,6 +39,9 @@ type File struct {
 	slideEntries []slideEntry // sldIdLst の順序
 	slideSize    SlideSize
 
+	// presentation.xml の defaultTextStyle
+	defaultTextStyle *xmlLstStyle
+
 	// 遅延ロード
 	theme     *themeColors
 	themeOnce sync.Once
@@ -179,6 +182,9 @@ func (f *File) loadPresentation() error {
 		Height: pres.SldSz.Cy,
 	}
 
+	// defaultTextStyle
+	f.defaultTextStyle = pres.DefaultTextStyle
+
 	// リレーション読み込み
 	rels, err := loadRels(f, "ppt/_rels/presentation.xml.rels")
 	if err != nil {
@@ -224,11 +230,12 @@ func cleanPath(p string) string {
 
 // xmlPresentation は presentation.xml の構造
 type xmlPresentation struct {
-	XMLName  xml.Name `xml:"presentation"`
-	SldSz    xmlSldSz `xml:"sldSz"`
-	SldIdLst struct {
+	XMLName          xml.Name     `xml:"presentation"`
+	SldSz            xmlSldSz     `xml:"sldSz"`
+	SldIdLst         struct {
 		SldId []xmlSldId `xml:"sldId"`
 	} `xml:"sldIdLst"`
+	DefaultTextStyle *xmlLstStyle `xml:"defaultTextStyle"`
 }
 
 type xmlSldSz struct {

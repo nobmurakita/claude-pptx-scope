@@ -678,11 +678,11 @@ func TestParseGraphicFrame_SimpleTable(t *testing.T) {
 	if len(s.Table.Rows) != 2 {
 		t.Fatalf("Rows: got %d, want 2", len(s.Table.Rows))
 	}
-	if *s.Table.Rows[0][0] != "A1" {
-		t.Errorf("Rows[0][0]: got %q, want %q", *s.Table.Rows[0][0], "A1")
+	if s.Table.Rows[0][0].Text != "A1" {
+		t.Errorf("Rows[0][0]: got %q, want %q", s.Table.Rows[0][0].Text, "A1")
 	}
-	if *s.Table.Rows[1][1] != "B2" {
-		t.Errorf("Rows[1][1]: got %q, want %q", *s.Table.Rows[1][1], "B2")
+	if s.Table.Rows[1][1].Text != "B2" {
+		t.Errorf("Rows[1][1]: got %q, want %q", s.Table.Rows[1][1].Text, "B2")
 	}
 }
 
@@ -726,15 +726,15 @@ func TestParseGraphicFrame_MergedCells(t *testing.T) {
 	}
 
 	// A1-B1 は col 0, C1 は col 2 (colSpan=2 なので)
-	if *s.Table.Rows[0][0] != "A1-B1" {
-		t.Errorf("Rows[0][0]: got %q, want %q", *s.Table.Rows[0][0], "A1-B1")
+	if s.Table.Rows[0][0].Text != "A1-B1" {
+		t.Errorf("Rows[0][0]: got %q, want %q", s.Table.Rows[0][0].Text, "A1-B1")
 	}
 	// col 1 は colSpan で飛ばされて nil
 	if s.Table.Rows[0][1] != nil {
 		t.Errorf("Rows[0][1]: got %v, want nil (colSpan による被結合セル)", s.Table.Rows[0][1])
 	}
-	if *s.Table.Rows[0][2] != "C1" {
-		t.Errorf("Rows[0][2]: got %q, want %q", *s.Table.Rows[0][2], "C1")
+	if s.Table.Rows[0][2].Text != "C1" {
+		t.Errorf("Rows[0][2]: got %q, want %q", s.Table.Rows[0][2].Text, "C1")
 	}
 }
 
@@ -777,15 +777,100 @@ func TestParseGraphicFrame_RowSpan(t *testing.T) {
 		t.Fatal("parseGraphicFrame がnilを返した")
 	}
 
-	if *s.Table.Rows[0][0] != "A1" {
-		t.Errorf("Rows[0][0]: got %q, want %q", *s.Table.Rows[0][0], "A1")
+	if s.Table.Rows[0][0].Text != "A1" {
+		t.Errorf("Rows[0][0]: got %q, want %q", s.Table.Rows[0][0].Text, "A1")
 	}
 	// A2 は vMerge="1" なので nil
 	if s.Table.Rows[1][0] != nil {
 		t.Errorf("Rows[1][0]: got %v, want nil (vMerge による被結合セル)", s.Table.Rows[1][0])
 	}
-	if *s.Table.Rows[1][1] != "B2" {
-		t.Errorf("Rows[1][1]: got %q, want %q", *s.Table.Rows[1][1], "B2")
+	if s.Table.Rows[1][1].Text != "B2" {
+		t.Errorf("Rows[1][1]: got %q, want %q", s.Table.Rows[1][1].Text, "B2")
+	}
+}
+
+func TestParseGraphicFrame_CellWithRichText(t *testing.T) {
+	ctx := newTestContext()
+
+	gf := xmlGraphicFrame{
+		NvGraphicFramePr: xmlNvGraphicFramePr{
+			CNvPr: xmlCNvPr{ID: 50, Name: "リッチテーブル"},
+		},
+		Graphic: xmlGraphic{
+			GraphicData: xmlGraphicData{
+				Tbl: &xmlTbl{
+					TblGrid: xmlTblGrid{
+						GridCols: []xmlGridCol{{W: 100}},
+					},
+					Trs: []xmlTr{
+						{
+							Tcs: []xmlTc{
+								{TxBody: &xmlTxBody{Ps: []xmlP{
+									{Rs: []xmlR{{RPr: &xmlRPr{B: "1"}, T: "太字"}}},
+								}}},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	s := ctx.parseGraphicFrame(gf)
+	if s == nil {
+		t.Fatal("parseGraphicFrame がnilを返した")
+	}
+
+	cell := s.Table.Rows[0][0]
+	if cell == nil {
+		t.Fatal("セルがnil")
+	}
+	if cell.Text != "太字" {
+		t.Errorf("Text: got %q, want %q", cell.Text, "太字")
+	}
+	if len(cell.Paragraphs) != 1 {
+		t.Fatalf("Paragraphs: got %d, want 1", len(cell.Paragraphs))
+	}
+	if cell.Paragraphs[0].Font == nil || !cell.Paragraphs[0].Font.Bold {
+		t.Errorf("セルの段落にフォント情報（太字）が含まれるべき")
+	}
+}
+
+func TestParseGraphicFrame_CellPlainText_NoParagraphs(t *testing.T) {
+	ctx := newTestContext()
+
+	gf := xmlGraphicFrame{
+		NvGraphicFramePr: xmlNvGraphicFramePr{
+			CNvPr: xmlCNvPr{ID: 50},
+		},
+		Graphic: xmlGraphic{
+			GraphicData: xmlGraphicData{
+				Tbl: &xmlTbl{
+					TblGrid: xmlTblGrid{
+						GridCols: []xmlGridCol{{W: 100}},
+					},
+					Trs: []xmlTr{
+						{
+							Tcs: []xmlTc{
+								{TxBody: &xmlTxBody{Ps: []xmlP{
+									{Rs: []xmlR{{T: "プレーン"}}},
+								}}},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	s := ctx.parseGraphicFrame(gf)
+	cell := s.Table.Rows[0][0]
+	if cell.Text != "プレーン" {
+		t.Errorf("Text: got %q, want %q", cell.Text, "プレーン")
+	}
+	// フォント情報のないプレーンテキストの場合、paragraphs は省略される
+	if len(cell.Paragraphs) != 0 {
+		t.Errorf("プレーンテキストの場合 Paragraphs は省略されるべき: got %d", len(cell.Paragraphs))
 	}
 }
 

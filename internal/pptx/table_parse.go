@@ -21,15 +21,15 @@ func (ctx *parseContext) parseGraphicFrame(gf xmlGraphicFrame) *Shape {
 	s.Pos = xfrmToPosition(gf.Xfrm)
 
 	// テーブルデータ（被結合セルは null）
-	s.Table = parseTableData(tbl)
+	s.Table = ctx.parseTableData(tbl)
 
 	return s
 }
 
 // parseTableData はXMLテーブルからTableDataを構築する
-func parseTableData(tbl *xmlTbl) *TableData {
+func (ctx *parseContext) parseTableData(tbl *xmlTbl) *TableData {
 	cols := len(tbl.TblGrid.GridCols)
-	var rows [][]*string
+	var rows [][]*TableCell
 
 	// rowSpan による被結合セルを後のパスで null にするための記録
 	type rowSpanArea struct {
@@ -38,15 +38,15 @@ func parseTableData(tbl *xmlTbl) *TableData {
 	var rowSpans []rowSpanArea
 
 	for _, tr := range tbl.Trs {
-		row := make([]*string, cols)
+		row := make([]*TableCell, cols)
 		colIdx := 0
 		for _, tc := range tr.Tcs {
 			if colIdx >= cols {
 				break
 			}
 			if tc.VMerge != "1" && tc.HMerge != "1" {
-				text := extractTextFromTxBody(tc.TxBody)
-				row[colIdx] = &text
+				cell := ctx.parseTableCell(tc.TxBody)
+				row[colIdx] = cell
 			}
 			span := tc.GridSpan
 			if span < 1 {
@@ -76,4 +76,27 @@ func parseTableData(tbl *xmlTbl) *TableData {
 		Cols: cols,
 		Rows: rows,
 	}
+}
+
+// parseTableCell はテーブルセルのテキストと段落情報をパースする。
+// リッチテキスト情報がある場合のみ paragraphs を設定する。
+func (ctx *parseContext) parseTableCell(txBody *xmlTxBody) *TableCell {
+	if txBody == nil {
+		return &TableCell{}
+	}
+
+	text := extractTextFromTxBody(txBody)
+	paras := ctx.parseParagraphs(txBody.Ps, nil)
+
+	cell := &TableCell{Text: text}
+
+	// フォント・リッチテキスト・リンク・箇条書き等の情報がある場合のみ paragraphs を設定
+	for _, p := range paras {
+		if p.Font != nil || len(p.RichText) > 0 || p.Link != nil || p.Bullet != "" || p.Level > 0 {
+			cell.Paragraphs = paras
+			return cell
+		}
+	}
+
+	return cell
 }

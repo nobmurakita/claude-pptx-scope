@@ -59,7 +59,7 @@ func matchShape(s Shape, queryLower string) *Shape {
 		// テーブル: いずれかのセルにマッチすればテーブル全体を返す
 		for _, row := range s.Table.Rows {
 			for _, cell := range row {
-				if cell != nil && strings.Contains(strings.ToLower(*cell), queryLower) {
+				if cell != nil && strings.Contains(strings.ToLower(cell.Text), queryLower) {
 					return &s
 				}
 			}

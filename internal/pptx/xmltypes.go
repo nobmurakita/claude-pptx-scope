@@ -335,6 +335,8 @@ func (ls *xmlLstStyle) GetLevel(level int) *xmlLvlPPr {
 // xmlLvlPPr は a:lvl1pPr 〜 a:lvl9pPr 要素
 type xmlLvlPPr struct {
 	Algn      string        `xml:"algn,attr"`
+	MarL      *int64        `xml:"marL,attr"`
+	Indent    *int64        `xml:"indent,attr"`
 	BuNone    *struct{}     `xml:"buNone"`
 	BuChar    *xmlBuChar    `xml:"buChar"`
 	BuAutoNum *xmlBuAutoNum `xml:"buAutoNum"`
@@ -352,6 +354,10 @@ type xmlTxBody struct {
 
 type xmlBodyPr struct {
 	Anchor string `xml:"anchor,attr"`
+	LIns   *int64 `xml:"lIns,attr"`
+	RIns   *int64 `xml:"rIns,attr"`
+	TIns   *int64 `xml:"tIns,attr"`
+	BIns   *int64 `xml:"bIns,attr"`
 }
 
 // xmlP は a:p 要素（段落）。子要素をXML出現順に保持する。
@@ -425,6 +431,8 @@ func (p *xmlP) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 type xmlPPr struct {
 	Lvl       int           `xml:"lvl,attr"`
 	Algn      string        `xml:"algn,attr"`
+	MarL      *int64        `xml:"marL,attr"`
+	Indent    *int64        `xml:"indent,attr"`
 	BuNone    *struct{}     `xml:"buNone"`
 	BuChar    *xmlBuChar    `xml:"buChar"`
 	BuAutoNum *xmlBuAutoNum `xml:"buAutoNum"`

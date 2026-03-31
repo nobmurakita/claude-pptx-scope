@@ -197,7 +197,7 @@ func resolveLayoutPath(f *File, slidePath string) string {
 }
 
 // resolveInheritedStyle はプレースホルダーの継承スタイルを解決する
-func resolveInheritedStyle(ph *xmlPh, slideTxBodyLstStyle *xmlLstStyle, layout *layoutData, master *masterData) *inheritedStyle {
+func resolveInheritedStyle(ph *xmlPh, slideTxBodyLstStyle *xmlLstStyle, layout *layoutData, master *masterData, defaultTextStyle *xmlLstStyle) *inheritedStyle {
 	if ph == nil {
 		return nil
 	}
@@ -245,6 +245,11 @@ func resolveInheritedStyle(ph *xmlPh, slideTxBodyLstStyle *xmlLstStyle, layout *
 		if txStyleLst != nil {
 			is.lstStyles = append(is.lstStyles, txStyleLst)
 		}
+	}
+
+	// presentation.xml の defaultTextStyle（最終フォールバック）
+	if defaultTextStyle != nil {
+		is.lstStyles = append(is.lstStyles, defaultTextStyle)
 	}
 
 	return is

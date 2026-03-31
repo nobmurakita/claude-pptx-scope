@@ -114,8 +114,21 @@ func (sd2 *StyleDeduplicator) Deduplicate(sd *SlideData) []StyleDef {
 func countShapes(counts map[string]int, shapes []Shape) {
 	for _, s := range shapes {
 		countParas(counts, s.Paragraphs)
+		if s.Table != nil {
+			countTableCells(counts, s.Table)
+		}
 		if s.Type == "group" {
 			countShapes(counts, s.Children)
+		}
+	}
+}
+
+func countTableCells(counts map[string]int, table *TableData) {
+	for _, row := range table.Rows {
+		for _, cell := range row {
+			if cell != nil {
+				countParas(counts, cell.Paragraphs)
+			}
 		}
 	}
 }
@@ -138,8 +151,21 @@ func countParas(counts map[string]int, paras []Paragraph) {
 func collectFontMap(fontMap map[string]*FontStyle, shapes []Shape) {
 	for _, s := range shapes {
 		collectFontMapParas(fontMap, s.Paragraphs)
+		if s.Table != nil {
+			collectFontMapTable(fontMap, s.Table)
+		}
 		if s.Type == "group" {
 			collectFontMap(fontMap, s.Children)
+		}
+	}
+}
+
+func collectFontMapTable(fontMap map[string]*FontStyle, table *TableData) {
+	for _, row := range table.Rows {
+		for _, cell := range row {
+			if cell != nil {
+				collectFontMapParas(fontMap, cell.Paragraphs)
+			}
 		}
 	}
 }
@@ -168,8 +194,21 @@ func collectFontMapParas(fontMap map[string]*FontStyle, paras []Paragraph) {
 func replaceShapes(styleMap map[string]int, shapes []Shape) {
 	for i := range shapes {
 		replaceParas(styleMap, shapes[i].Paragraphs)
+		if shapes[i].Table != nil {
+			replaceTableCells(styleMap, shapes[i].Table)
+		}
 		if shapes[i].Type == "group" {
 			replaceShapes(styleMap, shapes[i].Children)
+		}
+	}
+}
+
+func replaceTableCells(styleMap map[string]int, table *TableData) {
+	for _, row := range table.Rows {
+		for _, cell := range row {
+			if cell != nil {
+				replaceParas(styleMap, cell.Paragraphs)
+			}
 		}
 	}
 }

@@ -100,6 +100,87 @@ func TestParseParagraphs_AutoNumResetOnNonBullet(t *testing.T) {
 	}
 }
 
+func TestResolveParaIndent_ExplicitValues(t *testing.T) {
+	marL := int64(457200)
+	indent := int64(-228600)
+	ppr := &xmlPPr{MarL: &marL, Indent: &indent}
+
+	gotMarL, gotIndent := resolveParaIndent(ppr, 0, nil)
+	if gotMarL == nil || *gotMarL != 457200 {
+		t.Errorf("MarL: got %v, want 457200", gotMarL)
+	}
+	if gotIndent == nil || *gotIndent != -228600 {
+		t.Errorf("Indent: got %v, want -228600", gotIndent)
+	}
+}
+
+func TestResolveParaIndent_InheritedValues(t *testing.T) {
+	marL := int64(914400)
+	indent := int64(-342900)
+	inherited := &inheritedStyle{
+		lstStyles: []*xmlLstStyle{
+			{
+				Lvl2pPr: &xmlLvlPPr{MarL: &marL, Indent: &indent},
+			},
+		},
+	}
+
+	gotMarL, gotIndent := resolveParaIndent(nil, 1, inherited)
+	if gotMarL == nil || *gotMarL != 914400 {
+		t.Errorf("MarL: got %v, want 914400", gotMarL)
+	}
+	if gotIndent == nil || *gotIndent != -342900 {
+		t.Errorf("Indent: got %v, want -342900", gotIndent)
+	}
+}
+
+func TestResolveParaIndent_ZeroOmitted(t *testing.T) {
+	zero := int64(0)
+	ppr := &xmlPPr{MarL: &zero, Indent: &zero}
+
+	gotMarL, gotIndent := resolveParaIndent(ppr, 0, nil)
+	if gotMarL != nil {
+		t.Errorf("MarL=0 は省略されるべき: got %v", gotMarL)
+	}
+	if gotIndent != nil {
+		t.Errorf("Indent=0 は省略されるべき: got %v", gotIndent)
+	}
+}
+
+func TestExtractTextMargin_NonDefault(t *testing.T) {
+	l := int64(0)
+	r := int64(0)
+	ti := int64(0)
+	b := int64(0)
+	bodyPr := xmlBodyPr{LIns: &l, RIns: &r, TIns: &ti, BIns: &b}
+
+	tm := extractTextMargin(bodyPr)
+	if tm == nil {
+		t.Fatal("デフォルトと異なるマージンは出力されるべき")
+	}
+}
+
+func TestExtractTextMargin_Default(t *testing.T) {
+	l := int64(91440)
+	r := int64(91440)
+	ti := int64(45720)
+	b := int64(45720)
+	bodyPr := xmlBodyPr{LIns: &l, RIns: &r, TIns: &ti, BIns: &b}
+
+	tm := extractTextMargin(bodyPr)
+	if tm != nil {
+		t.Errorf("デフォルト値のマージンは省略されるべき: got %+v", tm)
+	}
+}
+
+func TestExtractTextMargin_Nil(t *testing.T) {
+	bodyPr := xmlBodyPr{}
+	tm := extractTextMargin(bodyPr)
+	if tm != nil {
+		t.Errorf("未指定のマージンは省略されるべき: got %+v", tm)
+	}
+}
+
 func TestToLowerAlpha(t *testing.T) {
 	tests := []struct {
 		n    int

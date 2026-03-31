@@ -252,7 +252,7 @@ func (ctx *parseContext) parseSp(sp xmlSp) *Shape {
 		if sp.TxBody != nil {
 			slideLstStyle = sp.TxBody.LstStyle
 		}
-		inherited = resolveInheritedStyle(ph, slideLstStyle, ctx.layout, ctx.master)
+		inherited = resolveInheritedStyle(ph, slideLstStyle, ctx.layout, ctx.master, ctx.f.defaultTextStyle)
 	}
 
 	// テキスト・塗りつぶし・枠線のいずれもない図形はスキップ（プレースホルダー含む）
@@ -315,6 +315,7 @@ func (ctx *parseContext) parseSp(sp xmlSp) *Shape {
 	if sp.TxBody != nil {
 		s.Paragraphs = ctx.parseParagraphs(sp.TxBody.Ps, inherited)
 		s.Alignment = ctx.extractShapeLevelAlignment(sp.TxBody)
+		s.TextMargin = extractTextMargin(sp.TxBody.BodyPr)
 	}
 
 	return s
