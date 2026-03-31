@@ -23,8 +23,8 @@ PowerPointファイル（.pptx）の内容をCLIから出力するツール。
 
 **画像の確認手順:** 出力に `image_id` がある場合:
 
-1. `image` サブコマンドでファイルに保存する: `cc-read-pptx image <file> <image_id> <output>`
-   - `<output>` は重複しない一時ファイルパスを生成して指定する（拡張子は `image_id` に合わせる）
+1. `image` サブコマンドで一時ファイルに保存する: `cc-read-pptx image <file> <image_id>`
+   - `<output>` を省略すると一時ファイルが自動生成され、パスが stdout に出力される
 2. Read ツールで保存したファイルを読み、画像の内容を確認する
 3. 確認が終わったら画像を削除する
 
@@ -110,7 +110,7 @@ cc-read-pptx slides [options] <file>
 ```
 
 ```bash
-cc-read-pptx image example.pptx ppt/media/image1.png <output>
+cc-read-pptx image example.pptx ppt/media/image1.png
 ```
 
 **ノート（`--notes` 指定時）:**
@@ -120,13 +120,14 @@ cc-read-pptx image example.pptx ppt/media/image1.png <output>
 ### image
 
 ```bash
-cc-read-pptx image <file> <image_id> <output>
+cc-read-pptx image <file> <image_id> [output]
 ```
 
-`slides` 出力の `image_id`（ZIP内のメディアパス）を指定して、画像をファイルに保存する。
+`slides` 出力の `image_id`（ZIP内のメディアパス）を指定して、画像をファイルに保存する。`output` を省略すると一時ファイルが自動生成され、パスが stdout に出力される。
 
 ```bash
-cc-read-pptx image example.pptx ppt/media/image1.png <output>
+cc-read-pptx image example.pptx ppt/media/image1.png
+# stdout: /var/folders/.../cc-read-pptx-1234567.png
 ```
 
 ### search

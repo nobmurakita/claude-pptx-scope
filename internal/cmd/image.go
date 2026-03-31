@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/nobmurakita/cc-read-pptx/internal/pptx"
 	"github.com/spf13/cobra"
@@ -11,9 +12,9 @@ import (
 // NewImageCmd は image サブコマンドを生成する
 func NewImageCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "image <file> <image_id> <output>",
+		Use:   "image <file> <image_id> [output]",
 		Short: "画像をファイルに保存する",
-		Args:  cobra.ExactArgs(3),
+		Args:  cobra.RangeArgs(2, 3),
 		RunE:  runImage,
 	}
 }
@@ -25,11 +26,33 @@ func runImage(cmd *cobra.Command, args []string) error {
 	}
 	defer f.Close()
 
-	out, err := os.Create(args[2])
-	if err != nil {
-		return fmt.Errorf("出力ファイルの作成エラー: %w", err)
+	imageID := args[1]
+
+	var outputPath string
+	var out *os.File
+	if len(args) >= 3 {
+		outputPath = args[2]
+		var err error
+		out, err = os.Create(outputPath)
+		if err != nil {
+			return fmt.Errorf("出力ファイルの作成エラー: %w", err)
+		}
+	} else {
+		// 一時ファイルを自動生成（拡張子は image_id から取得）
+		ext := filepath.Ext(imageID)
+		var err error
+		out, err = os.CreateTemp("", "cc-read-pptx-*"+ext)
+		if err != nil {
+			return fmt.Errorf("一時ファイルの作成エラー: %w", err)
+		}
+		outputPath = out.Name()
 	}
 	defer out.Close()
 
-	return f.ExtractImage(args[1], out)
+	if err := f.ExtractImage(imageID, out); err != nil {
+		return err
+	}
+
+	fmt.Println(outputPath)
+	return nil
 }
