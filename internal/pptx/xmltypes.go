@@ -266,12 +266,86 @@ type xmlLineEnd struct {
 	Type string `xml:"type,attr"`
 }
 
+// ---------- レイアウト・マスター ----------
+
+// xmlSldLayout は p:sldLayout 要素
+type xmlSldLayout struct {
+	XMLName xml.Name `xml:"sldLayout"`
+	CSld    xmlCSld  `xml:"cSld"`
+}
+
+// xmlSldMaster は p:sldMaster 要素
+type xmlSldMaster struct {
+	XMLName  xml.Name     `xml:"sldMaster"`
+	CSld     xmlCSld      `xml:"cSld"`
+	TxStyles *xmlTxStyles `xml:"txStyles"`
+}
+
+// xmlTxStyles は p:txStyles 要素（マスターレベルのデフォルトテキストスタイル）
+type xmlTxStyles struct {
+	TitleStyle *xmlLstStyle `xml:"titleStyle"`
+	BodyStyle  *xmlLstStyle `xml:"bodyStyle"`
+	OtherStyle *xmlLstStyle `xml:"otherStyle"`
+}
+
+// xmlLstStyle は a:lstStyle 要素（レベル別段落プロパティのリスト）
+type xmlLstStyle struct {
+	Lvl1pPr *xmlLvlPPr `xml:"lvl1pPr"`
+	Lvl2pPr *xmlLvlPPr `xml:"lvl2pPr"`
+	Lvl3pPr *xmlLvlPPr `xml:"lvl3pPr"`
+	Lvl4pPr *xmlLvlPPr `xml:"lvl4pPr"`
+	Lvl5pPr *xmlLvlPPr `xml:"lvl5pPr"`
+	Lvl6pPr *xmlLvlPPr `xml:"lvl6pPr"`
+	Lvl7pPr *xmlLvlPPr `xml:"lvl7pPr"`
+	Lvl8pPr *xmlLvlPPr `xml:"lvl8pPr"`
+	Lvl9pPr *xmlLvlPPr `xml:"lvl9pPr"`
+}
+
+// GetLevel はレベル番号（0始まり）に対応する xmlLvlPPr を返す
+func (ls *xmlLstStyle) GetLevel(level int) *xmlLvlPPr {
+	if ls == nil {
+		return nil
+	}
+	switch level {
+	case 0:
+		return ls.Lvl1pPr
+	case 1:
+		return ls.Lvl2pPr
+	case 2:
+		return ls.Lvl3pPr
+	case 3:
+		return ls.Lvl4pPr
+	case 4:
+		return ls.Lvl5pPr
+	case 5:
+		return ls.Lvl6pPr
+	case 6:
+		return ls.Lvl7pPr
+	case 7:
+		return ls.Lvl8pPr
+	case 8:
+		return ls.Lvl9pPr
+	default:
+		return nil
+	}
+}
+
+// xmlLvlPPr は a:lvl1pPr 〜 a:lvl9pPr 要素
+type xmlLvlPPr struct {
+	Algn      string        `xml:"algn,attr"`
+	BuNone    *struct{}     `xml:"buNone"`
+	BuChar    *xmlBuChar    `xml:"buChar"`
+	BuAutoNum *xmlBuAutoNum `xml:"buAutoNum"`
+	DefRPr    *xmlRPr       `xml:"defRPr"`
+}
+
 // ---------- テキスト ----------
 
 // xmlTxBody は p:txBody 要素
 type xmlTxBody struct {
-	BodyPr xmlBodyPr `xml:"bodyPr"`
-	Ps     []xmlP    `xml:"p"`
+	BodyPr   xmlBodyPr    `xml:"bodyPr"`
+	LstStyle *xmlLstStyle `xml:"lstStyle"`
+	Ps       []xmlP       `xml:"p"`
 }
 
 type xmlBodyPr struct {

@@ -42,6 +42,10 @@ type File struct {
 	// 遅延ロード
 	theme     *themeColors
 	themeOnce sync.Once
+
+	// レイアウト/マスター継承キャッシュ
+	inherit     *inheritCache
+	inheritOnce sync.Once
 }
 
 // slideEntry はスライドのエントリ
@@ -133,6 +137,14 @@ func (f *File) getTheme() *themeColors {
 		f.theme = tc
 	})
 	return f.theme
+}
+
+// getInheritCache はレイアウト/マスター継承キャッシュを遅延初期化して返す
+func (f *File) getInheritCache() *inheritCache {
+	f.inheritOnce.Do(func() {
+		f.inherit = newInheritCache()
+	})
+	return f.inherit
 }
 
 // loadPresentation は presentation.xml をパースする

@@ -82,7 +82,7 @@ func TestParseParagraphs_AutoNumResetOnNonBullet(t *testing.T) {
 		{PPr: &xmlPPr{BuAutoNum: &xmlBuAutoNum{Type: "arabicPeriod"}}, Rs: []xmlR{{T: "third"}}},
 	}
 
-	paras := ctx.parseParagraphs(ps)
+	paras := ctx.parseParagraphs(ps, nil)
 	if len(paras) != 4 {
 		t.Fatalf("got %d paragraphs, want 4", len(paras))
 	}

@@ -5,9 +5,11 @@ import (
 	"fmt"
 )
 
-// themeColors はテーマカラーのマッピング
+// themeColors はテーマカラーとフォントのマッピング
 type themeColors struct {
-	colors map[int]string // テーマインデックス → "#RRGGBB"
+	colors    map[int]string // テーマインデックス → "#RRGGBB"
+	majorFont string         // 見出しフォント（+mj-lt 解決用）
+	minorFont string         // 本文フォント（+mn-lt 解決用）
 }
 
 // Get はテーマインデックスから色を取得する
@@ -18,7 +20,7 @@ func (tc *themeColors) Get(idx int) string {
 	return tc.colors[idx]
 }
 
-// parseThemeColors は theme1.xml からテーマカラーをパースする。
+// parseThemeColors は theme1.xml からテーマカラーとフォントをパースする。
 // パース失敗時はエラーを返す。
 func parseThemeColors(data []byte) (*themeColors, error) {
 	var theme struct {
@@ -37,6 +39,10 @@ func parseThemeColors(data []byte) (*themeColors, error) {
 				Hlink    xmlThemeColor `xml:"hlink"`
 				FolHlink xmlThemeColor `xml:"folHlink"`
 			} `xml:"clrScheme"`
+			FontScheme struct {
+				MajorFont xmlThemeFontSet `xml:"majorFont"`
+				MinorFont xmlThemeFontSet `xml:"minorFont"`
+			} `xml:"fontScheme"`
 		} `xml:"themeElements"`
 	}
 	if err := xml.Unmarshal(data, &theme); err != nil {
@@ -44,6 +50,7 @@ func parseThemeColors(data []byte) (*themeColors, error) {
 	}
 
 	cs := theme.ThemeElements.ClrScheme
+	fs := theme.ThemeElements.FontScheme
 	tc := &themeColors{colors: make(map[int]string, 12)}
 
 	// PowerPoint テーマインデックスのマッピング:
@@ -59,7 +66,40 @@ func parseThemeColors(data []byte) (*themeColors, error) {
 			tc.colors[i] = c
 		}
 	}
+
+	// テーマフォント（ea → latin の優先順で日本語環境対応）
+	tc.majorFont = resolveThemeFontTypeface(fs.MajorFont)
+	tc.minorFont = resolveThemeFontTypeface(fs.MinorFont)
+
 	return tc, nil
+}
+
+// resolveThemeFontTypeface はテーマフォントセットからフォント名を解決する。
+// ea（東アジア）を優先し、なければ latin を返す。
+func resolveThemeFontTypeface(fs xmlThemeFontSet) string {
+	if fs.Ea.Typeface != "" {
+		return fs.Ea.Typeface
+	}
+	return fs.Latin.Typeface
+}
+
+// ResolveThemeFont はテーマフォント参照（+mj-lt, +mn-lt 等）を実際のフォント名に解決する。
+// テーマフォント参照でない場合はそのまま返す。
+func (tc *themeColors) ResolveThemeFont(typeface string) string {
+	if tc == nil {
+		return typeface
+	}
+	switch typeface {
+	case "+mj-lt", "+mj-ea", "+mj-cs":
+		if tc.majorFont != "" {
+			return tc.majorFont
+		}
+	case "+mn-lt", "+mn-ea", "+mn-cs":
+		if tc.minorFont != "" {
+			return tc.minorFont
+		}
+	}
+	return typeface
 }
 
 type xmlThemeColor struct {
@@ -70,6 +110,12 @@ type xmlThemeColor struct {
 		LastClr string `xml:"lastClr,attr"`
 		Val     string `xml:"val,attr"`
 	} `xml:"sysClr"`
+}
+
+// xmlThemeFontSet は a:majorFont / a:minorFont 要素
+type xmlThemeFontSet struct {
+	Latin xmlFont `xml:"latin"`
+	Ea    xmlFont `xml:"ea"`
 }
 
 func extractThemeColorValue(tc xmlThemeColor) string {

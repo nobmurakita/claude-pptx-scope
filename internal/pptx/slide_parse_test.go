@@ -1,6 +1,7 @@
 package pptx
 
 import (
+	"archive/zip"
 	"testing"
 )
 
@@ -8,7 +9,7 @@ import (
 
 func newTestContext() *parseContext {
 	return &parseContext{
-		f:         &File{},
+		f:         &File{zi: &zipIndex{files: make(map[string]*zip.File)}},
 		pptxIDMap: make(map[int]int),
 	}
 }

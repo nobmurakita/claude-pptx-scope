@@ -34,7 +34,7 @@ func (ctx *parseContext) parseCxnSp(cxn xmlCxnSp) *Shape {
 
 	// テキスト
 	if cxn.TxBody != nil {
-		paras := ctx.parseParagraphs(cxn.TxBody.Ps)
+		paras := ctx.parseParagraphs(cxn.TxBody.Ps, nil)
 		if len(paras) > 0 {
 			var texts []string
 			for _, p := range paras {

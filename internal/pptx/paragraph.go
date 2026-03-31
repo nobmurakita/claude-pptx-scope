@@ -5,8 +5,9 @@ import (
 	"strings"
 )
 
-// parseParagraphs は段落の配列をパースする
-func (ctx *parseContext) parseParagraphs(ps []xmlP) []Paragraph {
+// parseParagraphs は段落の配列をパースする。
+// inherited はプレースホルダーの継承スタイル（非プレースホルダーの場合はnil）。
+func (ctx *parseContext) parseParagraphs(ps []xmlP, inherited *inheritedStyle) []Paragraph {
 	var result []Paragraph
 
 	// 自動番号のカウンタ管理
@@ -33,27 +34,31 @@ func (ctx *parseContext) parseParagraphs(ps []xmlP) []Paragraph {
 			para.Level = level
 		}
 
-		// 箇条書き
-		if p.PPr != nil && p.PPr.BuChar != nil {
-			para.Bullet = p.PPr.BuChar.Char
+		// 箇条書き（スライド上で明示指定されているか、継承から取得）
+		buChar, buAutoNum, buNone := resolveBullet(p.PPr, level, inherited)
+		if buChar != nil {
+			para.Bullet = buChar.Char
 			autoNumCounters = make(map[int]int)
 			lastAutoNumLevel = -1
-		} else if p.PPr != nil && p.PPr.BuAutoNum != nil {
-			an := p.PPr.BuAutoNum
+		} else if buAutoNum != nil {
 			// レベルが変わるか、前が自動番号でなければカウンタリセット
 			if level != lastAutoNumLevel {
 				autoNumCounters[level] = 0
 			}
-			startAt := an.StartAt
+			startAt := buAutoNum.StartAt
 			if startAt == 0 {
 				startAt = 1
 			}
 			autoNumCounters[level]++
 			num := startAt + autoNumCounters[level] - 1
-			para.Bullet = formatAutoNum(an.Type, num)
+			para.Bullet = formatAutoNum(buAutoNum.Type, num)
 			lastAutoNumLevel = level
+		} else if buNone {
+			// 明示的に箇条書きなし → リセット
+			autoNumCounters = make(map[int]int)
+			lastAutoNumLevel = -1
 		} else {
-			// 箇条書き指定なし（BuNone・PPr なし含む）→ 自動番号をリセット
+			// 箇条書き指定なし（PPr なし含む）→ 自動番号をリセット
 			autoNumCounters = make(map[int]int)
 			lastAutoNumLevel = -1
 		}
@@ -64,7 +69,7 @@ func (ctx *parseContext) parseParagraphs(ps []xmlP) []Paragraph {
 		}
 
 		// フォント情報・リッチテキスト
-		para.Font, para.RichText = ctx.parseRunStyles(p)
+		para.Font, para.RichText = ctx.parseRunStyles(p, level, inherited)
 
 		result = append(result, para)
 	}
@@ -72,16 +77,59 @@ func (ctx *parseContext) parseParagraphs(ps []xmlP) []Paragraph {
 	return result
 }
 
-// parseRunStyles は段落のランからフォント情報とリッチテキストを抽出する
-func (ctx *parseContext) parseRunStyles(p xmlP) (*FontStyle, []RichTextRun) {
+// resolveBullet は段落の箇条書きプロパティを解決する。
+// スライド上で明示的に指定されていれば優先し、なければ継承チェーンから取得する。
+func resolveBullet(ppr *xmlPPr, level int, inherited *inheritedStyle) (buChar *xmlBuChar, buAutoNum *xmlBuAutoNum, buNone bool) {
+	// スライド上の段落プロパティを優先
+	if ppr != nil {
+		if ppr.BuChar != nil {
+			return ppr.BuChar, nil, false
+		}
+		if ppr.BuAutoNum != nil {
+			return nil, ppr.BuAutoNum, false
+		}
+		if ppr.BuNone != nil {
+			return nil, nil, true
+		}
+	}
+
+	// 継承チェーンから取得（空の lvlPPr をスキップして辿る）
+	if inherited != nil {
+		for _, ls := range inherited.lstStyles {
+			if ppr := ls.GetLevel(level); ppr != nil {
+				if ppr.BuChar != nil {
+					return ppr.BuChar, nil, false
+				}
+				if ppr.BuAutoNum != nil {
+					return nil, ppr.BuAutoNum, false
+				}
+				if ppr.BuNone != nil {
+					return nil, nil, true
+				}
+			}
+		}
+	}
+
+	return nil, nil, false
+}
+
+// parseRunStyles は段落のランからフォント情報とリッチテキストを抽出する。
+// level は段落のインデントレベル、inherited は継承スタイル（フォント補完用）。
+func (ctx *parseContext) parseRunStyles(p xmlP, level int, inherited *inheritedStyle) (*FontStyle, []RichTextRun) {
 	runs := p.Rs
 	if len(runs) == 0 {
-		return nil, nil
+		// ランがなくても継承からフォント情報を取得できる場合がある
+		font := ctx.applyInheritedFont(nil, level, inherited)
+		if font != nil && isEmptyFont(font) {
+			font = nil
+		}
+		return font, nil
 	}
 
 	// 単一ランの場合はフォント情報のみ
 	if len(runs) == 1 {
 		font := ctx.rprToFont(runs[0].RPr)
+		font = ctx.applyInheritedFont(font, level, inherited)
 		if font != nil && isEmptyFont(font) {
 			font = nil
 		}
@@ -91,8 +139,10 @@ func (ctx *parseContext) parseRunStyles(p xmlP) (*FontStyle, []RichTextRun) {
 	// 複数ランの場合: すべて同じ書式ならフォント情報のみ
 	allSame := true
 	firstFont := ctx.rprToFont(runs[0].RPr)
+	firstFont = ctx.applyInheritedFont(firstFont, level, inherited)
 	for i := 1; i < len(runs); i++ {
 		f := ctx.rprToFont(runs[i].RPr)
+		f = ctx.applyInheritedFont(f, level, inherited)
 		if !fontsEqual(firstFont, f) {
 			allSame = false
 			break
@@ -114,6 +164,7 @@ func (ctx *parseContext) parseRunStyles(p xmlP) (*FontStyle, []RichTextRun) {
 		}
 		rt := RichTextRun{Text: r.T}
 		font := ctx.rprToFont(r.RPr)
+		font = ctx.applyInheritedFont(font, level, inherited)
 		if font != nil && !isEmptyFont(font) {
 			rt.Font = font
 		}
@@ -121,6 +172,72 @@ func (ctx *parseContext) parseRunStyles(p xmlP) (*FontStyle, []RichTextRun) {
 	}
 
 	return nil, richText
+}
+
+// applyInheritedFont は継承チェーンからフォント情報を補完する。
+// font が nil の場合は新たに作成する。inherited が nil の場合は何もしない。
+// 各フォントフィールドごとに継承チェーンを個別に辿り、空の defRPr による遮断を防ぐ。
+func (ctx *parseContext) applyInheritedFont(font *FontStyle, level int, inherited *inheritedStyle) *FontStyle {
+	if inherited == nil {
+		return font
+	}
+
+	if font == nil {
+		font = &FontStyle{}
+	}
+
+	tc := ctx.f.getTheme()
+	modified := false
+
+	// フォント名: 継承チェーン上で最初に見つかったフォント名を使用
+	if font.Name == "" {
+		for _, ls := range inherited.lstStyles {
+			if ppr := ls.GetLevel(level); ppr != nil && ppr.DefRPr != nil {
+				if ppr.DefRPr.Latin != nil && ppr.DefRPr.Latin.Typeface != "" {
+					font.Name = tc.ResolveThemeFont(ppr.DefRPr.Latin.Typeface)
+					modified = true
+					break
+				}
+				if ppr.DefRPr.Ea != nil && ppr.DefRPr.Ea.Typeface != "" {
+					font.Name = tc.ResolveThemeFont(ppr.DefRPr.Ea.Typeface)
+					modified = true
+					break
+				}
+			}
+		}
+	}
+
+	// サイズ: 継承チェーン上で最初に見つかったサイズを使用
+	if font.Size == 0 {
+		for _, ls := range inherited.lstStyles {
+			if ppr := ls.GetLevel(level); ppr != nil && ppr.DefRPr != nil && ppr.DefRPr.Sz > 0 {
+				font.Size = int64(ppr.DefRPr.Sz) * 127
+				modified = true
+				break
+			}
+		}
+	}
+
+	// 色: 継承チェーン上で最初に見つかった色を使用
+	if font.Color == "" {
+		for _, ls := range inherited.lstStyles {
+			if ppr := ls.GetLevel(level); ppr != nil && ppr.DefRPr != nil && ppr.DefRPr.SolidFill != nil {
+				color := ctx.resolveSolidFillColor(ppr.DefRPr.SolidFill)
+				if color != "" {
+					font.Color = color
+					modified = true
+					break
+				}
+			}
+		}
+	}
+
+	// 何も補完されなかった場合は元の状態を維持
+	if !modified && font.Name == "" && font.Size == 0 && !font.Bold && !font.Italic && font.Underline == "" && !font.Strikethrough && font.Color == "" {
+		return nil
+	}
+
+	return font
 }
 
 // rprToFont は rPr からフォント情報を抽出する
@@ -131,11 +248,12 @@ func (ctx *parseContext) rprToFont(rpr *xmlRPr) *FontStyle {
 
 	f := &FontStyle{}
 
-	// フォント名
+	// フォント名（テーマフォント参照を解決）
+	tc := ctx.f.getTheme()
 	if rpr.Latin != nil && rpr.Latin.Typeface != "" {
-		f.Name = rpr.Latin.Typeface
+		f.Name = tc.ResolveThemeFont(rpr.Latin.Typeface)
 	} else if rpr.Ea != nil && rpr.Ea.Typeface != "" {
-		f.Name = rpr.Ea.Typeface
+		f.Name = tc.ResolveThemeFont(rpr.Ea.Typeface)
 	}
 
 	// サイズ（hundredths of point → EMU: ×127）

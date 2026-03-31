@@ -47,12 +47,32 @@ func (f *File) LoadSlide(slideNum int, includeNotes bool) (*SlideData, error) {
 		Title:  extractTitle(sld.CSld.SpTree.Children),
 	}
 
+	// レイアウト/マスターの継承データを取得
+	ic := f.getInheritCache()
+	var layout *layoutData
+	var master *masterData
+	layoutPath := resolveLayoutPath(f, entry.Path)
+	if layoutPath != "" {
+		layout = ic.getLayout(f, layoutPath)
+		if layout != nil && layout.masterPath != "" {
+			master = ic.getMaster(f, layout.masterPath)
+		}
+	}
+	if layout == nil {
+		layout = &layoutData{placeholders: make(map[phKey]*placeholderDef)}
+	}
+	if master == nil {
+		master = &masterData{placeholders: make(map[phKey]*placeholderDef)}
+	}
+
 	// 図形をパース
 	ctx := &parseContext{
 		f:         f,
 		slideRels: slideRels,
 		slidePath: entry.Path,
 		pptxIDMap: make(map[int]int),
+		layout:    layout,
+		master:    master,
 	}
 
 	sd.Shapes = ctx.parseSpTree(sld.CSld.SpTree.Children)
@@ -76,6 +96,8 @@ type parseContext struct {
 	nextID    int         // 連番ID
 	pptxIDMap map[int]int // PowerPoint図形ID → 連番ID
 	nextZ     int         // z-order カウンタ
+	layout    *layoutData // レイアウトデータ（継承解決用）
+	master    *masterData // マスターデータ（継承解決用）
 }
 
 // newTextOnlyContext はテキスト解析専用の parseContext を生成する。
@@ -99,6 +121,8 @@ func (ctx *parseContext) newChildContext() *parseContext {
 		nextID:    ctx.nextID,
 		nextZ:     ctx.nextZ,
 		pptxIDMap: ctx.pptxIDMap,
+		layout:    ctx.layout,
+		master:    ctx.master,
 	}
 }
 
@@ -217,6 +241,16 @@ func phPriority(ph *xmlPh) int {
 func (ctx *parseContext) parseSp(sp xmlSp) *Shape {
 	ph := sp.NvSpPr.NvPr.Ph
 
+	// プレースホルダーの継承スタイルを解決
+	var inherited *inheritedStyle
+	if ph != nil {
+		var slideLstStyle *xmlLstStyle
+		if sp.TxBody != nil {
+			slideLstStyle = sp.TxBody.LstStyle
+		}
+		inherited = resolveInheritedStyle(ph, slideLstStyle, ctx.layout, ctx.master)
+	}
+
 	// テキスト・塗りつぶし・枠線のいずれもない図形はスキップ（プレースホルダー含む）
 	hasText := hasTextContent(sp.TxBody)
 	hasFill := sp.SpPr.SolidFill != nil
@@ -248,13 +282,17 @@ func (ctx *parseContext) parseSp(sp xmlSp) *Shape {
 		s.Name = sp.NvSpPr.CNvPr.Name
 	}
 
-	// 位置
-	s.Pos = xfrmToPosition(sp.SpPr.Xfrm)
+	// 位置（スライド上で未指定の場合、レイアウト/マスターから継承）
+	xfrm := sp.SpPr.Xfrm
+	if xfrm == nil && inherited != nil {
+		xfrm = inherited.xfrm
+	}
+	s.Pos = xfrmToPosition(xfrm)
 
 	// 回転・反転
-	if sp.SpPr.Xfrm != nil {
-		s.Rotation = float64(sp.SpPr.Xfrm.Rot) / 60000.0
-		s.Flip = xfrmFlip(sp.SpPr.Xfrm)
+	if xfrm != nil {
+		s.Rotation = float64(xfrm.Rot) / 60000.0
+		s.Flip = xfrmFlip(xfrm)
 	}
 
 	// 塗りつぶし
@@ -268,7 +306,7 @@ func (ctx *parseContext) parseSp(sp xmlSp) *Shape {
 
 	// テキスト
 	if sp.TxBody != nil {
-		s.Paragraphs = ctx.parseParagraphs(sp.TxBody.Ps)
+		s.Paragraphs = ctx.parseParagraphs(sp.TxBody.Ps, inherited)
 		s.Alignment = ctx.extractShapeLevelAlignment(sp.TxBody)
 	}
 
@@ -337,7 +375,7 @@ func (f *File) loadNotesParagraphs(slideIdx int) []Paragraph {
 		return nil
 	}
 	ctx := newTextOnlyContext(f)
-	paras := ctx.parseParagraphs(txBody.Ps)
+	paras := ctx.parseParagraphs(txBody.Ps, nil)
 	if len(paras) > 0 {
 		return paras
 	}
