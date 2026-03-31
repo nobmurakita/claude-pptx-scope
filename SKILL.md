@@ -60,7 +60,7 @@ cc-read-pptx slides [options] <file>
 
 出力例:
 ```jsonl
-{"slide":1,"title":"基本設計書","shapes":[{"id":1,"type":"rect","placeholder":"ctrTitle","pos":{"x":685800,"y":2286000,"w":7772400,"h":1470025},"z":0,"alignment":{"vertical":"center"},"paragraphs":[{"text":"基本設計書","font":{"name":"メイリオ","size":36,"bold":true,"color":"#333333"},"alignment":{"horizontal":"center"}}]}]}
+{"slide":1,"title":"基本設計書","shapes":[{"id":1,"type":"rect","placeholder":"ctrTitle","pos":{"x":685800,"y":2286000,"w":7772400,"h":1470025},"z":0,"alignment":{"vertical":"center"},"paragraphs":[{"text":"基本設計書","font":{"name":"メイリオ","size":4572000,"bold":true,"color":"#333333"},"alignment":{"horizontal":"center"}}]}]}
 {"slide":2,"title":"目次","shapes":[{"id":1,"type":"rect","placeholder":"title","z":0,"paragraphs":[{"text":"目次"}]},{"id":2,"type":"rect","placeholder":"body","z":1,"paragraphs":[{"text":"システム概要","bullet":"1."},{"text":"機能一覧","bullet":"2."}]}]}
 ```
 
@@ -82,9 +82,9 @@ cc-read-pptx slides [options] <file>
 - `pos`: 位置とサイズ（`x`, `y`, `w`, `h`。EMU単位）
 - `z`: Z-order（0始まり、大きいほど前面）
 - `fill`: 塗りつぶし色（`#RRGGBB`）
-- `line`: 枠線情報（`color`, `style`, `width`）
+- `line`: 枠線情報（`color`, `style`, `width`。`width` はEMU単位）
 - `alignment`: テキストの垂直配置（`vertical` フィールド）。デフォルトの場合は省略
-- `paragraphs`: 段落の配列。各段落に `text`, `bullet`, `level`, `font`, `alignment`, `rich_text`
+- `paragraphs`: 段落の配列。各段落に `text`, `bullet`, `level`, `font`, `alignment`, `rich_text`。`font.size` はEMU単位
 - `callout_pointer`: 吹き出しのポインタ位置（`x`, `y`。EMU単位）
 
 **コネクタの追加フィールド:**

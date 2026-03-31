@@ -138,9 +138,9 @@ func (ctx *parseContext) rprToFont(rpr *xmlRPr) *FontStyle {
 		f.Name = rpr.Ea.Typeface
 	}
 
-	// サイズ（hundredths of point → point）
+	// サイズ（hundredths of point → EMU: ×127）
 	if rpr.Sz > 0 {
-		f.Size = float64(rpr.Sz) / 100.0
+		f.Size = int64(rpr.Sz) * 127
 	}
 
 	// 太字

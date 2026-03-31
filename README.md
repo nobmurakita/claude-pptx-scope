@@ -52,7 +52,7 @@ cc-read-pptx slides --slide 1 基本設計書.pptx
 ```
 
 ```jsonl
-{"slide":1,"title":"基本設計書","shapes":[{"id":1,"type":"rect","placeholder":"ctrTitle","pos":{"x":685800,"y":2286000,"w":7772400,"h":1470025},"z":0,"paragraphs":[{"text":"基本設計書","font":{"name":"メイリオ","size":36,"bold":true}}]},{"id":2,"type":"rect","placeholder":"subTitle","pos":{"x":1371600,"y":3886200,"w":6400800,"h":1752600},"z":1,"paragraphs":[{"text":"2025年4月版"}]}]}
+{"slide":1,"title":"基本設計書","shapes":[{"id":1,"type":"rect","placeholder":"ctrTitle","pos":{"x":685800,"y":2286000,"w":7772400,"h":1470025},"z":0,"paragraphs":[{"text":"基本設計書","font":{"name":"メイリオ","size":4572000,"bold":true}}]},{"id":2,"type":"rect","placeholder":"subTitle","pos":{"x":1371600,"y":3886200,"w":6400800,"h":1752600},"z":1,"paragraphs":[{"text":"2025年4月版"}]}]}
 ```
 
 1スライドにつき1行のJSONオブジェクト（JSONL形式）。`--slide` 未指定時は全スライドを順番に出力する。
@@ -70,7 +70,7 @@ cc-read-pptx slides --slide 2 進捗_20200108.pptx
 コネクタ:
 
 ```jsonl
-{"id":20,"type":"connector","name":"直線矢印コネクタ 52","pos":{"x":3530458,"y":2689356,"w":296133,"h":4992},"z":19,"line":{"color":"#007CD5","style":"solid","width":3},"from":3,"to":4,"connector_type":"straightConnector1","arrow":"end"}
+{"id":20,"type":"connector","name":"直線矢印コネクタ 52","pos":{"x":3530458,"y":2689356,"w":296133,"h":4992},"z":19,"line":{"color":"#007CD5","style":"solid","width":38100},"from":3,"to":4,"connector_type":"straightConnector1","arrow":"end"}
 ```
 
 画像は `image_id` で識別され、`image` サブコマンドで個別に取得できる:

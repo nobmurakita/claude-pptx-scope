@@ -77,9 +77,9 @@ func (ctx *parseContext) resolveLine(ln *xmlLn) *LineStyle {
 		ls.Style = "solid"
 	}
 
-	// 幅（EMU → ポイント）
+	// 幅（EMU）
 	if ln.W > 0 {
-		ls.Width = float64(ln.W) / 12700.0
+		ls.Width = int64(ln.W)
 	}
 
 	if ls.Color == "" && ls.Style == "" && ls.Width == 0 {

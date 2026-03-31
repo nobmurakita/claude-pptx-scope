@@ -57,9 +57,9 @@ type Point struct {
 
 // LineStyle は枠線情報
 type LineStyle struct {
-	Color string  `json:"color,omitempty"`
-	Style string  `json:"style,omitempty"`
-	Width float64 `json:"width,omitempty"`
+	Color string `json:"color,omitempty"`
+	Style string `json:"style,omitempty"`
+	Width int64  `json:"width,omitempty"`
 }
 
 // Paragraph は段落
@@ -80,8 +80,8 @@ type RichTextRun struct {
 
 // FontStyle はフォント情報
 type FontStyle struct {
-	Name          string  `json:"name,omitempty"`
-	Size          float64 `json:"size,omitempty"`
+	Name          string `json:"name,omitempty"`
+	Size          int64  `json:"size,omitempty"`
 	Bold          bool   `json:"bold,omitempty"`
 	Italic        bool   `json:"italic,omitempty"`
 	Strikethrough bool   `json:"strikethrough,omitempty"`
