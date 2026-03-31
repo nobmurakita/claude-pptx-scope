@@ -49,8 +49,9 @@ func runSearch(cmd *cobra.Command, args []string) error {
 	}
 
 	enc := newJSONLWriter(os.Stdout)
+	dedup := pptx.NewStyleDeduplicator()
 	for i := range results {
-		if err := emitSlideData(enc, &results[i]); err != nil {
+		if err := emitSlideData(enc, dedup, &results[i]); err != nil {
 			return err
 		}
 	}

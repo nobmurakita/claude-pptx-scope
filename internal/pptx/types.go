@@ -70,6 +70,7 @@ type Paragraph struct {
 	Bullet    string         `json:"bullet,omitempty"`
 	Level     int            `json:"level,omitempty"`
 	Font      *FontStyle     `json:"font,omitempty"`
+	StyleRef  int            `json:"s,omitempty"`
 	Alignment *Alignment     `json:"alignment,omitempty"`
 	Link      *HyperlinkData `json:"link,omitempty"`
 	RichText  []RichTextRun  `json:"rich_text,omitempty"`
@@ -77,9 +78,10 @@ type Paragraph struct {
 
 // RichTextRun はリッチテキストラン
 type RichTextRun struct {
-	Text string         `json:"text"`
-	Font *FontStyle     `json:"font,omitempty"`
-	Link *HyperlinkData `json:"link,omitempty"`
+	Text     string         `json:"text"`
+	Font     *FontStyle     `json:"font,omitempty"`
+	StyleRef int            `json:"s,omitempty"`
+	Link     *HyperlinkData `json:"link,omitempty"`
 }
 
 // HyperlinkData はハイパーリンク情報
