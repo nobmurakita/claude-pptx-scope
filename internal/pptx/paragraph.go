@@ -63,8 +63,8 @@ func (ctx *parseContext) parseParagraphs(ps []xmlP, inherited *inheritedStyle) [
 			lastAutoNumLevel = -1
 		}
 
-		// 配置
-		if p.PPr != nil && p.PPr.Algn != "" {
+		// 配置（デフォルトの左揃えは省略）
+		if p.PPr != nil && p.PPr.Algn != "" && p.PPr.Algn != "l" {
 			para.Alignment = &Alignment{Horizontal: mapAlignment(p.PPr.Algn)}
 		}
 
@@ -453,9 +453,10 @@ func mapAlignment(algn string) string {
 	}
 }
 
-// extractShapeLevelAlignment はテキストボディレベルの垂直配置を抽出する
+// extractShapeLevelAlignment はテキストボディレベルの垂直配置を抽出する。
+// デフォルトの上揃え（"t"）は省略する。
 func (ctx *parseContext) extractShapeLevelAlignment(txBody *xmlTxBody) *Alignment {
-	if txBody.BodyPr.Anchor == "" {
+	if txBody.BodyPr.Anchor == "" || txBody.BodyPr.Anchor == "t" {
 		return nil
 	}
 	v := mapVerticalAnchor(txBody.BodyPr.Anchor)

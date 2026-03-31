@@ -146,7 +146,7 @@ Claude Code からの典型的な利用フローは以下の通り:
 | `fill` | string | 塗りつぶし色（`#RRGGBB` 形式）。塗りつぶしなしの場合は省略 |
 | `line` | object | 枠線情報。枠線がない場合は省略 |
 | `callout_pointer` | object | 吹き出しのポインタ位置（吹き出し図形の場合のみ。後述） |
-| `alignment` | object | テキストの垂直配置（`a:bodyPr` の `anchor` 属性）。デフォルトの場合は省略 |
+| `alignment` | object | テキストの垂直配置（`a:bodyPr` の `anchor` 属性）。デフォルトの上揃えは省略 |
 | `link` | object | 図形全体に設定されたハイパーリンク（後述）。ない場合は省略 |
 | `paragraphs` | array | 段落の配列。テキストがない場合は省略 |
 | `table` | object | テーブルデータ（テーブルの場合。`paragraphs` の代わりに使用） |
@@ -178,7 +178,7 @@ Claude Code からの典型的な利用フローは以下の通り:
 | `bullet` | string | 箇条書き記号。箇条書きでない段落は省略 |
 | `level` | number | インデントレベル（0始まり）。0の場合は省略 |
 | `font` | object | フォント情報。デフォルト値のフィールドは省略 |
-| `alignment` | object | 水平配置情報。デフォルトの場合は省略 |
+| `alignment` | object | 水平配置情報。デフォルトの左揃えは省略 |
 | `link` | object | ハイパーリンク（段落内の全テキストが同一リンクの場合。後述） |
 | `rich_text` | array | リッチテキストラン（段落内に書式やリンクの異なるランが存在する場合のみ） |
 
