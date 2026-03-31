@@ -137,8 +137,58 @@ type xmlSpPr struct {
 	PrstGeom  *xmlPrstGeom  `xml:"prstGeom"`
 	CustGeom  *struct{}     `xml:"custGeom"`
 	SolidFill *xmlSolidFill `xml:"solidFill"`
+	GradFill  *xmlGradFill  `xml:"gradFill"`
 	NoFill    *struct{}     `xml:"noFill"`
 	Ln        *xmlLn        `xml:"ln"`
+}
+
+// xmlGradFill は a:gradFill 要素（グラデーション塗りつぶし）
+type xmlGradFill struct {
+	GsLst []xmlGradStop `xml:"gsLst>gs"`
+}
+
+// xmlGradStop は a:gs 要素（グラデーションストップ）
+type xmlGradStop struct {
+	Pos       int           `xml:"pos,attr"`
+	SolidFill xmlSolidFill  // gs の子に直接 srgbClr/schemeClr が来る
+}
+
+func (gs *xmlGradStop) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	for _, attr := range start.Attr {
+		if attr.Name.Local == "pos" {
+			fmt.Sscanf(attr.Value, "%d", &gs.Pos)
+		}
+	}
+	// gs の子要素は solidFill と同じ色要素（srgbClr, schemeClr）
+	for {
+		tok, err := d.Token()
+		if err != nil {
+			return err
+		}
+		switch el := tok.(type) {
+		case xml.StartElement:
+			switch el.Name.Local {
+			case "srgbClr":
+				var v xmlSrgbClr
+				if err := d.DecodeElement(&v, &el); err != nil {
+					return err
+				}
+				gs.SolidFill.SrgbClr = &v
+			case "schemeClr":
+				var v xmlSchemeClr
+				if err := d.DecodeElement(&v, &el); err != nil {
+					return err
+				}
+				gs.SolidFill.SchemeClr = &v
+			default:
+				if err := d.Skip(); err != nil {
+					return err
+				}
+			}
+		case xml.EndElement:
+			return nil
+		}
+	}
 }
 
 // xmlXfrm は a:xfrm 要素

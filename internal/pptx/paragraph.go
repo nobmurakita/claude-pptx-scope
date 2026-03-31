@@ -124,7 +124,7 @@ func (ctx *parseContext) parseRunStyles(p xmlP, level int, inherited *inheritedS
 	runs := collectTextRuns(p)
 	if len(runs) == 0 {
 		// ランがなくても継承からフォント情報を取得できる場合がある
-		font := ctx.applyInheritedFont(nil, level, inherited)
+		font := ctx.applyInheritedFont(nil, nil, level, inherited)
 		if font != nil && isEmptyFont(font) {
 			font = nil
 		}
@@ -134,7 +134,7 @@ func (ctx *parseContext) parseRunStyles(p xmlP, level int, inherited *inheritedS
 	// 単一ランの場合はフォント情報+リンクのみ
 	if len(runs) == 1 && runs[0].R != nil {
 		font := ctx.rprToFont(runs[0].R.RPr)
-		font = ctx.applyInheritedFont(font, level, inherited)
+		font = ctx.applyInheritedFont(font, runs[0].R.RPr, level, inherited)
 		if font != nil && isEmptyFont(font) {
 			font = nil
 		}
@@ -160,7 +160,7 @@ func (ctx *parseContext) parseRunStyles(p xmlP, level int, inherited *inheritedS
 			rpr = elem.Fld.RPr
 		}
 		f := ctx.rprToFont(rpr)
-		f = ctx.applyInheritedFont(f, level, inherited)
+		f = ctx.applyInheritedFont(f, rpr, level, inherited)
 		l := ctx.resolveRunHyperlink(rpr)
 		if !firstSet {
 			firstFont = f
@@ -200,7 +200,7 @@ func (ctx *parseContext) parseRunStyles(p xmlP, level int, inherited *inheritedS
 		}
 		rt := RichTextRun{Text: text}
 		font := ctx.rprToFont(rpr)
-		font = ctx.applyInheritedFont(font, level, inherited)
+		font = ctx.applyInheritedFont(font, rpr, level, inherited)
 		if font != nil && !isEmptyFont(font) {
 			rt.Font = font
 		}
@@ -255,8 +255,9 @@ func linksEqual(a, b *HyperlinkData) bool {
 
 // applyInheritedFont は継承チェーンからフォント情報を補完する。
 // font が nil の場合は新たに作成する。inherited が nil の場合は何もしない。
+// rpr は元のランプロパティ（明示指定の有無を判定するため）。nil の場合はすべて未指定として扱う。
 // 各フォントフィールドごとに継承チェーンを個別に辿り、空の defRPr による遮断を防ぐ。
-func (ctx *parseContext) applyInheritedFont(font *FontStyle, level int, inherited *inheritedStyle) *FontStyle {
+func (ctx *parseContext) applyInheritedFont(font *FontStyle, rpr *xmlRPr, level int, inherited *inheritedStyle) *FontStyle {
 	if inherited == nil {
 		return font
 	}
@@ -307,6 +308,54 @@ func (ctx *parseContext) applyInheritedFont(font *FontStyle, level int, inherite
 					modified = true
 					break
 				}
+			}
+		}
+	}
+
+	// 太字: rPr で明示指定されていない場合（B == ""）のみ継承
+	if !font.Bold && (rpr == nil || rpr.B == "") {
+		for _, ls := range inherited.lstStyles {
+			if ppr := ls.GetLevel(level); ppr != nil && ppr.DefRPr != nil && ppr.DefRPr.B != "" {
+				if ppr.DefRPr.B == "1" || ppr.DefRPr.B == "true" {
+					font.Bold = true
+					modified = true
+				}
+				break // 明示的な値が見つかった（false含む）ので終了
+			}
+		}
+	}
+
+	// 斜体: rPr で明示指定されていない場合のみ継承
+	if !font.Italic && (rpr == nil || rpr.I == "") {
+		for _, ls := range inherited.lstStyles {
+			if ppr := ls.GetLevel(level); ppr != nil && ppr.DefRPr != nil && ppr.DefRPr.I != "" {
+				if ppr.DefRPr.I == "1" || ppr.DefRPr.I == "true" {
+					font.Italic = true
+					modified = true
+				}
+				break
+			}
+		}
+	}
+
+	// 下線: rPr で明示指定されていない場合のみ継承
+	if font.Underline == "" && (rpr == nil || rpr.U == "") {
+		for _, ls := range inherited.lstStyles {
+			if ppr := ls.GetLevel(level); ppr != nil && ppr.DefRPr != nil && ppr.DefRPr.U != "" && ppr.DefRPr.U != "none" {
+				font.Underline = ppr.DefRPr.U
+				modified = true
+				break
+			}
+		}
+	}
+
+	// 取り消し線: rPr で明示指定されていない場合のみ継承
+	if !font.Strikethrough && (rpr == nil || rpr.Strike == "") {
+		for _, ls := range inherited.lstStyles {
+			if ppr := ls.GetLevel(level); ppr != nil && ppr.DefRPr != nil && ppr.DefRPr.Strike != "" && ppr.DefRPr.Strike != "noStrike" {
+				font.Strikethrough = true
+				modified = true
+				break
 			}
 		}
 	}

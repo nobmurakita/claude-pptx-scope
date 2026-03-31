@@ -54,6 +54,22 @@ func applyColorTransforms(color string, transforms []colorTransform) string {
 	return color
 }
 
+// resolveGradFillColor は gradFill から代表色（最初のストップカラー）を返す
+func (ctx *parseContext) resolveGradFillColor(fill *xmlGradFill) string {
+	if fill == nil || len(fill.GsLst) == 0 {
+		return ""
+	}
+	return ctx.resolveSolidFillColor(&fill.GsLst[0].SolidFill)
+}
+
+// resolveFillColor は図形の塗りつぶし色を解決する（solidFill 優先、なければ gradFill の代表色）
+func (ctx *parseContext) resolveFillColor(spPr *xmlSpPr) string {
+	if spPr.SolidFill != nil {
+		return ctx.resolveSolidFillColor(spPr.SolidFill)
+	}
+	return ctx.resolveGradFillColor(spPr.GradFill)
+}
+
 // resolveLine は ln 要素から枠線情報を解決する
 func (ctx *parseContext) resolveLine(ln *xmlLn) *LineStyle {
 	if ln == nil {

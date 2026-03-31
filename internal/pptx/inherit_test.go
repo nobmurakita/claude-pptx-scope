@@ -115,7 +115,7 @@ func TestResolveInheritedFont_FromDefRPr(t *testing.T) {
 	}
 
 	// nil のフォントに継承を適用
-	font := ctx.applyInheritedFont(nil, 0, inherited)
+	font := ctx.applyInheritedFont(nil, nil, 0, inherited)
 	if font == nil {
 		t.Fatal("継承フォントが返されない")
 	}
@@ -127,6 +127,65 @@ func TestResolveInheritedFont_FromDefRPr(t *testing.T) {
 	}
 	if font.Color != "#333333" {
 		t.Errorf("Color: got %q, want %q", font.Color, "#333333")
+	}
+}
+
+func TestResolveInheritedFont_BoldFromDefRPr(t *testing.T) {
+	ctx := newTestContext()
+
+	inherited := &inheritedStyle{
+		lstStyles: []*xmlLstStyle{
+			{
+				Lvl1pPr: &xmlLvlPPr{
+					DefRPr: &xmlRPr{B: "1", I: "1", U: "sng", Strike: "sngStrike"},
+				},
+			},
+		},
+	}
+
+	// rpr が nil → すべて継承される
+	font := ctx.applyInheritedFont(nil, nil, 0, inherited)
+	if font == nil {
+		t.Fatal("継承フォントが返されない")
+	}
+	if !font.Bold {
+		t.Errorf("Bold が継承されていない")
+	}
+	if !font.Italic {
+		t.Errorf("Italic が継承されていない")
+	}
+	if font.Underline != "sng" {
+		t.Errorf("Underline: got %q, want %q", font.Underline, "sng")
+	}
+	if !font.Strikethrough {
+		t.Errorf("Strikethrough が継承されていない")
+	}
+}
+
+func TestResolveInheritedFont_ExplicitFalse_NoInherit(t *testing.T) {
+	ctx := newTestContext()
+
+	inherited := &inheritedStyle{
+		lstStyles: []*xmlLstStyle{
+			{
+				Lvl1pPr: &xmlLvlPPr{
+					DefRPr: &xmlRPr{B: "1", I: "1"},
+				},
+			},
+		},
+	}
+
+	// rpr で明示的に B="0" を指定 → 継承しない
+	rpr := &xmlRPr{B: "0", I: "0", Sz: 1800}
+	font := ctx.applyInheritedFont(&FontStyle{Size: 1800 * 127}, rpr, 0, inherited)
+	if font == nil {
+		t.Fatal("フォントが返されない")
+	}
+	if font.Bold {
+		t.Errorf("明示的に B=0 なのに Bold が継承された")
+	}
+	if font.Italic {
+		t.Errorf("明示的に I=0 なのに Italic が継承された")
 	}
 }
 
@@ -148,7 +207,7 @@ func TestResolveInheritedFont_NoOverrideExplicit(t *testing.T) {
 
 	// 既にフォント名が設定されている場合は上書きしない
 	font := &FontStyle{Name: "メイリオ", Size: 127000}
-	result := ctx.applyInheritedFont(font, 0, inherited)
+	result := ctx.applyInheritedFont(font, nil, 0, inherited)
 	if result.Name != "メイリオ" {
 		t.Errorf("明示的な値が上書きされた: got %q, want %q", result.Name, "メイリオ")
 	}
@@ -170,7 +229,7 @@ func TestResolveInheritedFont_Level2(t *testing.T) {
 	}
 
 	// level=2 → lvl3pPr
-	font := ctx.applyInheritedFont(nil, 2, inherited)
+	font := ctx.applyInheritedFont(nil, nil, 2, inherited)
 	if font == nil {
 		t.Fatal("継承フォントが返されない")
 	}

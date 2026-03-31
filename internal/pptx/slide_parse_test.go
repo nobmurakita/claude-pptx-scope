@@ -262,6 +262,60 @@ func TestParseSp_FillOnly(t *testing.T) {
 	}
 }
 
+func TestParseSp_GradFill(t *testing.T) {
+	ctx := newTestContext()
+
+	sp := xmlSp{
+		NvSpPr: xmlNvSpPr{
+			CNvPr: xmlCNvPr{ID: 11},
+		},
+		SpPr: xmlSpPr{
+			GradFill: &xmlGradFill{
+				GsLst: []xmlGradStop{
+					{Pos: 0, SolidFill: xmlSolidFill{SrgbClr: &xmlSrgbClr{Val: "4472C4"}}},
+					{Pos: 100000, SolidFill: xmlSolidFill{SrgbClr: &xmlSrgbClr{Val: "002060"}}},
+				},
+			},
+		},
+	}
+
+	s := ctx.parseSp(sp)
+	if s == nil {
+		t.Fatal("グラデーション塗りの図形はnilであるべきではない")
+	}
+	if s.Fill != "#4472C4" {
+		t.Errorf("Fill: got %q, want %q（最初のストップカラー）", s.Fill, "#4472C4")
+	}
+}
+
+func TestParseSp_SolidFillPriorityOverGradFill(t *testing.T) {
+	ctx := newTestContext()
+
+	sp := xmlSp{
+		NvSpPr: xmlNvSpPr{
+			CNvPr: xmlCNvPr{ID: 12},
+		},
+		SpPr: xmlSpPr{
+			SolidFill: &xmlSolidFill{
+				SrgbClr: &xmlSrgbClr{Val: "FF0000"},
+			},
+			GradFill: &xmlGradFill{
+				GsLst: []xmlGradStop{
+					{Pos: 0, SolidFill: xmlSolidFill{SrgbClr: &xmlSrgbClr{Val: "0000FF"}}},
+				},
+			},
+		},
+	}
+
+	s := ctx.parseSp(sp)
+	if s == nil {
+		t.Fatal("図形がnilであるべきではない")
+	}
+	if s.Fill != "#FF0000" {
+		t.Errorf("Fill: got %q, want %q（solidFill が優先）", s.Fill, "#FF0000")
+	}
+}
+
 func TestResolveHyperlink_ExternalURL(t *testing.T) {
 	ctx := newTestContext()
 	ctx.slideRels = map[string]string{

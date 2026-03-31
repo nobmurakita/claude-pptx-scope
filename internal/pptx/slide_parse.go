@@ -257,7 +257,7 @@ func (ctx *parseContext) parseSp(sp xmlSp) *Shape {
 
 	// テキスト・塗りつぶし・枠線のいずれもない図形はスキップ（プレースホルダー含む）
 	hasText := hasTextContent(sp.TxBody)
-	hasFill := sp.SpPr.SolidFill != nil
+	hasFill := sp.SpPr.SolidFill != nil || sp.SpPr.GradFill != nil
 	hasLine := sp.SpPr.Ln != nil && sp.SpPr.Ln.NoFill == nil
 	if !hasText && !hasFill && !hasLine {
 		return nil
@@ -302,8 +302,8 @@ func (ctx *parseContext) parseSp(sp xmlSp) *Shape {
 		s.Flip = xfrmFlip(xfrm)
 	}
 
-	// 塗りつぶし
-	s.Fill = ctx.resolveSolidFillColor(sp.SpPr.SolidFill)
+	// 塗りつぶし（solidFill 優先、なければ gradFill の代表色）
+	s.Fill = ctx.resolveFillColor(&sp.SpPr)
 
 	// 枠線
 	s.Line = ctx.resolveLine(sp.SpPr.Ln)
