@@ -70,7 +70,7 @@ ${CLAUDE_SKILL_DIR}/scripts/cc-read-pptx slides [options] <file>
 
 - シェイプ: `rect`, `roundRect`, `ellipse`, `flowChartProcess`, `flowChartDecision` 等（`a:prstGeom` の `prst` 属性値）
 - コネクタ: `type` は常に `"connector"`。`from`/`to` で接続先の図形IDを参照。`connector_type` でコネクタ形状、`arrow` で矢印の位置
-- グループ: `type` は `"group"`。`children` に子要素の配列
+- グループ: `type` は `"group"`。`children` に子要素の配列。子要素の `pos` はスライド上の絶対座標に変換済み
 - テーブル: `type` は `"table"`。`table` フィールドに `cols`（列数）と `rows`（行データ配列）。結合で吸収されたセルは `null`
 - 画像: `type` は `"picture"`。`image_id` で `image` サブコマンドにより画像を取得可能
 

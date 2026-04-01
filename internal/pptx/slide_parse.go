@@ -382,7 +382,72 @@ func (ctx *parseContext) parseGrpSp(grp xmlGrpSp) *Shape {
 		return nil
 	}
 
+	// 子要素の座標をグループローカル座標から絶対座標に変換
+	if grp.GrpSpPr.Xfrm != nil {
+		xfrm := grp.GrpSpPr.Xfrm
+		transformGroupChildren(s.Children, xfrm)
+	}
+
 	return s
+}
+
+// transformGroupChildren はグループ内の子要素の座標を絶対座標に変換する
+// グループの子座標空間(ChOff/ChExt)からスライド座標空間(Off/Ext)へマッピングする
+func transformGroupChildren(children []Shape, xfrm *xmlGrpXfrm) {
+	chOffX, chOffY := xfrm.ChOff.X, xfrm.ChOff.Y
+	chExtW, chExtH := xfrm.ChExt.Cx, xfrm.ChExt.Cy
+	grpX, grpY := xfrm.Off.X, xfrm.Off.Y
+	grpW, grpH := xfrm.Ext.Cx, xfrm.Ext.Cy
+
+	// ChExt が 0 の場合は変換不要（1:1マッピング）
+	if chExtW == 0 || chExtH == 0 {
+		return
+	}
+
+	for i := range children {
+		transformShapePos(children[i].Pos, chOffX, chOffY, chExtW, chExtH, grpX, grpY, grpW, grpH)
+		transformPointPos(children[i].CalloutPointer, chOffX, chOffY, chExtW, chExtH, grpX, grpY, grpW, grpH)
+		transformPointPos(children[i].Start, chOffX, chOffY, chExtW, chExtH, grpX, grpY, grpW, grpH)
+		transformPointPos(children[i].End, chOffX, chOffY, chExtW, chExtH, grpX, grpY, grpW, grpH)
+		// ネストされたグループ: 子要素は内側グループ基準の絶対座標に変換済みだが、
+		// それは外側グループのローカル座標なので、さらに外側の座標空間に変換する
+		if children[i].Type == "group" {
+			transformGroupChildrenToParent(children[i].Children, chOffX, chOffY, chExtW, chExtH, grpX, grpY, grpW, grpH)
+		}
+	}
+}
+
+// transformShapePos は Position を子座標空間から親座標空間に変換する
+func transformShapePos(pos *Position, chOffX, chOffY, chExtW, chExtH, grpX, grpY, grpW, grpH int64) {
+	if pos == nil {
+		return
+	}
+	pos.X = grpX + (pos.X-chOffX)*grpW/chExtW
+	pos.Y = grpY + (pos.Y-chOffY)*grpH/chExtH
+	pos.W = pos.W * grpW / chExtW
+	pos.H = pos.H * grpH / chExtH
+}
+
+// transformPointPos は Point を子座標空間から親座標空間に変換する
+func transformPointPos(pt *Point, chOffX, chOffY, chExtW, chExtH, grpX, grpY, grpW, grpH int64) {
+	if pt == nil {
+		return
+	}
+	pt.X = grpX + (pt.X-chOffX)*grpW/chExtW
+	pt.Y = grpY + (pt.Y-chOffY)*grpH/chExtH
+}
+
+// transformGroupChildrenToParent はネストされたグループの子要素を再帰的に親座標空間に変換する
+func transformGroupChildrenToParent(children []Shape, chOffX, chOffY, chExtW, chExtH, grpX, grpY, grpW, grpH int64) {
+	for i := range children {
+		transformShapePos(children[i].Pos, chOffX, chOffY, chExtW, chExtH, grpX, grpY, grpW, grpH)
+		transformPointPos(children[i].CalloutPointer, chOffX, chOffY, chExtW, chExtH, grpX, grpY, grpW, grpH)
+		transformPointPos(children[i].Start, chOffX, chOffY, chExtW, chExtH, grpX, grpY, grpW, grpH)
+		transformPointPos(children[i].End, chOffX, chOffY, chExtW, chExtH, grpX, grpY, grpW, grpH)
+		if children[i].Type == "group" {
+			transformGroupChildrenToParent(children[i].Children, chOffX, chOffY, chExtW, chExtH, grpX, grpY, grpW, grpH)
+		}
+	}
 }
 
 
