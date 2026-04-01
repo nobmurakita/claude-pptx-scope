@@ -21,7 +21,7 @@ PowerPointファイル（.pptx）の内容をCLIから出力するツール。
 基本的には `info` → `slides` で内容を把握する。特定のキーワードを探す場合は `search` が効率的。
 図形の書式情報（フォント・色・枠線）は常に出力される。
 
-**画像の確認手順:** 出力に `image_id` がある場合:
+**画像の確認:** `info` で `has_images: true` のスライドには画像が含まれる。`slides` 出力に `image_id` がある場合、内容の把握に役立つ可能性が高いため積極的に確認する。
 
 1. `image` サブコマンドで一時ファイルに保存する: `${CLAUDE_SKILL_DIR}/scripts/cc-read-pptx image <file> <image_id>`
    - `<output>` を省略すると一時ファイルが自動生成され、パスが stdout に出力される
@@ -81,6 +81,7 @@ ${CLAUDE_SKILL_DIR}/scripts/cc-read-pptx slides [options] <file>
 - `name`: 図形名。プレースホルダーの場合は省略
 - `pos`: 位置とサイズ（`x`, `y`, `w`, `h`。EMU単位）
 - `z`: Z-order（0始まり、大きいほど前面）
+- `rotation`: 回転角度（時計回り、度単位。0の場合は省略）
 - `fill`: 塗りつぶし色（`#RRGGBB`）
 - `line`: 枠線情報（`color`, `style`, `width`。`width` はEMU単位）
 - `link`: ハイパーリンク（`url` で外部URL、`slide` でスライド内リンクのスライド番号）
