@@ -17,10 +17,22 @@ func (ctx *parseContext) parseCxnSp(cxn xmlCxnSp) *Shape {
 	// コネクタ形状
 	if cxn.SpPr.PrstGeom != nil {
 		s.ConnectorType = cxn.SpPr.PrstGeom.Prst
+		// 調整値
+		if cxn.SpPr.PrstGeom.AvLst != nil {
+			s.Adj = parseAdjValues(cxn.SpPr.PrstGeom.AvLst)
+		}
 	}
 
 	// 位置
 	s.Pos = xfrmToPosition(cxn.SpPr.Xfrm)
+
+	// フリップ（始点・終点の算出に必要）
+	flip := xfrmFlip(cxn.SpPr.Xfrm)
+
+	// 始点・終点座標
+	if s.Pos != nil {
+		s.Start, s.End = connectorEndpoints(s.Pos, flip)
+	}
 
 	// 枠線
 	s.Line = ctx.resolveLine(cxn.SpPr.Ln)
@@ -31,9 +43,13 @@ func (ctx *parseContext) parseCxnSp(cxn xmlCxnSp) *Shape {
 	// 接続情報（PowerPoint ID。後で解決する）
 	if cxn.NvCxnSpPr.CNvCxnSpPr.StCxn != nil {
 		s.From = -cxn.NvCxnSpPr.CNvCxnSpPr.StCxn.ID // 負値で未解決マーク
+		idx := cxn.NvCxnSpPr.CNvCxnSpPr.StCxn.Idx
+		s.FromIdx = &idx
 	}
 	if cxn.NvCxnSpPr.CNvCxnSpPr.EndCxn != nil {
 		s.To = -cxn.NvCxnSpPr.CNvCxnSpPr.EndCxn.ID
+		idx := cxn.NvCxnSpPr.CNvCxnSpPr.EndCxn.Idx
+		s.ToIdx = &idx
 	}
 
 	// テキスト
@@ -51,6 +67,41 @@ func (ctx *parseContext) parseCxnSp(cxn xmlCxnSp) *Shape {
 	return s
 }
 
+// connectorEndpoints は pos と flip からコネクタの始点・終点を算出する
+func connectorEndpoints(pos *Position, flip string) (*Point, *Point) {
+	x1, y1 := pos.X, pos.Y
+	x2, y2 := pos.X+pos.W, pos.Y+pos.H
+	switch flip {
+	case "h":
+		x1, x2 = x2, x1
+	case "v":
+		y1, y2 = y2, y1
+	case "hv":
+		x1, x2 = x2, x1
+		y1, y2 = y2, y1
+	}
+	return &Point{X: x1, Y: y1}, &Point{X: x2, Y: y2}
+}
+
+// parseAdjValues は avLst から調整値を取得する
+func parseAdjValues(avLst *xmlAvLst) map[string]int {
+	if len(avLst.Gd) == 0 {
+		return nil
+	}
+	adj := make(map[string]int, len(avLst.Gd))
+	for _, gd := range avLst.Gd {
+		if gd.Name != "" {
+			if v := parseGdVal(gd.Fmla); v != nil {
+				adj[gd.Name] = int(*v)
+			}
+		}
+	}
+	if len(adj) == 0 {
+		return nil
+	}
+	return adj
+}
+
 // resolveConnectors はコネクタの from/to を PowerPoint ID から連番IDに変換する
 func (ctx *parseContext) resolveConnectors(shapes []Shape) {
 	for i := range shapes {
@@ -61,6 +112,7 @@ func (ctx *parseContext) resolveConnectors(shapes []Shape) {
 					shapes[i].From = resolved
 				} else {
 					shapes[i].From = 0
+					shapes[i].FromIdx = nil
 				}
 			}
 			if shapes[i].To < 0 {
@@ -69,6 +121,7 @@ func (ctx *parseContext) resolveConnectors(shapes []Shape) {
 					shapes[i].To = resolved
 				} else {
 					shapes[i].To = 0
+					shapes[i].ToIdx = nil
 				}
 			}
 		}

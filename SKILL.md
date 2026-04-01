@@ -92,8 +92,11 @@ ${CLAUDE_SKILL_DIR}/scripts/cc-read-pptx slides [options] <file>
 **コネクタの追加フィールド:**
 
 - `from`/`to`: 接続元/先の図形ID
+- `from_idx`/`to_idx`: 接続ポイントのインデックス（図形上の接続位置、形状依存）
 - `connector_type`: `line`, `straightConnector1`, `bentConnector3`, `curvedConnector3` 等
+- `adj`: 屈曲・カーブの調整値（1/100000単位。bent/curvedコネクタで屈曲位置を制御）
 - `arrow`: `"start"`, `"end"`, `"both"`, `"none"`
+- `start`/`end`: 始点・終点座標（`x`, `y`。EMU単位。`pos` と `flip` から算出）
 - `label`: コネクタ上のテキスト
 
 **テーブルの出力例:**
