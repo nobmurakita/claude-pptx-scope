@@ -28,7 +28,7 @@ PowerPointファイル（.pptx）の内容をCLIから出力するツール。
 **画像の確認:** `info` で `has_images: true` のスライドには画像が含まれる。`slides` 出力に `image_id` がある場合、内容の把握に役立つ可能性が高いため積極的に確認する。
 
 1. `image` サブコマンドで一時ファイルに保存する: `${CLAUDE_SKILL_DIR}/scripts/cc-read-pptx image <file> <image_id>`
-   - `<output>` を省略すると一時ファイルが自動生成され、パスが stdout に出力される
+   - 一時ファイルが自動生成され、パスが stdout に出力される
 2. Read ツールで保存したファイルを読み、画像の内容を確認する
 3. 確認が終わったら画像を削除する
 
@@ -128,10 +128,10 @@ ${CLAUDE_SKILL_DIR}/scripts/cc-read-pptx image example.pptx ppt/media/image1.png
 ### image
 
 ```bash
-${CLAUDE_SKILL_DIR}/scripts/cc-read-pptx image <file> <image_id> [output]
+${CLAUDE_SKILL_DIR}/scripts/cc-read-pptx image <file> <image_id>
 ```
 
-`slides` 出力の `image_id`（ZIP内のメディアパス）を指定して、画像をファイルに保存する。`output` を省略すると一時ファイルが自動生成され、パスが stdout に出力される。
+`slides` 出力の `image_id`（ZIP内のメディアパス）を指定して、画像を一時ファイルに保存する。保存先のパスが stdout に出力される。
 
 ```bash
 ${CLAUDE_SKILL_DIR}/scripts/cc-read-pptx image example.pptx ppt/media/image1.png
