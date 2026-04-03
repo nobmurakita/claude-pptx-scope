@@ -1,11 +1,11 @@
 ---
-name: cc-read-pptx
+name: pptx-scope
 description: PowerPointファイル（.pptx）を読み取る。プレゼン資料、設計書、フローチャート、提案書の内容確認・データ抽出時に使用する。
 user-invocable: false
-allowed-tools: Bash(bash ${CLAUDE_SKILL_DIR}/scripts/cc-read-pptx *), Read
+allowed-tools: Bash(bash ${CLAUDE_SKILL_DIR}/scripts/pptx-scope *), Read
 ---
 
-# cc-read-pptx
+# pptx-scope
 
 PowerPointファイル（.pptx）の内容をCLIから出力するツール。
 
@@ -27,7 +27,7 @@ PowerPointファイル（.pptx）の内容をCLIから出力するツール。
 
 **画像の確認:** `info` で `has_images: true` のスライドには画像が含まれる。`slides` 出力に `image_id` がある場合、内容の把握に役立つ可能性が高いため積極的に確認する。
 
-1. `image` サブコマンドで一時ファイルに保存する: `${CLAUDE_SKILL_DIR}/scripts/cc-read-pptx image <file> <image_id>`
+1. `image` サブコマンドで一時ファイルに保存する: `${CLAUDE_SKILL_DIR}/scripts/pptx-scope image <file> <image_id>`
    - 一時ファイルが自動生成され、パスが stdout に出力される
 2. Read ツールで保存したファイルを読み、画像の内容を確認する
 3. 確認が終わったら画像を削除する
@@ -37,7 +37,7 @@ PowerPointファイル（.pptx）の内容をCLIから出力するツール。
 ### info
 
 ```bash
-${CLAUDE_SKILL_DIR}/scripts/cc-read-pptx info <file>
+${CLAUDE_SKILL_DIR}/scripts/pptx-scope info <file>
 ```
 
 出力例:
@@ -54,7 +54,7 @@ ${CLAUDE_SKILL_DIR}/scripts/cc-read-pptx info <file>
 ### slides
 
 ```bash
-${CLAUDE_SKILL_DIR}/scripts/cc-read-pptx slides [options] <file>
+${CLAUDE_SKILL_DIR}/scripts/pptx-scope slides [options] <file>
 ```
 
 | オプション | 説明 | デフォルト |
@@ -118,7 +118,7 @@ ${CLAUDE_SKILL_DIR}/scripts/cc-read-pptx slides [options] <file>
 ```
 
 ```bash
-${CLAUDE_SKILL_DIR}/scripts/cc-read-pptx image example.pptx ppt/media/image1.png
+${CLAUDE_SKILL_DIR}/scripts/pptx-scope image example.pptx ppt/media/image1.png
 ```
 
 **ノート（`--notes` 指定時）:**
@@ -128,20 +128,20 @@ ${CLAUDE_SKILL_DIR}/scripts/cc-read-pptx image example.pptx ppt/media/image1.png
 ### image
 
 ```bash
-${CLAUDE_SKILL_DIR}/scripts/cc-read-pptx image <file> <image_id>
+${CLAUDE_SKILL_DIR}/scripts/pptx-scope image <file> <image_id>
 ```
 
 `slides` 出力の `image_id`（ZIP内のメディアパス）を指定して、画像を一時ファイルに保存する。保存先のパスが stdout に出力される。
 
 ```bash
-${CLAUDE_SKILL_DIR}/scripts/cc-read-pptx image example.pptx ppt/media/image1.png
-# stdout: /var/folders/.../cc-read-pptx-1234567.png
+${CLAUDE_SKILL_DIR}/scripts/pptx-scope image example.pptx ppt/media/image1.png
+# stdout: /var/folders/.../pptx-scope-1234567.png
 ```
 
 ### search
 
 ```bash
-${CLAUDE_SKILL_DIR}/scripts/cc-read-pptx search [options] <file>
+${CLAUDE_SKILL_DIR}/scripts/pptx-scope search [options] <file>
 ```
 
 | オプション | 説明 | デフォルト |
@@ -153,7 +153,7 @@ ${CLAUDE_SKILL_DIR}/scripts/cc-read-pptx search [options] <file>
 出力形式は `slides` と同じJSONL。マッチしたスライドのみ出力し、図形内ではマッチした段落のみを含める。テーブルはいずれかのセルにヒットした場合テーブル全体を出力する。結果なしでも正常終了（終了コード 0）する。
 
 ```bash
-${CLAUDE_SKILL_DIR}/scripts/cc-read-pptx search --text "データ" example.pptx
+${CLAUDE_SKILL_DIR}/scripts/pptx-scope search --text "データ" example.pptx
 ```
 
 ```jsonl

@@ -32,28 +32,28 @@ jobs:
           for TARGET in "${TARGETS[@]}"; do
             GOOS="${TARGET%/*}"
             GOARCH="${TARGET#*/}"
-            OUTPUT="scripts/cc-read-pptx-${GOOS}-${GOARCH}"
+            OUTPUT="scripts/pptx-scope-${GOOS}-${GOARCH}"
             if [ "$GOOS" = "windows" ]; then
               OUTPUT="${OUTPUT}.exe"
             fi
             echo "Building ${OUTPUT}..."
             CGO_ENABLED=0 GOOS="$GOOS" GOARCH="$GOARCH" \
-              go build -ldflags="$LDFLAGS" -o "$OUTPUT" .
+              go build -ldflags="$LDFLAGS" -o "$OUTPUT" ./cmd/pptx-scope
           done
 
       - name: Create zip
         run: |
-          zip -r "cc-read-pptx-${GITHUB_REF_NAME}.zip" \
+          zip -r "pptx-scope-${GITHUB_REF_NAME}.zip" \
             SKILL.md \
-            scripts/cc-read-pptx \
-            scripts/cc-read-pptx-darwin-amd64 \
-            scripts/cc-read-pptx-darwin-arm64 \
-            scripts/cc-read-pptx-linux-amd64 \
-            scripts/cc-read-pptx-linux-arm64 \
-            scripts/cc-read-pptx-windows-amd64.exe
+            scripts/pptx-scope \
+            scripts/pptx-scope-darwin-amd64 \
+            scripts/pptx-scope-darwin-arm64 \
+            scripts/pptx-scope-linux-amd64 \
+            scripts/pptx-scope-linux-arm64 \
+            scripts/pptx-scope-windows-amd64.exe
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: "cc-read-pptx-${{ github.ref_name }}.zip"
+          files: "pptx-scope-${{ github.ref_name }}.zip"
           generate_release_notes: true

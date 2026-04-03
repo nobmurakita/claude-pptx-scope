@@ -9,7 +9,7 @@ case "$OS" in
   Linux)    OS="linux" ;;
   MINGW*|MSYS*|CYGWIN*) OS="windows" ;;
   *)
-    echo "cc-read-pptx: unsupported OS: $OS" >&2
+    echo "pptx-scope: unsupported OS: $OS" >&2
     exit 1
     ;;
 esac
@@ -19,23 +19,23 @@ case "$ARCH" in
   x86_64)  ARCH="amd64" ;;
   arm64)   ARCH="arm64" ;;
   *)
-    echo "cc-read-pptx: unsupported architecture: $ARCH" >&2
+    echo "pptx-scope: unsupported architecture: $ARCH" >&2
     exit 1
     ;;
 esac
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-BIN="${SCRIPT_DIR}/cc-read-pptx-${OS}-${ARCH}"
+BIN="${SCRIPT_DIR}/pptx-scope-${OS}-${ARCH}"
 [ "$OS" = "windows" ] && BIN="${BIN}.exe"
 
 if [ ! -f "$BIN" ]; then
-  echo "cc-read-pptx: binary not found: $BIN" >&2
+  echo "pptx-scope: binary not found: $BIN" >&2
   exit 1
 fi
 
 # 実行権限がなければ一時ディレクトリにコピーして権限を付与
 if [ ! -x "$BIN" ]; then
-  TMP_BIN="${TMPDIR:-/tmp}/cc-read-pptx-$(id -u)-${OS}-${ARCH}"
+  TMP_BIN="${TMPDIR:-/tmp}/pptx-scope-$(id -u)-${OS}-${ARCH}"
   if [ ! -x "$TMP_BIN" ] || ! cmp -s "$BIN" "$TMP_BIN"; then
     cp "$BIN" "$TMP_BIN"
     chmod +x "$TMP_BIN"

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/nobmurakita/cc-read-pptx/internal/pptx"
+	"github.com/nobmurakita/claude-pptx-scope/internal/pptx"
 	"github.com/spf13/cobra"
 )
 

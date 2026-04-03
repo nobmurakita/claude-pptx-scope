@@ -1,4 +1,4 @@
-module github.com/nobmurakita/cc-read-pptx
+module github.com/nobmurakita/claude-pptx-scope
 
 go 1.25.6
 

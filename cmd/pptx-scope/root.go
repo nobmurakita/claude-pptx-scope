@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/nobmurakita/cc-read-pptx/internal/cmd"
+	"github.com/nobmurakita/claude-pptx-scope/internal/cmd"
 	"github.com/spf13/cobra"
 )
 
@@ -14,7 +14,7 @@ const (
 )
 
 var rootCmd = &cobra.Command{
-	Use:           "cc-read-pptx",
+	Use:           "pptx-scope",
 	Short:         "PowerPoint ファイル（.pptx）の内容をAIエージェント向けに読み取るツール",
 	SilenceUsage:  true,
 	SilenceErrors: true,
@@ -34,6 +34,6 @@ func execute() int {
 	if err == nil {
 		return exitOK
 	}
-	fmt.Fprintf(os.Stderr, "cc-read-pptx: %s\n", err)
+	fmt.Fprintf(os.Stderr, "pptx-scope: %s\n", err)
 	return exitError
 }

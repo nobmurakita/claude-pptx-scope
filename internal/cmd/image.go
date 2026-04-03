@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/nobmurakita/cc-read-pptx/internal/pptx"
+	"github.com/nobmurakita/claude-pptx-scope/internal/pptx"
 	"github.com/spf13/cobra"
 )
 
@@ -30,7 +30,7 @@ func runImage(cmd *cobra.Command, args []string) error {
 
 	// 一時ファイルを自動生成（拡張子は image_id から取得）
 	ext := filepath.Ext(imageID)
-	out, err := os.CreateTemp("", "cc-read-pptx-*"+ext)
+	out, err := os.CreateTemp("", "pptx-scope-*"+ext)
 	if err != nil {
 		return fmt.Errorf("一時ファイルの作成エラー: %w", err)
 	}

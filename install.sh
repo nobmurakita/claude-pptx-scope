@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO="nobmurakita/cc-read-pptx"
-SKILL_NAME="cc-read-pptx"
+REPO="nobmurakita/claude-pptx-scope"
+SKILL_NAME="pptx-scope"
 INSTALL_DIR="${HOME}/.claude/skills/${SKILL_NAME}"
 
 # 最新リリースの zip URL を取得
@@ -17,7 +17,7 @@ if [ -z "$ZIP_URL" ]; then
 fi
 
 echo "Downloading ${ZIP_URL}..."
-TMP_ZIP="$(mktemp /tmp/cc-read-pptx-XXXXXX.zip)"
+TMP_ZIP="$(mktemp /tmp/pptx-scope-XXXXXX.zip)"
 curl -fsSL -o "$TMP_ZIP" "$ZIP_URL"
 
 # インストール先を準備
@@ -28,7 +28,7 @@ unzip -o "$TMP_ZIP" -d "$INSTALL_DIR"
 rm -f "$TMP_ZIP"
 
 # 実行権限を付与
-chmod +x "${INSTALL_DIR}/scripts/cc-read-pptx"
-chmod +x "${INSTALL_DIR}/scripts/cc-read-pptx-"* 2>/dev/null || true
+chmod +x "${INSTALL_DIR}/scripts/pptx-scope"
+chmod +x "${INSTALL_DIR}/scripts/pptx-scope-"* 2>/dev/null || true
 
 echo "Done. Installed to ${INSTALL_DIR}"
