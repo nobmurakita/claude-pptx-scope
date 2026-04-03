@@ -2,7 +2,7 @@
 name: cc-read-pptx
 description: PowerPointファイル（.pptx）を読み取る。プレゼン資料、設計書、フローチャート、提案書の内容確認・データ抽出時に使用する。
 user-invocable: false
-allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/cc-read-pptx *), Read
+allowed-tools: Bash(bash ${CLAUDE_SKILL_DIR}/scripts/cc-read-pptx *), Read
 ---
 
 # cc-read-pptx
