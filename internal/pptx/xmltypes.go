@@ -413,8 +413,6 @@ type xmlBodyPr struct {
 // xmlP は a:p 要素（段落）。子要素をXML出現順に保持する。
 type xmlP struct {
 	PPr        *xmlPPr
-	Rs         []xmlR   // 後方互換用（Elementsからも参照可能）
-	Fld        []xmlFld // 後方互換用
 	EndParaRPr *xmlRPr
 	Elements   []xmlParagraphElement // 出現順の要素リスト（r, br, fld）
 }
@@ -446,7 +444,6 @@ func (p *xmlP) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 				if err := d.DecodeElement(&v, &el); err != nil {
 					return err
 				}
-				p.Rs = append(p.Rs, v)
 				p.Elements = append(p.Elements, xmlParagraphElement{R: &v})
 			case "br":
 				p.Elements = append(p.Elements, xmlParagraphElement{Br: true})
@@ -458,7 +455,6 @@ func (p *xmlP) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 				if err := d.DecodeElement(&v, &el); err != nil {
 					return err
 				}
-				p.Fld = append(p.Fld, v)
 				p.Elements = append(p.Elements, xmlParagraphElement{Fld: &v})
 			case "endParaRPr":
 				var v xmlRPr

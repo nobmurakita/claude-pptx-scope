@@ -212,24 +212,12 @@ func (ctx *parseContext) parseRunStyles(p xmlP, level int, inherited *inheritedS
 }
 
 // collectTextRuns は段落からテキストに関係する要素（r, br, fld）を出現順で返す。
-// Elements が空の場合は Rs から構築する（テスト互換）。
 func collectTextRuns(p xmlP) []xmlParagraphElement {
-	if len(p.Elements) > 0 {
-		var result []xmlParagraphElement
-		for _, elem := range p.Elements {
-			if elem.R != nil || elem.Br || elem.Fld != nil {
-				result = append(result, elem)
-			}
+	var result []xmlParagraphElement
+	for _, elem := range p.Elements {
+		if elem.R != nil || elem.Br || elem.Fld != nil {
+			result = append(result, elem)
 		}
-		return result
-	}
-	// フォールバック: Rs/Fld から構築
-	result := make([]xmlParagraphElement, 0, len(p.Rs)+len(p.Fld))
-	for i := range p.Rs {
-		result = append(result, xmlParagraphElement{R: &p.Rs[i]})
-	}
-	for i := range p.Fld {
-		result = append(result, xmlParagraphElement{Fld: &p.Fld[i]})
 	}
 	return result
 }

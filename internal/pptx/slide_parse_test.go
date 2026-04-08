@@ -5,13 +5,29 @@ import (
 	"testing"
 )
 
-// --- parseContext ヘルパーのテスト ---
+// --- テストヘルパー ---
 
 func newTestContext() *parseContext {
 	return &parseContext{
 		f:         &File{zi: &zipIndex{files: make(map[string]*zip.File)}},
 		pptxIDMap: make(map[int]int),
 	}
+}
+
+// mkP はテスト用に Elements を正しく設定した xmlP を構築する
+func mkP(runs ...xmlR) xmlP {
+	p := xmlP{}
+	for i := range runs {
+		p.Elements = append(p.Elements, xmlParagraphElement{R: &runs[i]})
+	}
+	return p
+}
+
+// mkPWithPPr はテスト用に PPr 付きの xmlP を構築する
+func mkPWithPPr(ppr *xmlPPr, runs ...xmlR) xmlP {
+	p := mkP(runs...)
+	p.PPr = ppr
+	return p
 }
 
 func TestAllocID(t *testing.T) {
@@ -195,7 +211,7 @@ func TestParseSp_TextOnly(t *testing.T) {
 		},
 		TxBody: &xmlTxBody{
 			Ps: []xmlP{
-				{Rs: []xmlR{{T: "Hello"}}},
+				mkP(xmlR{T: "Hello"}),
 			},
 		},
 	}
@@ -397,7 +413,7 @@ func TestParseSp_Placeholder(t *testing.T) {
 		},
 		SpPr: xmlSpPr{},
 		TxBody: &xmlTxBody{
-			Ps: []xmlP{{Rs: []xmlR{{T: "タイトル"}}}},
+			Ps: []xmlP{mkP(xmlR{T: "タイトル"})},
 		},
 	}
 
@@ -424,7 +440,7 @@ func TestParseSp_PlaceholderEmptyType(t *testing.T) {
 		},
 		SpPr: xmlSpPr{},
 		TxBody: &xmlTxBody{
-			Ps: []xmlP{{Rs: []xmlR{{T: "本文"}}}},
+			Ps: []xmlP{mkP(xmlR{T: "本文"})},
 		},
 	}
 
@@ -452,7 +468,7 @@ func TestParseSp_Rotation(t *testing.T) {
 			},
 		},
 		TxBody: &xmlTxBody{
-			Ps: []xmlP{{Rs: []xmlR{{T: "回転"}}}},
+			Ps: []xmlP{mkP(xmlR{T: "回転"})},
 		},
 	}
 
@@ -477,7 +493,7 @@ func TestParseSp_CustomGeom(t *testing.T) {
 			CustGeom: &struct{}{},
 		},
 		TxBody: &xmlTxBody{
-			Ps: []xmlP{{Rs: []xmlR{{T: "カスタム"}}}},
+			Ps: []xmlP{mkP(xmlR{T: "カスタム"})},
 		},
 	}
 
@@ -497,7 +513,7 @@ func TestParseSp_DefaultRect(t *testing.T) {
 		NvSpPr: xmlNvSpPr{CNvPr: xmlCNvPr{ID: 10}},
 		SpPr:   xmlSpPr{},
 		TxBody: &xmlTxBody{
-			Ps: []xmlP{{Rs: []xmlR{{T: "テスト"}}}},
+			Ps: []xmlP{mkP(xmlR{T: "テスト"})},
 		},
 	}
 
@@ -565,8 +581,8 @@ func TestParseCxnSp_WithLabel(t *testing.T) {
 		SpPr: xmlSpPr{},
 		TxBody: &xmlTxBody{
 			Ps: []xmlP{
-				{Rs: []xmlR{{T: "ラベル1"}}},
-				{Rs: []xmlR{{T: "ラベル2"}}},
+				mkP(xmlR{T: "ラベル1"}),
+				mkP(xmlR{T: "ラベル2"}),
 			},
 		},
 	}
@@ -638,7 +654,7 @@ func TestParseGrpSp(t *testing.T) {
 					NvSpPr: xmlNvSpPr{CNvPr: xmlCNvPr{ID: 41}},
 					SpPr:   xmlSpPr{},
 					TxBody: &xmlTxBody{
-						Ps: []xmlP{{Rs: []xmlR{{T: "子1"}}}},
+						Ps: []xmlP{mkP(xmlR{T: "子1"})},
 					},
 				},
 			},
@@ -702,14 +718,14 @@ func TestParseGraphicFrame_SimpleTable(t *testing.T) {
 					Trs: []xmlTr{
 						{
 							Tcs: []xmlTc{
-								{TxBody: &xmlTxBody{Ps: []xmlP{{Rs: []xmlR{{T: "A1"}}}}}},
-								{TxBody: &xmlTxBody{Ps: []xmlP{{Rs: []xmlR{{T: "B1"}}}}}},
+								{TxBody: &xmlTxBody{Ps: []xmlP{mkP(xmlR{T: "A1"})}}},
+								{TxBody: &xmlTxBody{Ps: []xmlP{mkP(xmlR{T: "B1"})}}},
 							},
 						},
 						{
 							Tcs: []xmlTc{
-								{TxBody: &xmlTxBody{Ps: []xmlP{{Rs: []xmlR{{T: "A2"}}}}}},
-								{TxBody: &xmlTxBody{Ps: []xmlP{{Rs: []xmlR{{T: "B2"}}}}}},
+								{TxBody: &xmlTxBody{Ps: []xmlP{mkP(xmlR{T: "A2"})}}},
+								{TxBody: &xmlTxBody{Ps: []xmlP{mkP(xmlR{T: "B2"})}}},
 							},
 						},
 					},
@@ -757,15 +773,15 @@ func TestParseGraphicFrame_MergedCells(t *testing.T) {
 						{
 							Tcs: []xmlTc{
 								// A1: colSpan=2
-								{GridSpan: 2, TxBody: &xmlTxBody{Ps: []xmlP{{Rs: []xmlR{{T: "A1-B1"}}}}}},
-								{TxBody: &xmlTxBody{Ps: []xmlP{{Rs: []xmlR{{T: "C1"}}}}}},
+								{GridSpan: 2, TxBody: &xmlTxBody{Ps: []xmlP{mkP(xmlR{T: "A1-B1"})}}},
+								{TxBody: &xmlTxBody{Ps: []xmlP{mkP(xmlR{T: "C1"})}}},
 							},
 						},
 						{
 							Tcs: []xmlTc{
-								{TxBody: &xmlTxBody{Ps: []xmlP{{Rs: []xmlR{{T: "A2"}}}}}},
-								{TxBody: &xmlTxBody{Ps: []xmlP{{Rs: []xmlR{{T: "B2"}}}}}},
-								{TxBody: &xmlTxBody{Ps: []xmlP{{Rs: []xmlR{{T: "C2"}}}}}},
+								{TxBody: &xmlTxBody{Ps: []xmlP{mkP(xmlR{T: "A2"})}}},
+								{TxBody: &xmlTxBody{Ps: []xmlP{mkP(xmlR{T: "B2"})}}},
+								{TxBody: &xmlTxBody{Ps: []xmlP{mkP(xmlR{T: "C2"})}}},
 							},
 						},
 					},
@@ -809,15 +825,15 @@ func TestParseGraphicFrame_RowSpan(t *testing.T) {
 						{
 							Tcs: []xmlTc{
 								// A1: rowSpan=2
-								{RowSpan: 2, TxBody: &xmlTxBody{Ps: []xmlP{{Rs: []xmlR{{T: "A1"}}}}}},
-								{TxBody: &xmlTxBody{Ps: []xmlP{{Rs: []xmlR{{T: "B1"}}}}}},
+								{RowSpan: 2, TxBody: &xmlTxBody{Ps: []xmlP{mkP(xmlR{T: "A1"})}}},
+								{TxBody: &xmlTxBody{Ps: []xmlP{mkP(xmlR{T: "B1"})}}},
 							},
 						},
 						{
 							Tcs: []xmlTc{
 								// A2 は vMerge で被結合
-								{VMerge: "1", TxBody: &xmlTxBody{Ps: []xmlP{{Rs: []xmlR{{T: ""}}}}}},
-								{TxBody: &xmlTxBody{Ps: []xmlP{{Rs: []xmlR{{T: "B2"}}}}}},
+								{VMerge: "1", TxBody: &xmlTxBody{Ps: []xmlP{mkP(xmlR{T: ""})}}},
+								{TxBody: &xmlTxBody{Ps: []xmlP{mkP(xmlR{T: "B2"})}}},
 							},
 						},
 					},
@@ -860,7 +876,7 @@ func TestParseGraphicFrame_CellWithRichText(t *testing.T) {
 						{
 							Tcs: []xmlTc{
 								{TxBody: &xmlTxBody{Ps: []xmlP{
-									{Rs: []xmlR{{RPr: &xmlRPr{B: "1"}, T: "太字"}}},
+									mkP(xmlR{RPr: &xmlRPr{B: "1"}, T: "太字"}),
 								}}},
 							},
 						},
@@ -907,7 +923,7 @@ func TestParseGraphicFrame_CellPlainText_NoParagraphs(t *testing.T) {
 						{
 							Tcs: []xmlTc{
 								{TxBody: &xmlTxBody{Ps: []xmlP{
-									{Rs: []xmlR{{T: "プレーン"}}},
+									mkP(xmlR{T: "プレーン"}),
 								}}},
 							},
 						},
@@ -1021,7 +1037,7 @@ func TestParseSpTree(t *testing.T) {
 			Sp: &xmlSp{
 				NvSpPr: xmlNvSpPr{CNvPr: xmlCNvPr{ID: 1}},
 				SpPr:   xmlSpPr{},
-				TxBody: &xmlTxBody{Ps: []xmlP{{Rs: []xmlR{{T: "テキスト"}}}}},
+				TxBody: &xmlTxBody{Ps: []xmlP{mkP(xmlR{T: "テキスト"})}},
 			},
 		},
 		{
@@ -1055,7 +1071,7 @@ func TestParseSpTree_PlaceholdersSortedFirst(t *testing.T) {
 			Sp: &xmlSp{
 				NvSpPr: xmlNvSpPr{CNvPr: xmlCNvPr{ID: 1}},
 				SpPr:   xmlSpPr{},
-				TxBody: &xmlTxBody{Ps: []xmlP{{Rs: []xmlR{{T: "通常"}}}}},
+				TxBody: &xmlTxBody{Ps: []xmlP{mkP(xmlR{T: "通常"})}},
 			},
 		},
 		// タイトルプレースホルダー（出現順1）
@@ -1066,7 +1082,7 @@ func TestParseSpTree_PlaceholdersSortedFirst(t *testing.T) {
 					NvPr:  xmlNvPr{Ph: &xmlPh{Type: "title"}},
 				},
 				SpPr:   xmlSpPr{},
-				TxBody: &xmlTxBody{Ps: []xmlP{{Rs: []xmlR{{T: "タイトル"}}}}},
+				TxBody: &xmlTxBody{Ps: []xmlP{mkP(xmlR{T: "タイトル"})}},
 			},
 		},
 	}

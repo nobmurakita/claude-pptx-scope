@@ -183,7 +183,7 @@ func relsPathFor(xmlPath string) string {
 
 // resolveLayoutPath はスライドの .rels からレイアウトのZIPパスを解決する
 func resolveLayoutPath(f *File, slidePath string) string {
-	relsPath := slideRelsPath(slidePath)
+	relsPath := relsPathFor(slidePath)
 	rels, err := loadRelsTyped(f, relsPath)
 	if err != nil {
 		return ""

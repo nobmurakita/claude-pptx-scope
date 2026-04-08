@@ -37,7 +37,7 @@ func (f *File) LoadSlide(slideNum int, includeNotes bool) (*SlideData, error) {
 	}
 
 	// スライドのリレーション（画像・コネクタ用）
-	slideRels, err := loadRels(f, slideRelsPath(entry.Path))
+	slideRels, err := loadRels(f, relsPathFor(entry.Path))
 	if err != nil {
 		return nil, fmt.Errorf("スライド %d のリレーション読み込みに失敗: %w", slideNum, err)
 	}

@@ -82,18 +82,6 @@ func extractTextFromTxBody(txBody *xmlTxBody) string {
 // extractParagraphText は段落からプレーンテキストを結合する。
 // a:br は改行、テキストランとフィールドはXML出現順に結合する。
 func extractParagraphText(p xmlP) string {
-	// Elements が空の場合は Rs/Fld から直接取得（テスト互換）
-	if len(p.Elements) == 0 {
-		var sb strings.Builder
-		for _, r := range p.Rs {
-			sb.WriteString(r.T)
-		}
-		for _, fld := range p.Fld {
-			sb.WriteString(fld.T)
-		}
-		return sb.String()
-	}
-
 	var sb strings.Builder
 	for _, elem := range p.Elements {
 		switch {
@@ -167,7 +155,7 @@ func (f *File) notesPath(slideIdx int) string {
 	}
 	entry := f.slideEntries[slideIdx]
 	// スライドの .rels からノートのリレーションを探す
-	relsPath := slideRelsPath(entry.Path)
+	relsPath := relsPathFor(entry.Path)
 	rels, _ := loadRelsTyped(f, relsPath)
 	for _, r := range rels {
 		if strings.HasSuffix(r.Type, "/notesSlide") {
@@ -175,13 +163,6 @@ func (f *File) notesPath(slideIdx int) string {
 		}
 	}
 	return ""
-}
-
-// slideRelsPath はスライドXMLパスから .rels パスを生成する
-func slideRelsPath(slidePath string) string {
-	dir := pathDir(slidePath)
-	base := pathBase(slidePath)
-	return dir + "/_rels/" + base + ".rels"
 }
 
 // pathDir はパスのディレクトリ部分を返す

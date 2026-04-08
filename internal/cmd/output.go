@@ -58,10 +58,13 @@ func (ow *outputWriter) Write(p []byte) (n int, err error) {
 	return
 }
 
-// cleanup は一時ファイルを閉じる（結果JSONは出力しない）
+// cleanup は一時ファイルを閉じる（結果JSONは出力しない）。
+// finalize 未完了（= エラー発生）の場合は一時ファイルを削除する。
 func (ow *outputWriter) cleanup() {
 	if ow.file != nil {
+		name := ow.file.Name()
 		ow.file.Close()
+		os.Remove(name)
 	}
 }
 

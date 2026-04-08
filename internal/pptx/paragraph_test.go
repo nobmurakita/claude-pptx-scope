@@ -73,13 +73,13 @@ func TestParseParagraphs_AutoNumResetOnNonBullet(t *testing.T) {
 
 	ps := []xmlP{
 		// autoNum: 1.
-		{PPr: &xmlPPr{BuAutoNum: &xmlBuAutoNum{Type: "arabicPeriod"}}, Rs: []xmlR{{T: "first"}}},
+		mkPWithPPr(&xmlPPr{BuAutoNum: &xmlBuAutoNum{Type: "arabicPeriod"}}, xmlR{T: "first"}),
 		// autoNum: 2.
-		{PPr: &xmlPPr{BuAutoNum: &xmlBuAutoNum{Type: "arabicPeriod"}}, Rs: []xmlR{{T: "second"}}},
+		mkPWithPPr(&xmlPPr{BuAutoNum: &xmlBuAutoNum{Type: "arabicPeriod"}}, xmlR{T: "second"}),
 		// PPr なし（箇条書き指定なし）→ リセット
-		{Rs: []xmlR{{T: "plain"}}},
+		mkP(xmlR{T: "plain"}),
 		// リセット後なので 1. から再開
-		{PPr: &xmlPPr{BuAutoNum: &xmlBuAutoNum{Type: "arabicPeriod"}}, Rs: []xmlR{{T: "third"}}},
+		mkPWithPPr(&xmlPPr{BuAutoNum: &xmlBuAutoNum{Type: "arabicPeriod"}}, xmlR{T: "third"}),
 	}
 
 	paras := ctx.parseParagraphs(ps, nil)
