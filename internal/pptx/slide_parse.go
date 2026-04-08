@@ -8,10 +8,24 @@ import (
 
 // SlideData はスライドのパース結果
 type SlideData struct {
-	Number int
-	Title  string
-	Shapes []Shape
-	Notes  []Paragraph
+	Number    int
+	Title     string
+	Hidden    bool
+	HasNotes  bool
+	HasImages bool
+	Shapes    []Shape
+	Notes     []Paragraph
+}
+
+// Info は SlideData からヘッダ情報を返す
+func (sd *SlideData) Info() SlideInfo {
+	return SlideInfo{
+		Slide:     sd.Number,
+		Title:     sd.Title,
+		HasNotes:  sd.HasNotes,
+		HasImages: sd.HasImages,
+		Hidden:    sd.Hidden,
+	}
 }
 
 // LoadSlide は指定スライドの内容をパースする
@@ -43,8 +57,11 @@ func (f *File) LoadSlide(slideNum int, includeNotes bool) (*SlideData, error) {
 	}
 
 	sd := &SlideData{
-		Number: slideNum,
-		Title:  extractTitle(sld.CSld.SpTree.Children),
+		Number:    slideNum,
+		Title:     extractTitle(sld.CSld.SpTree.Children),
+		Hidden:    sld.Show == "0",
+		HasNotes:  f.hasNotes(idx),
+		HasImages: hasImages(sld.CSld.SpTree.Children),
 	}
 
 	// レイアウト/マスターの継承データを取得

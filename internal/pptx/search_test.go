@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestFilterShapesByText(t *testing.T) {
+func TestMatchShapesText(t *testing.T) {
 	shapes := []Shape{
 		{ID: 1, Type: "rect", Paragraphs: []Paragraph{
 			{Text: "Hello World"},
@@ -15,20 +15,15 @@ func TestFilterShapesByText(t *testing.T) {
 		}},
 	}
 
-	matched := filterShapesByText(shapes, "hello")
-	if len(matched) != 1 {
-		t.Fatalf("got %d matched shapes, want 1", len(matched))
+	if !matchShapesText(shapes, "hello") {
+		t.Error("expected match for 'hello'")
 	}
-	if matched[0].ID != 1 {
-		t.Errorf("matched shape ID: got %d, want 1", matched[0].ID)
-	}
-	// マッチした段落のみ含まれる
-	if len(matched[0].Paragraphs) != 1 {
-		t.Errorf("matched paragraphs: got %d, want 1", len(matched[0].Paragraphs))
+	if matchShapesText(shapes, "missing") {
+		t.Error("expected no match for 'missing'")
 	}
 }
 
-func TestFilterShapesByText_Table(t *testing.T) {
+func TestMatchShapesText_Table(t *testing.T) {
 	cell := func(s string) *TableCell { return &TableCell{Text: s} }
 	shapes := []Shape{
 		{
@@ -44,34 +39,29 @@ func TestFilterShapesByText_Table(t *testing.T) {
 		},
 	}
 
-	matched := filterShapesByText(shapes, "beta")
-	if len(matched) != 1 {
-		t.Fatalf("got %d matched shapes, want 1", len(matched))
+	if !matchShapesText(shapes, "beta") {
+		t.Error("expected match for 'beta'")
 	}
-
-	// マッチしないテーブル
-	matched = filterShapesByText(shapes, "delta")
-	if len(matched) != 0 {
-		t.Errorf("got %d matched shapes, want 0", len(matched))
+	if matchShapesText(shapes, "delta") {
+		t.Error("expected no match for 'delta'")
 	}
 }
 
-func TestFilterShapesByText_Connector(t *testing.T) {
+func TestMatchShapesText_Connector(t *testing.T) {
 	shapes := []Shape{
 		{ID: 1, Type: "connector", Label: "接続ラベル"},
 		{ID: 2, Type: "connector", Label: "別のラベル"},
 	}
 
-	matched := filterShapesByText(shapes, "接続")
-	if len(matched) != 1 {
-		t.Fatalf("got %d matched shapes, want 1", len(matched))
+	if !matchShapesText(shapes, "接続") {
+		t.Error("expected match for '接続'")
 	}
-	if matched[0].ID != 1 {
-		t.Errorf("matched shape ID: got %d, want 1", matched[0].ID)
+	if matchShapesText(shapes, "存在しない") {
+		t.Error("expected no match for '存在しない'")
 	}
 }
 
-func TestFilterShapesByText_Group(t *testing.T) {
+func TestMatchShapesText_Group(t *testing.T) {
 	shapes := []Shape{
 		{
 			ID:   1,
@@ -83,42 +73,31 @@ func TestFilterShapesByText_Group(t *testing.T) {
 		},
 	}
 
-	matched := filterShapesByText(shapes, "内部")
-	if len(matched) != 1 {
-		t.Fatalf("got %d matched shapes, want 1", len(matched))
+	if !matchShapesText(shapes, "内部") {
+		t.Error("expected match for '内部'")
 	}
-	if len(matched[0].Children) != 1 {
-		t.Errorf("matched children: got %d, want 1", len(matched[0].Children))
-	}
-}
-
-func TestFilterShapesByText_NoMatch(t *testing.T) {
-	shapes := []Shape{
-		{ID: 1, Type: "rect", Paragraphs: []Paragraph{{Text: "テスト"}}},
-	}
-
-	matched := filterShapesByText(shapes, "存在しない")
-	if len(matched) != 0 {
-		t.Errorf("got %d matched shapes, want 0", len(matched))
+	if matchShapesText(shapes, "外部") {
+		t.Error("expected no match for '外部'")
 	}
 }
 
-func TestFilterParagraphsByText(t *testing.T) {
-	paras := []Paragraph{
-		{Text: "最初の段落"},
-		{Text: "二番目の段落"},
-		{Text: "最初に戻る"},
+func TestMatchSlideText_Notes(t *testing.T) {
+	sd := &SlideData{
+		Shapes: []Shape{
+			{ID: 1, Type: "rect", Paragraphs: []Paragraph{{Text: "本文"}}},
+		},
+		Notes: []Paragraph{
+			{Text: "ノートのテキスト"},
+		},
 	}
 
-	matched := filterParagraphsByText(paras, "最初")
-	if len(matched) != 2 {
-		t.Fatalf("got %d matched paragraphs, want 2", len(matched))
+	if !matchSlideText(sd, "ノート") {
+		t.Error("expected match for 'ノート' in notes")
 	}
-}
-
-func TestFilterParagraphsByText_Empty(t *testing.T) {
-	matched := filterParagraphsByText(nil, "test")
-	if len(matched) != 0 {
-		t.Errorf("got %d matched paragraphs, want 0", len(matched))
+	if !matchSlideText(sd, "本文") {
+		t.Error("expected match for '本文' in shapes")
+	}
+	if matchSlideText(sd, "存在しない") {
+		t.Error("expected no match for '存在しない'")
 	}
 }

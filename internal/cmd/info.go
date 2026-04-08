@@ -17,10 +17,10 @@ func NewInfoCmd() *cobra.Command {
 	}
 }
 
-type infoOutput struct {
-	File      string           `json:"file"`
-	SlideSize pptx.SlideSize   `json:"slide_size"`
-	Slides    []pptx.SlideInfo `json:"slides"`
+// infoMeta はファイルレベルのメタ情報
+type infoMeta struct {
+	File      string         `json:"file"`
+	SlideSize pptx.SlideSize `json:"slide_size"`
 }
 
 func runInfo(cmd *cobra.Command, args []string) error {
@@ -35,12 +35,6 @@ func runInfo(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	out := infoOutput{
-		File:      f.Name,
-		SlideSize: f.GetSlideSize(),
-		Slides:    infos,
-	}
-
 	ow, err := newOutputWriter(cmd)
 	if err != nil {
 		return err
@@ -48,8 +42,18 @@ func runInfo(cmd *cobra.Command, args []string) error {
 	defer ow.cleanup()
 
 	enc := newJSONLWriter(ow)
-	if err := enc.Encode(out); err != nil {
+
+	// メタ情報行
+	if err := enc.Encode(infoMeta{File: f.Name, SlideSize: f.GetSlideSize()}); err != nil {
 		return fmt.Errorf("JSON出力エラー: %w", err)
 	}
+
+	// スライド情報行
+	for _, info := range infos {
+		if err := enc.Encode(info); err != nil {
+			return fmt.Errorf("JSON出力エラー: %w", err)
+		}
+	}
+
 	return ow.finalize()
 }

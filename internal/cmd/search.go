@@ -54,10 +54,9 @@ func runSearch(cmd *cobra.Command, args []string) error {
 	defer ow.cleanup()
 
 	enc := newJSONLWriter(ow)
-	dedup := pptx.NewStyleDeduplicator()
-	for i := range results {
-		if err := emitSlideData(enc, dedup, &results[i]); err != nil {
-			return err
+	for _, info := range results {
+		if err := enc.Encode(info); err != nil {
+			return fmt.Errorf("JSON出力エラー: %w", err)
 		}
 	}
 

@@ -47,15 +47,22 @@ $ pptx-scope slides --slide 1,2,3 example.pptx
 `pptx-scope info <file>` — ファイルの概要（スライド一覧、スライドサイズ）を出力。
 
 出力例:
-```json
-{"file":"基本設計書.pptx","slide_size":{"width":9144000,"height":6858000},"slides":[{"number":1,"title":"基本設計書","has_notes":true},{"number":2,"title":"目次"},{"number":3,"title":"システム構成","has_images":true},{"number":4},{"number":5,"title":"フロー図","hidden":true}]}
+```jsonl
+{"file":"基本設計書.pptx","slide_size":{"width":9144000,"height":6858000}}
+{"slide":1,"title":"基本設計書","has_notes":true}
+{"slide":2,"title":"目次"}
+{"slide":3,"title":"システム構成","has_images":true}
+{"slide":4}
+{"slide":5,"title":"フロー図","hidden":true}
 ```
 
-- `slides[].title`: タイトルプレースホルダーのテキスト。存在しない場合は省略
-- `slides[].has_notes`: ノートにテキストがある場合のみ `true`
-- `slides[].has_images`: 画像を含む場合のみ `true`（グループ内の画像も検出）
-- `slides[].hidden`: 非表示スライドの場合のみ `true`
+1行目はファイルメタ情報、2行目以降はスライド行（slides/search と共通形式）。
+
 - `slide_size`: スライドサイズ（EMU単位。標準4:3=9144000x6858000, 16:9=12192000x6858000）
+- `title`: タイトルプレースホルダーのテキスト。存在しない場合は省略
+- `has_notes`: ノートにテキストがある場合のみ `true`
+- `has_images`: 画像を含む場合のみ `true`（グループ内の画像も検出）
+- `hidden`: 非表示スライドの場合のみ `true`
 
 ### slides
 
@@ -70,7 +77,7 @@ pptx-scope slides [options] <file>
 
 出力例:
 ```jsonl
-{"slide":1,"title":"基本設計書","shapes":2}
+{"slide":1,"title":"基本設計書","shapes":2,"has_notes":true}
 {"slide":1,"id":1,"type":"rect","placeholder":"ctrTitle","pos":{"x":685800,"y":2286000,"w":7772400,"h":1470025},"z":0,"alignment":{"vertical":"center"},"paragraphs":[{"text":"基本設計書","font":{"name":"メイリオ","size":4572000,"bold":true,"color":"#333333"},"alignment":{"horizontal":"center"}}]}
 {"slide":1,"id":2,"type":"rect","placeholder":"subTitle","pos":{"x":1371600,"y":3886200,"w":6400800,"h":1752600},"z":1,"paragraphs":[{"text":"2025年4月版"}]}
 {"slide":2,"title":"目次","shapes":2}
@@ -133,7 +140,7 @@ pptx-scope image example.pptx ppt/media/image1.png
 
 **ノート（`--notes` 指定時）:**
 
-`notes` フィールドに段落の配列が追加される。`paragraphs` と同じ構造。
+図形行の後にノート行 `{"slide":N,"notes":[...]}` が出力される。`notes` は `paragraphs` と同じ構造。
 
 ### image
 
@@ -153,13 +160,13 @@ pptx-scope search [options] <file>
 | `--slide <number,...>` | 対象スライド番号（複数指定可） | 全スライド |
 | `--notes` | ノートも検索対象にする | OFF |
 
-出力形式は `slides` と同じJSONL。マッチしたスライドのみ出力し、図形内ではマッチした段落のみを含める。テーブルはいずれかのセルにヒットした場合テーブル全体を出力する。結果なしでも正常終了（終了コード 0）する。
+マッチしたスライドのヘッダ行のみ出力する（info/slides と共通形式）。詳細は `slides --slide` で取得する。結果なしでも正常終了（終了コード 0）する。
 
 ```bash
 pptx-scope search --text "データ" example.pptx
 ```
 
 ```jsonl
-{"slide":2,"title":"システム構成","shapes":1}
-{"slide":2,"id":3,"type":"rect","name":"テキストボックス 1","pos":{"x":1000000,"y":2000000,"w":3000000,"h":500000},"z":2,"paragraphs":[{"text":"データフロー図"}]}
+{"slide":2,"title":"システム構成","has_images":true}
+{"slide":5,"title":"データフロー"}
 ```

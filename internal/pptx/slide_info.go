@@ -11,7 +11,7 @@ func (f *File) LoadSlideInfos() ([]SlideInfo, error) {
 	infos := make([]SlideInfo, 0, len(f.slideEntries))
 
 	for i, entry := range f.slideEntries {
-		info := SlideInfo{Number: i + 1}
+		info := SlideInfo{Slide: i + 1}
 
 		// スライドXMLを読み込み
 		data, err := readZipFile(f.zi, entry.Path)

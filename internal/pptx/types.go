@@ -2,10 +2,11 @@ package pptx
 
 // 出力用のデータ型
 
-// SlideInfo は info コマンドの出力用
+// SlideInfo はスライドのヘッダ情報（info/slides/search 共通）
 type SlideInfo struct {
-	Number    int    `json:"number"`
+	Slide     int    `json:"slide"`
 	Title     string `json:"title,omitempty"`
+	Shapes    *int   `json:"shapes,omitempty"`
 	HasNotes  bool   `json:"has_notes,omitempty"`
 	HasImages bool   `json:"has_images,omitempty"`
 	Hidden    bool   `json:"hidden,omitempty"`
