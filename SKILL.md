@@ -2,12 +2,30 @@
 name: pptx-scope
 description: PowerPointファイル（.pptx）を読み取る。プレゼン資料、設計書、フローチャート、提案書の内容確認・データ抽出時に使用する。
 user-invocable: false
-allowed-tools: Bash(bash ${CLAUDE_SKILL_DIR}/scripts/pptx-scope *), Read
+allowed-tools:
+  - Bash
+  - Read
 ---
 
 # pptx-scope
 
 PowerPointファイル（.pptx）の内容をCLIから出力するツール。
+
+実行ファイル: `bash ${CLAUDE_SKILL_DIR}/scripts/pptx-scope <command> [options] <file>`
+
+## 出力の読み取り方
+
+全コマンドの出力は自動的に一時ファイルに保存され、stdout にはファイルパスと行数のみが返る。
+
+```bash
+$ bash ${CLAUDE_SKILL_DIR}/scripts/pptx-scope info example.pptx
+{"file":"$TMPDIR/pptx-scope-abc123.jsonl","lines":1}
+
+$ bash ${CLAUDE_SKILL_DIR}/scripts/pptx-scope slides --slide 1,2,3 example.pptx
+{"file":"$TMPDIR/pptx-scope-abc456.jsonl","lines":5}
+```
+
+返された `file` パスを Read で読む（offset: 0始まり行番号, limit: 読む行数）。読み終わったら都度削除する。
 
 ## 利用フロー
 
@@ -27,18 +45,15 @@ PowerPointファイル（.pptx）の内容をCLIから出力するツール。
 
 **画像の確認:** `info` で `has_images: true` のスライドには画像が含まれる。`slides` 出力に `image_id` がある場合、内容の把握に役立つ可能性が高いため積極的に確認する。
 
-1. `image` サブコマンドで一時ファイルに保存する: `${CLAUDE_SKILL_DIR}/scripts/pptx-scope image <file> <image_id>`
-   - 一時ファイルが自動生成され、パスが stdout に出力される
-2. Read ツールで保存したファイルを読み、画像の内容を確認する
-3. 確認が終わったら画像を削除する
+1. `image` サブコマンドで画像を取得: `pptx-scope image <file> <image_id>`
+2. 返された `file` パスを Read で画像の内容を確認する
+3. 確認が終わったら削除する
 
 ## コマンドリファレンス
 
 ### info
 
-```bash
-${CLAUDE_SKILL_DIR}/scripts/pptx-scope info <file>
-```
+`pptx-scope info <file>` — ファイルの概要（スライド一覧、スライドサイズ）を出力。
 
 出力例:
 ```json
@@ -53,8 +68,8 @@ ${CLAUDE_SKILL_DIR}/scripts/pptx-scope info <file>
 
 ### slides
 
-```bash
-${CLAUDE_SKILL_DIR}/scripts/pptx-scope slides [options] <file>
+```
+pptx-scope slides [options] <file>
 ```
 
 | オプション | 説明 | デフォルト |
@@ -118,7 +133,7 @@ ${CLAUDE_SKILL_DIR}/scripts/pptx-scope slides [options] <file>
 ```
 
 ```bash
-${CLAUDE_SKILL_DIR}/scripts/pptx-scope image example.pptx ppt/media/image1.png
+pptx-scope image example.pptx ppt/media/image1.png
 ```
 
 **ノート（`--notes` 指定時）:**
@@ -127,21 +142,14 @@ ${CLAUDE_SKILL_DIR}/scripts/pptx-scope image example.pptx ppt/media/image1.png
 
 ### image
 
-```bash
-${CLAUDE_SKILL_DIR}/scripts/pptx-scope image <file> <image_id>
-```
+`pptx-scope image <file> <image_id>` — 画像を一時ファイルに保存。
 
-`slides` 出力の `image_id`（ZIP内のメディアパス）を指定して、画像を一時ファイルに保存する。保存先のパスが stdout に出力される。
-
-```bash
-${CLAUDE_SKILL_DIR}/scripts/pptx-scope image example.pptx ppt/media/image1.png
-# stdout: /var/folders/.../pptx-scope-1234567.png
-```
+slides 出力の `image_id` を指定する。stdout に `{"file":"$TMPDIR/pptx-scope-abc123.png"}` が返る。返された `file` パスを Read で確認し、終わったら削除する。
 
 ### search
 
-```bash
-${CLAUDE_SKILL_DIR}/scripts/pptx-scope search [options] <file>
+```
+pptx-scope search [options] <file>
 ```
 
 | オプション | 説明 | デフォルト |
@@ -153,7 +161,7 @@ ${CLAUDE_SKILL_DIR}/scripts/pptx-scope search [options] <file>
 出力形式は `slides` と同じJSONL。マッチしたスライドのみ出力し、図形内ではマッチした段落のみを含める。テーブルはいずれかのセルにヒットした場合テーブル全体を出力する。結果なしでも正常終了（終了コード 0）する。
 
 ```bash
-${CLAUDE_SKILL_DIR}/scripts/pptx-scope search --text "データ" example.pptx
+pptx-scope search --text "データ" example.pptx
 ```
 
 ```jsonl

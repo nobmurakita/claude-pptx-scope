@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/nobmurakita/claude-pptx-scope/internal/pptx"
 	"github.com/spf13/cobra"
@@ -42,9 +41,15 @@ func runInfo(cmd *cobra.Command, args []string) error {
 		Slides:    infos,
 	}
 
-	enc := newJSONLWriter(os.Stdout)
+	ow, err := newOutputWriter(cmd)
+	if err != nil {
+		return err
+	}
+	defer ow.cleanup()
+
+	enc := newJSONLWriter(ow)
 	if err := enc.Encode(out); err != nil {
 		return fmt.Errorf("JSON出力エラー: %w", err)
 	}
-	return nil
+	return ow.finalize()
 }

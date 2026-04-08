@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/nobmurakita/claude-pptx-scope/internal/pptx"
 	"github.com/spf13/cobra"
@@ -48,7 +47,13 @@ func runSearch(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	enc := newJSONLWriter(os.Stdout)
+	ow, err := newOutputWriter(cmd)
+	if err != nil {
+		return err
+	}
+	defer ow.cleanup()
+
+	enc := newJSONLWriter(ow)
 	dedup := pptx.NewStyleDeduplicator()
 	for i := range results {
 		if err := emitSlideData(enc, dedup, &results[i]); err != nil {
@@ -56,5 +61,5 @@ func runSearch(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	return nil
+	return ow.finalize()
 }

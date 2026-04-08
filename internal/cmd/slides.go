@@ -3,7 +3,6 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/nobmurakita/claude-pptx-scope/internal/pptx"
 	"github.com/spf13/cobra"
@@ -55,7 +54,13 @@ func runSlides(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	enc := newJSONLWriter(os.Stdout)
+	ow, err := newOutputWriter(cmd)
+	if err != nil {
+		return err
+	}
+	defer ow.cleanup()
+
+	enc := newJSONLWriter(ow)
 	dedup := pptx.NewStyleDeduplicator()
 
 	for _, n := range targets {
@@ -63,7 +68,7 @@ func runSlides(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	}
-	return nil
+	return ow.finalize()
 }
 
 func emitSlide(f *pptx.File, enc *json.Encoder, dedup *pptx.StyleDeduplicator, slideNum int, includeNotes bool) error {
