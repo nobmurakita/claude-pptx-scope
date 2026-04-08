@@ -63,7 +63,7 @@ Claude Code からの典型的な利用フローは以下の通り:
 
 ### `pptx-scope slides [options] <file>`
 
-**役割:** スライドの内容を取得する。図形・テキスト・テーブル・コネクタをまとめて1スライド1JSONオブジェクトで出力する。
+**役割:** スライドの内容を取得する。スライドヘッダ行に続いて、図形を1つずつ個別のJSONL行として出力する。
 
 **オプション:**
 
@@ -72,19 +72,23 @@ Claude Code からの典型的な利用フローは以下の通り:
 | `--slide <number,...>` | 対象スライド番号（1始まり、複数指定可: `--slide 1,3`） | 全スライド |
 | `--notes` | ノートも出力する | OFF |
 
-- `--slide` 未指定時は全スライドを順番に出力する（1行1スライドのJSONL）
+- `--slide` 未指定時は全スライドを順番に出力する
 - 画像は `image_id` フィールドにZIP内のメディアパスを出力する（`image` サブコマンドで個別に取得可能）
 - 書式情報は常に出力する
 
 **出力形式:**
 
-1スライドにつき1行のJSONオブジェクトを出力する（JSONL形式だがスライド単位）。
+スライドヘッダ行（`shapes` は図形数）に続いて、図形を1つずつ個別の行として出力する。各図形行には `slide` フィールドでスライド番号を付与する。
 
 **出力例:**
 
 ```jsonl
-{"slide":1,"title":"基本設計書","shapes":[{"id":1,"type":"rect","placeholder":"ctrTitle","pos":{"x":685800,"y":2286000,"w":7772400,"h":1470025},"z":0,"alignment":{"vertical":"center"},"paragraphs":[{"text":"基本設計書","font":{"name":"メイリオ","size":4572000,"bold":true,"color":"#333333"},"alignment":{"horizontal":"center"}}]},{"id":2,"type":"rect","placeholder":"subTitle","pos":{"x":1371600,"y":3886200,"w":6400800,"h":1752600},"z":1,"paragraphs":[{"text":"2025年4月版"}]}]}
-{"slide":2,"title":"目次","shapes":[{"id":1,"type":"rect","placeholder":"title","pos":{"x":457200,"y":274638,"w":8229600,"h":1143000},"z":0,"paragraphs":[{"text":"目次"}]},{"id":2,"type":"rect","placeholder":"body","pos":{"x":457200,"y":1600200,"w":8229600,"h":4525963},"z":1,"paragraphs":[{"text":"システム概要","bullet":"1."},{"text":"機能一覧","bullet":"2."},{"text":"データフロー","bullet":"3."}]}]}
+{"slide":1,"title":"基本設計書","shapes":2}
+{"slide":1,"id":1,"type":"rect","placeholder":"ctrTitle","pos":{"x":685800,"y":2286000,"w":7772400,"h":1470025},"z":0,"alignment":{"vertical":"center"},"paragraphs":[{"text":"基本設計書","font":{"name":"メイリオ","size":4572000,"bold":true,"color":"#333333"},"alignment":{"horizontal":"center"}}]}
+{"slide":1,"id":2,"type":"rect","placeholder":"subTitle","pos":{"x":1371600,"y":3886200,"w":6400800,"h":1752600},"z":1,"paragraphs":[{"text":"2025年4月版"}]}
+{"slide":2,"title":"目次","shapes":2}
+{"slide":2,"id":1,"type":"rect","placeholder":"title","pos":{"x":457200,"y":274638,"w":8229600,"h":1143000},"z":0,"paragraphs":[{"text":"目次"}]}
+{"slide":2,"id":2,"type":"rect","placeholder":"body","pos":{"x":457200,"y":1600200,"w":8229600,"h":4525963},"z":1,"paragraphs":[{"text":"システム概要","bullet":"1."},{"text":"機能一覧","bullet":"2."},{"text":"データフロー","bullet":"3."}]}
 ```
 
 整形すると以下のような構造:
@@ -435,15 +439,17 @@ pptx-scope image example.pptx ppt/media/image1.png
 
 **出力形式:**
 
-`slides` コマンドと同じ1スライド1JSONの形式。マッチしたスライドのみ出力する。
+`slides` コマンドと同じスライドヘッダ行＋図形行の形式。マッチしたスライドのみ出力する。
 
 ```bash
 pptx-scope search --text "データ" example.pptx
 ```
 
 ```jsonl
-{"slide":2,"title":"システム構成","shapes":[{"id":3,"type":"rect","name":"テキストボックス 1","pos":{"x":1000000,"y":2000000,"w":3000000,"h":500000},"z":2,"paragraphs":[{"text":"データフロー図"}]}]}
-{"slide":4,"title":"処理フロー","shapes":[{"id":2,"type":"rect","placeholder":"body","pos":{"x":457200,"y":1600200,"w":8229600,"h":4525963},"z":1,"paragraphs":[{"text":"データ取得処理","bullet":"•"}]}]}
+{"slide":2,"title":"システム構成","shapes":1}
+{"slide":2,"id":3,"type":"rect","name":"テキストボックス 1","pos":{"x":1000000,"y":2000000,"w":3000000,"h":500000},"z":2,"paragraphs":[{"text":"データフロー図"}]}
+{"slide":4,"title":"処理フロー","shapes":1}
+{"slide":4,"id":2,"type":"rect","placeholder":"body","pos":{"x":457200,"y":1600200,"w":8229600,"h":4525963},"z":1,"paragraphs":[{"text":"データ取得処理","bullet":"•"}]}
 ```
 
 ## 技術選定
@@ -469,7 +475,7 @@ pptx-scope search --text "データ" example.pptx
 - ZIP 内の XML を自前で直接パースする（外部 PowerPoint パーサーは使用しない）
 - スライド XML はDOMパースで処理する（Excelのワークシートと異なり、スライドのXMLは通常小さいためSAXパースの必要性が低い）
 - 全コマンドの出力は一時ファイルに書き出され、stdout にはファイルパスと行数のJSON（`{"file":"...","lines":N}`）のみを出力する。`--stdout` フラグで標準出力に直接書き出すことも可能（デバッグ用）
-- 出力は1スライド1JSONオブジェクト（JSONL形式）。`info` のみファイル全体を1JSONで出力
+- 出力はスライドヘッダ行＋図形1つ1行のJSONL形式。`info` のみファイル全体を1JSONで出力
 - デフォルトでテキストが空の図形をスキップする
 - 書式情報は常に出力する（PowerPoint は書式自体がコンテンツの一部であり、1スライドあたりの要素数も少ないため）。デフォルト値のフィールドは省略する
 - 色は可能な限り `#RRGGBB` 形式で出力する。テーマカラーは theme1.xml から RGB に変換し、tint 値がある場合は HSL 色空間で明度を調整して適用する。グラデーション塗りつぶし（`a:gradFill`）は最初のストップカラーを代表色として使用する（色変換も適用される）
@@ -552,8 +558,11 @@ PowerPointはスライドマスター → スライドレイアウト → スラ
 
 ```jsonl
 {"_styles":[{"_s":1,"name":"Arial","size":177800,"color":"#3F3F3F"},{"_s":2,"name":"Arial","size":228600,"bold":true}]}
-{"slide":1,"shapes":[{"id":1,"type":"rect","z":0,"paragraphs":[{"text":"本文テキスト","s":1},{"text":"別の本文","s":1}]},{"id":2,"type":"rect","z":1,"paragraphs":[{"text":"見出し","s":2}]}]}
-{"slide":2,"shapes":[{"id":1,"type":"rect","z":0,"paragraphs":[{"text":"続きの本文","s":1}]}]}
+{"slide":1,"shapes":2}
+{"slide":1,"id":1,"type":"rect","z":0,"paragraphs":[{"text":"本文テキスト","s":1},{"text":"別の本文","s":1}]}
+{"slide":1,"id":2,"type":"rect","z":1,"paragraphs":[{"text":"見出し","s":2}]}
+{"slide":2,"shapes":1}
+{"slide":2,"id":1,"type":"rect","z":0,"paragraphs":[{"text":"続きの本文","s":1}]}
 ```
 
 **`_styles` 行:**

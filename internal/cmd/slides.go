@@ -21,11 +21,18 @@ func NewSlidesCmd() *cobra.Command {
 	return cmd
 }
 
-type slideOutput struct {
+// slideHeader はスライドのヘッダ行（図形数とタイトル）
+type slideHeader struct {
 	Slide  int              `json:"slide"`
 	Title  string           `json:"title,omitempty"`
-	Shapes []pptx.Shape     `json:"shapes"`
+	Shapes int              `json:"shapes"`
 	Notes  []pptx.Paragraph `json:"notes,omitempty"`
+}
+
+// shapeOutput は図形の出力行（スライド番号を付与）
+type shapeOutput struct {
+	Slide int `json:"slide"`
+	pptx.Shape
 }
 
 // styleDefsOutput はスタイル定義の出力行
@@ -90,14 +97,26 @@ func emitSlideData(enc *json.Encoder, dedup *pptx.StyleDeduplicator, sd *pptx.Sl
 		}
 	}
 
-	out := slideOutput{
+	// スライドヘッダ行（図形数を含む）
+	header := slideHeader{
 		Slide:  sd.Number,
 		Title:  sd.Title,
-		Shapes: sd.Shapes,
+		Shapes: len(sd.Shapes),
 		Notes:  sd.Notes,
 	}
-	if err := enc.Encode(out); err != nil {
+	if err := enc.Encode(header); err != nil {
 		return fmt.Errorf("JSON出力エラー: %w", err)
+	}
+
+	// 図形を1つずつ個別の行として出力
+	for i := range sd.Shapes {
+		out := shapeOutput{
+			Slide: sd.Number,
+			Shape: sd.Shapes[i],
+		}
+		if err := enc.Encode(out); err != nil {
+			return fmt.Errorf("JSON出力エラー: %w", err)
+		}
 	}
 	return nil
 }
