@@ -28,11 +28,11 @@ jobs:
             "linux/arm64"
             "windows/amd64"
           )
-          mkdir -p scripts
+          mkdir -p skills/pptx-scope/scripts
           for TARGET in "${TARGETS[@]}"; do
             GOOS="${TARGET%/*}"
             GOARCH="${TARGET#*/}"
-            OUTPUT="scripts/pptx-scope-${GOOS}-${GOARCH}"
+            OUTPUT="skills/pptx-scope/scripts/pptx-scope-${GOOS}-${GOARCH}"
             if [ "$GOOS" = "windows" ]; then
               OUTPUT="${OUTPUT}.exe"
             fi
@@ -43,7 +43,8 @@ jobs:
 
       - name: Create zip
         run: |
-          zip -r "pptx-scope-${GITHUB_REF_NAME}.zip" \
+          cd skills/pptx-scope
+          zip -r "../../pptx-scope-${GITHUB_REF_NAME}.zip" \
             SKILL.md \
             scripts/pptx-scope \
             scripts/pptx-scope-darwin-amd64 \
