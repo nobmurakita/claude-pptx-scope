@@ -83,10 +83,12 @@ func (ow *outputWriter) finalize() error {
 		return nil
 	}
 	name := ow.file.Name()
-	if err := ow.file.Close(); err != nil {
+	err := ow.file.Close()
+	ow.file = nil // cleanup での二重 Close を防止
+	if err != nil {
+		os.Remove(name)
 		return err
 	}
-	ow.file = nil // cleanup での二重 Close を防止
 	enc := newJSONEncoder(os.Stdout)
 	return enc.Encode(outputResult{File: name, Lines: intPtr(ow.lineCount)})
 }

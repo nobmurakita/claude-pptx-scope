@@ -1,10 +1,13 @@
 package pptx
 
 import (
+	"encoding/xml"
+	"fmt"
 	"strings"
 )
 
-// Search はプレゼンテーション内のテキストを検索し、マッチしたスライドの情報を返す
+// Search はプレゼンテーション内のテキストを検索し、マッチしたスライドの情報を返す。
+// 図形のフルパースを行わず、XMLから直接テキストを抽出して軽量に検索する。
 func (f *File) Search(query string, slideNums []int, includeNotes bool) ([]SlideInfo, error) {
 	queryLower := strings.ToLower(query)
 
@@ -16,59 +19,85 @@ func (f *File) Search(query string, slideNums []int, includeNotes bool) ([]Slide
 	var results []SlideInfo
 
 	for _, num := range targets {
-		sd, err := f.LoadSlide(num, includeNotes)
+		idx := num - 1
+		entry := f.slideEntries[idx]
+
+		data, err := readZipFile(f.zi, entry.Path)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("スライド %d の読み込みに失敗: %w", num, err)
+		}
+		if data == nil {
+			continue
 		}
 
-		if matchSlideText(sd, queryLower) {
-			results = append(results, sd.Info())
+		var sld xmlSlide
+		if err := xml.Unmarshal(data, &sld); err != nil {
+			return nil, fmt.Errorf("スライド %d のパースに失敗: %w", num, err)
+		}
+
+		matched := matchSpTreeText(sld.CSld.SpTree.Children, queryLower)
+
+		if !matched && includeNotes {
+			txBody := f.findNotesBody(idx)
+			if txBody != nil {
+				text := extractTextFromTxBody(txBody)
+				if strings.Contains(strings.ToLower(text), queryLower) {
+					matched = true
+				}
+			}
+		}
+
+		if matched {
+			results = append(results, SlideInfo{
+				Slide:     num,
+				Title:     extractTitle(sld.CSld.SpTree.Children),
+				HasNotes:  f.hasNotes(idx),
+				HasImages: hasImages(sld.CSld.SpTree.Children),
+				Hidden:    sld.Show == "0",
+			})
 		}
 	}
 
 	return results, nil
 }
 
-// matchSlideText はスライド内のテキストがクエリにマッチするか判定する
-func matchSlideText(sd *SlideData, queryLower string) bool {
-	if matchShapesText(sd.Shapes, queryLower) {
-		return true
-	}
-	for _, p := range sd.Notes {
-		if strings.Contains(strings.ToLower(p.Text), queryLower) {
-			return true
+// matchSpTreeText は spTree の子要素のテキストがクエリにマッチするか判定する
+func matchSpTreeText(children []xmlSpTreeChild, queryLower string) bool {
+	for _, child := range children {
+		switch {
+		case child.Sp != nil:
+			if matchTxBodyText(child.Sp.TxBody, queryLower) {
+				return true
+			}
+		case child.CxnSp != nil:
+			if matchTxBodyText(child.CxnSp.TxBody, queryLower) {
+				return true
+			}
+		case child.GrpSp != nil:
+			if matchSpTreeText(child.GrpSp.Children, queryLower) {
+				return true
+			}
+		case child.GraphicFrame != nil:
+			tbl := child.GraphicFrame.Graphic.GraphicData.Tbl
+			if tbl != nil {
+				for _, tr := range tbl.Trs {
+					for _, tc := range tr.Tcs {
+						if matchTxBodyText(tc.TxBody, queryLower) {
+							return true
+						}
+					}
+				}
+			}
 		}
 	}
 	return false
 }
 
-// matchShapesText は図形群のテキストがクエリにマッチするか判定する
-func matchShapesText(shapes []Shape, queryLower string) bool {
-	for _, s := range shapes {
-		switch {
-		case s.Type == "table" && s.Table != nil:
-			for _, row := range s.Table.Rows {
-				for _, cell := range row {
-					if cell != nil && strings.Contains(strings.ToLower(cell.Text), queryLower) {
-						return true
-					}
-				}
-			}
-		case s.Type == "connector":
-			if s.Label != "" && strings.Contains(strings.ToLower(s.Label), queryLower) {
-				return true
-			}
-		case s.Type == "group":
-			if matchShapesText(s.Children, queryLower) {
-				return true
-			}
-		default:
-			for _, p := range s.Paragraphs {
-				if strings.Contains(strings.ToLower(p.Text), queryLower) {
-					return true
-				}
-			}
-		}
+// matchTxBodyText は txBody 内のテキストがクエリにマッチするか判定する
+func matchTxBodyText(txBody *xmlTxBody, queryLower string) bool {
+	if txBody == nil {
+		return false
 	}
-	return false
+	text := extractTextFromTxBody(txBody)
+	return strings.Contains(strings.ToLower(text), queryLower)
 }

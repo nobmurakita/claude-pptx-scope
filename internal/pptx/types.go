@@ -19,7 +19,7 @@ type Shape struct {
 	Name           string      `json:"name,omitempty"`
 	Placeholder    string      `json:"placeholder,omitempty"`
 	Pos            *Position   `json:"pos,omitempty"`
-	Z              int         `json:"z"`
+	Z              int         `json:"z"` // 描画順（0始まり）。0が有効値のため omitempty なし
 	Rotation       float64     `json:"rotation,omitempty"`
 	Flip           string      `json:"flip,omitempty"`
 	Fill           string      `json:"fill,omitempty"`
@@ -27,7 +27,6 @@ type Shape struct {
 	CalloutPointer *Point      `json:"callout_pointer,omitempty"`
 	Paragraphs     []Paragraph `json:"paragraphs,omitempty"`
 	Table          *TableData  `json:"table,omitempty"`
-	Font           *FontStyle  `json:"font,omitempty"`
 	Alignment      *Alignment  `json:"alignment,omitempty"`
 	// テキストマージン（bodyPr の lIns/rIns/tIns/bIns）
 	TextMargin *TextMargin `json:"text_margin,omitempty"`

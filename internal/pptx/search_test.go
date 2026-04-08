@@ -4,100 +4,117 @@ import (
 	"testing"
 )
 
-func TestMatchShapesText(t *testing.T) {
-	shapes := []Shape{
-		{ID: 1, Type: "rect", Paragraphs: []Paragraph{
-			{Text: "Hello World"},
-			{Text: "Goodbye"},
-		}},
-		{ID: 2, Type: "rect", Paragraphs: []Paragraph{
-			{Text: "Nothing here"},
-		}},
+// mkSpWithText はテスト用にテキストを持つ図形の xmlSpTreeChild を生成する
+func mkSpWithText(text string) xmlSpTreeChild {
+	return xmlSpTreeChild{
+		Sp: &xmlSp{
+			TxBody: &xmlTxBody{
+				Ps: []xmlP{{Elements: []xmlParagraphElement{{R: &xmlR{T: text}}}}},
+			},
+		},
+	}
+}
+
+func TestMatchSpTreeText(t *testing.T) {
+	children := []xmlSpTreeChild{
+		mkSpWithText("Hello World"),
+		mkSpWithText("Goodbye"),
 	}
 
-	if !matchShapesText(shapes, "hello") {
+	if !matchSpTreeText(children, "hello") {
 		t.Error("expected match for 'hello'")
 	}
-	if matchShapesText(shapes, "missing") {
+	if matchSpTreeText(children, "missing") {
 		t.Error("expected no match for 'missing'")
 	}
 }
 
-func TestMatchShapesText_Table(t *testing.T) {
-	cell := func(s string) *TableCell { return &TableCell{Text: s} }
-	shapes := []Shape{
+func TestMatchSpTreeText_Table(t *testing.T) {
+	children := []xmlSpTreeChild{
 		{
-			ID: 1,
-			Type:    "table",
-			Table: &TableData{
-				Cols: 2,
-				Rows: [][]*TableCell{
-					{cell("Alpha"), cell("Beta")},
-					{cell("Gamma"), nil},
+			GraphicFrame: &xmlGraphicFrame{
+				Graphic: xmlGraphic{
+					GraphicData: xmlGraphicData{
+						Tbl: &xmlTbl{
+							TblGrid: xmlTblGrid{GridCols: []xmlGridCol{{W: 100}, {W: 100}}},
+							Trs: []xmlTr{
+								{Tcs: []xmlTc{
+									{TxBody: &xmlTxBody{Ps: []xmlP{{Elements: []xmlParagraphElement{{R: &xmlR{T: "Alpha"}}}}}}},
+									{TxBody: &xmlTxBody{Ps: []xmlP{{Elements: []xmlParagraphElement{{R: &xmlR{T: "Beta"}}}}}}},
+								}},
+							},
+						},
+					},
 				},
 			},
 		},
 	}
 
-	if !matchShapesText(shapes, "beta") {
+	if !matchSpTreeText(children, "beta") {
 		t.Error("expected match for 'beta'")
 	}
-	if matchShapesText(shapes, "delta") {
+	if matchSpTreeText(children, "delta") {
 		t.Error("expected no match for 'delta'")
 	}
 }
 
-func TestMatchShapesText_Connector(t *testing.T) {
-	shapes := []Shape{
-		{ID: 1, Type: "connector", Label: "接続ラベル"},
-		{ID: 2, Type: "connector", Label: "別のラベル"},
-	}
-
-	if !matchShapesText(shapes, "接続") {
-		t.Error("expected match for '接続'")
-	}
-	if matchShapesText(shapes, "存在しない") {
-		t.Error("expected no match for '存在しない'")
-	}
-}
-
-func TestMatchShapesText_Group(t *testing.T) {
-	shapes := []Shape{
+func TestMatchSpTreeText_Connector(t *testing.T) {
+	children := []xmlSpTreeChild{
 		{
-			ID: 1,
-			Type:    "group",
-			Children: []Shape{
-				{ID: 2, Type: "rect", Paragraphs: []Paragraph{{Text: "内部テキスト"}}},
-				{ID: 3, Type: "rect", Paragraphs: []Paragraph{{Text: "別のテキスト"}}},
+			CxnSp: &xmlCxnSp{
+				TxBody: &xmlTxBody{
+					Ps: []xmlP{{Elements: []xmlParagraphElement{{R: &xmlR{T: "接続ラベル"}}}}},
+				},
 			},
 		},
 	}
 
-	if !matchShapesText(shapes, "内部") {
+	if !matchSpTreeText(children, "接続") {
+		t.Error("expected match for '接続'")
+	}
+	if matchSpTreeText(children, "存在しない") {
+		t.Error("expected no match for '存在しない'")
+	}
+}
+
+func TestMatchSpTreeText_Group(t *testing.T) {
+	children := []xmlSpTreeChild{
+		{
+			GrpSp: &xmlGrpSp{
+				Children: []xmlSpTreeChild{
+					mkSpWithText("内部テキスト"),
+					mkSpWithText("別のテキスト"),
+				},
+			},
+		},
+	}
+
+	if !matchSpTreeText(children, "内部") {
 		t.Error("expected match for '内部'")
 	}
-	if matchShapesText(shapes, "外部") {
+	if matchSpTreeText(children, "外部") {
 		t.Error("expected no match for '外部'")
 	}
 }
 
-func TestMatchSlideText_Notes(t *testing.T) {
-	sd := &SlideData{
-		Shapes: []Shape{
-			{ID: 1, Type: "rect", Paragraphs: []Paragraph{{Text: "本文"}}},
-		},
-		Notes: []Paragraph{
-			{Text: "ノートのテキスト"},
+func TestMatchTxBodyText(t *testing.T) {
+	txBody := &xmlTxBody{
+		Ps: []xmlP{
+			{Elements: []xmlParagraphElement{{R: &xmlR{T: "本文テキスト"}}}},
+			{Elements: []xmlParagraphElement{{R: &xmlR{T: "ノートのテキスト"}}}},
 		},
 	}
 
-	if !matchSlideText(sd, "ノート") {
-		t.Error("expected match for 'ノート' in notes")
+	if !matchTxBodyText(txBody, "ノート") {
+		t.Error("expected match for 'ノート'")
 	}
-	if !matchSlideText(sd, "本文") {
-		t.Error("expected match for '本文' in shapes")
+	if !matchTxBodyText(txBody, "本文") {
+		t.Error("expected match for '本文'")
 	}
-	if matchSlideText(sd, "存在しない") {
+	if matchTxBodyText(txBody, "存在しない") {
 		t.Error("expected no match for '存在しない'")
+	}
+	if matchTxBodyText(nil, "test") {
+		t.Error("expected no match for nil txBody")
 	}
 }

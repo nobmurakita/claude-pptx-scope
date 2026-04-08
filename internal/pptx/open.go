@@ -42,7 +42,8 @@ type File struct {
 	// presentation.xml の defaultTextStyle
 	defaultTextStyle *xmlLstStyle
 
-	// 遅延ロード
+	// テーマ
+	themePath string // presentation.xml.rels から解決したテーマファイルのZIPパス
 	theme     *themeColors
 	themeOnce sync.Once
 
@@ -129,7 +130,10 @@ func (f *File) GetSlideSize() SlideSize {
 // テーマファイルが存在しない場合や読み込み失敗時は nil を返す。
 func (f *File) getTheme() *themeColors {
 	f.themeOnce.Do(func() {
-		data, err := readZipFile(f.zi, "ppt/theme/theme1.xml")
+		if f.themePath == "" {
+			return
+		}
+		data, err := readZipFile(f.zi, f.themePath)
 		if err != nil || data == nil {
 			return
 		}
@@ -186,18 +190,27 @@ func (f *File) loadPresentation() error {
 	f.defaultTextStyle = pres.DefaultTextStyle
 
 	// リレーション読み込み
-	rels, err := loadRels(f, "ppt/_rels/presentation.xml.rels")
+	typedRels, err := loadRelsTyped(f, "ppt/_rels/presentation.xml.rels")
 	if err != nil {
 		return fmt.Errorf("presentation.xml.rels の読み込みに失敗: %w", err)
 	}
-	if rels == nil {
+	if typedRels == nil {
 		return fmt.Errorf("presentation.xml.rels が見つかりません")
+	}
+
+	// ID→Target マップを構築 + テーマパスを探索
+	relsMap := make(map[string]string, len(typedRels))
+	for _, r := range typedRels {
+		relsMap[r.ID] = r.Target
+		if strings.HasSuffix(r.Type, "/theme") {
+			f.themePath = resolveRelTarget("ppt", r.Target)
+		}
 	}
 
 	// sldIdLst からスライドエントリを構築
 	f.slideEntries = make([]slideEntry, 0, len(pres.SldIdLst.SldId))
 	for _, sid := range pres.SldIdLst.SldId {
-		target, ok := rels[sid.RID]
+		target, ok := relsMap[sid.RID]
 		if !ok {
 			continue
 		}

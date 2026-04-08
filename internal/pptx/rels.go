@@ -40,11 +40,22 @@ func loadRels(f *File, relsPath string) (map[string]string, error) {
 }
 
 // loadRelsTyped は指定パスの .rels をパースしてリレーション一覧を返す。
-// ファイルが存在しない場合は nil, nil を返す（decodeZipXML がスキップするため）。
+// ファイルが存在しない場合は nil, nil を返す。
+// ファイルが存在するがリレーションが空の場合は空スライスを返す。
 func loadRelsTyped(f *File, relsPath string) ([]xmlRel, error) {
+	data, err := readZipFile(f.zi, relsPath)
+	if err != nil {
+		return nil, fmt.Errorf("%s の読み込みに失敗: %w", relsPath, err)
+	}
+	if data == nil {
+		return nil, nil
+	}
 	var rels xmlRelationships
-	if err := decodeZipXML(f.zi, relsPath, &rels); err != nil {
+	if err := xml.Unmarshal(data, &rels); err != nil {
 		return nil, fmt.Errorf("%s のパースに失敗: %w", relsPath, err)
+	}
+	if rels.Rels == nil {
+		return []xmlRel{}, nil
 	}
 	return rels.Rels, nil
 }

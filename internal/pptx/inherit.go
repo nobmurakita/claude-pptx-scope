@@ -2,7 +2,6 @@ package pptx
 
 import (
 	"strings"
-	"sync"
 )
 
 // phKey はプレースホルダーのマッチングキー
@@ -40,7 +39,6 @@ type inheritedStyle struct {
 
 // inheritCache はレイアウト/マスターのキャッシュ
 type inheritCache struct {
-	mu      sync.Mutex
 	layouts map[string]*layoutData // layoutPath → parsed data
 	masters map[string]*masterData // masterPath → parsed data
 }
@@ -54,9 +52,6 @@ func newInheritCache() *inheritCache {
 
 // getLayout はレイアウトデータを取得する（キャッシュ付き）
 func (ic *inheritCache) getLayout(f *File, layoutPath string) *layoutData {
-	ic.mu.Lock()
-	defer ic.mu.Unlock()
-
 	if ld, ok := ic.layouts[layoutPath]; ok {
 		return ld
 	}
@@ -68,9 +63,6 @@ func (ic *inheritCache) getLayout(f *File, layoutPath string) *layoutData {
 
 // getMaster はマスターデータを取得する（キャッシュ付き）
 func (ic *inheritCache) getMaster(f *File, masterPath string) *masterData {
-	ic.mu.Lock()
-	defer ic.mu.Unlock()
-
 	if md, ok := ic.masters[masterPath]; ok {
 		return md
 	}
