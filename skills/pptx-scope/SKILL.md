@@ -104,11 +104,13 @@ pptx-scope slides [options] <file>
 - `pos`: 位置とサイズ（`x`, `y`, `w`, `h`。pt単位）
 - `z`: Z-order（0始まり、大きいほど前面）
 - `rotation`: 回転角度（時計回り、度単位。0の場合は省略）
+- `flip`: 反転（`"h"`, `"v"`, `"hv"`。反転なしの場合は省略）
 - `fill`: 塗りつぶし色（`#RRGGBB`）
 - `line`: 枠線情報（`color`, `style`, `width`。`width` はpt単位）
 - `link`: ハイパーリンク（`url` で外部URL、`slide` でスライド内リンクのスライド番号）
 - `alignment`: テキストの垂直配置（`vertical` フィールド）。デフォルトの場合は省略
-- `paragraphs`: 段落の配列。各段落に `text`, `bullet`, `level`, `s`, `alignment`, `link`, `rich_text`。フォント情報は `style` 行（独立JSONL行）に定義を抽出し `s` で参照する
+- `text_margin`: テキストボディの内部マージン（`left`, `right`, `top`, `bottom`。pt単位。デフォルトの場合は省略）
+- `paragraphs`: 段落の配列。各段落に `text`, `bullet`, `level`, `margin_left`, `indent`, `s`, `alignment`, `link`, `rich_text`。フォント情報は `style` 行（独立JSONL行）に定義を抽出し `s` で参照する
 - `callout_pointer`: 吹き出しのポインタ位置（`x`, `y`。pt単位）
 
 **コネクタの追加フィールド:**
@@ -124,12 +126,12 @@ pptx-scope slides [options] <file>
 **テーブルの出力例:**
 
 ```json
-{"shape":4,"type":"table","name":"表 1","pos":{"x":36,"y":126,"w":648,"h":236.22},"z":3,"table":{"cols":3,"rows":[["項目","説明","備考"],["機能A",null,"必須"]]}}
+{"shape":4,"type":"table","name":"表 1","pos":{"x":36,"y":126,"w":648,"h":236.22},"z":3,"table":{"cols":3,"rows":[[{"text":"項目"},{"text":"説明"},{"text":"備考"}],[{"text":"機能A"},null,{"text":"必須"}]]}}
 ```
 
 **ノート（`--notes` 指定時）:**
 
-図形行の後にノート行 `{"slide":N,"notes":[...]}` が出力される。`notes` は `paragraphs` と同じ構造。
+図形行の後にノート行 `{"notes":[...]}` が出力される。`notes` は `paragraphs` と同じ構造。
 
 ### image
 
