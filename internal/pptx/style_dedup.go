@@ -1,6 +1,9 @@
 package pptx
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 // StyleDef はスタイル定義（スライドレベルの重複排除用）
 type StyleDef struct {
@@ -38,13 +41,13 @@ func (sd StyleDef) MarshalJSON() ([]byte, error) {
 	return json.Marshal(m)
 }
 
-// fontKey はフォントスタイルをJSON文字列化したキー
+// fontKey はフォントスタイルのフィールドを連結したキー文字列を返す
 func fontKey(font *FontStyle) string {
 	if font == nil {
 		return ""
 	}
-	key, _ := json.Marshal(font)
-	return string(key)
+	return fmt.Sprintf("%s\x00%d\x00%t\x00%t\x00%t\x00%s\x00%s",
+		font.Name, font.Size, font.Bold, font.Italic, font.Strikethrough, font.Underline, font.Color)
 }
 
 // StyleDeduplicator はスライド横断でフォントスタイルの重複排除を行う。

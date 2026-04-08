@@ -3,6 +3,7 @@ package pptx
 import (
 	"encoding/xml"
 	"fmt"
+	"strconv"
 )
 
 // スライドXMLの型定義
@@ -156,7 +157,11 @@ type xmlGradStop struct {
 func (gs *xmlGradStop) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	for _, attr := range start.Attr {
 		if attr.Name.Local == "pos" {
-			fmt.Sscanf(attr.Value, "%d", &gs.Pos)
+			v, err := strconv.Atoi(attr.Value)
+			if err != nil {
+				return fmt.Errorf("グラデーションストップの pos 属性が不正です: %w", err)
+			}
+			gs.Pos = v
 		}
 	}
 	// gs の子要素は solidFill と同じ色要素（srgbClr, schemeClr）

@@ -399,7 +399,8 @@ func transformGroupChildren(children []Shape, xfrm *xmlGrpXfrm) {
 	grpX, grpY := xfrm.Off.X, xfrm.Off.Y
 	grpW, grpH := xfrm.Ext.Cx, xfrm.Ext.Cy
 
-	// ChExt が 0 の場合は変換不要（1:1マッピング）
+	// ChExt が 0 の場合はスケール計算でゼロ除算になるため変換をスキップする。
+	// 通常の PPTX では発生しないが、壊れたファイルへの防御として残す。
 	if chExtW == 0 || chExtH == 0 {
 		return
 	}
