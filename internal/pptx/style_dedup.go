@@ -5,16 +5,16 @@ import (
 	"fmt"
 )
 
-// StyleDef はスタイル定義（スライドレベルの重複排除用）
+// StyleDef はスタイル定義行の出力用
 type StyleDef struct {
-	ID int `json:"_s"`
+	ID int `json:"style"`
 	*FontStyle
 }
 
-// MarshalJSON は _s フィールドと FontStyle のフィールドをフラットに結合する
+// MarshalJSON は style フィールドと FontStyle のフィールドをフラットに結合する
 func (sd StyleDef) MarshalJSON() ([]byte, error) {
 	m := make(map[string]any)
-	m["_s"] = sd.ID
+	m["style"] = sd.ID
 	if sd.FontStyle != nil {
 		if sd.Name != "" {
 			m["name"] = sd.Name
@@ -53,8 +53,7 @@ func fontKey(font *FontStyle) string {
 // StyleDeduplicator はスライド横断でフォントスタイルの重複排除を行う。
 // 複数スライドの出力で共有し、初出のスタイル定義のみを返す。
 type StyleDeduplicator struct {
-	styleMap map[string]int       // fontKey → styleID
-	fontMap  map[string]*FontStyle // fontKey → FontStyle
+	styleMap map[string]int // fontKey → styleID
 	nextID   int
 }
 
@@ -62,7 +61,6 @@ type StyleDeduplicator struct {
 func NewStyleDeduplicator() *StyleDeduplicator {
 	return &StyleDeduplicator{
 		styleMap: make(map[string]int),
-		fontMap:  make(map[string]*FontStyle),
 	}
 }
 
@@ -73,50 +71,41 @@ type fontSlot struct {
 }
 
 // Deduplicate はスライドデータ内のフォント情報を重複排除する。
-// スライド内で2回以上、またはスライド横断で既出のフォントを参照IDに置き換える。
-// 戻り値はこのスライドで新規に定義されたスタイルのみ。
+// すべてのフォントをスタイル定義に抽出し、参照IDに置き換える。
+// スライド横断で既出のフォントは既存IDを再利用する。
+// 戻り値はこのスライドで新規に定義されたスタイル（個別行として出力する）。
 // 元の SlideData を直接変更する。
 func (sd2 *StyleDeduplicator) Deduplicate(sd *SlideData) []StyleDef {
-	// 1パス目: フォント出現回数のカウントとフォントマップの収集
-	counts := make(map[string]int)
-	localFontMap := make(map[string]*FontStyle)
+	// 1パス目: フォントを収集し、新規スタイルを登録
+	var newStyles []StyleDef
+	replaceMap := make(map[string]int)
+
 	walkFontSlots(sd.Shapes, sd.Notes, func(s fontSlot) {
 		key := fontKey(*s.font)
 		if key == "" {
 			return
 		}
-		counts[key]++
-		if _, ok := localFontMap[key]; !ok {
-			localFontMap[key] = *s.font
+		if _, ok := replaceMap[key]; ok {
+			return
 		}
-	})
-
-	// スタイル定義に登録するフォントを決定:
-	// - スライド内で2回以上使われるフォント
-	// - スライド横断で既に登録済みのフォント（1回でも参照IDに置き換え可能）
-	var newStyles []StyleDef
-	replaceMap := make(map[string]int)
-
-	for key, count := range counts {
 		if id, ok := sd2.styleMap[key]; ok {
-			// 既にスライド横断で登録済み → 参照IDを使う
+			// スライド横断で既出 → 既存IDを再利用
 			replaceMap[key] = id
-		} else if count >= 2 {
-			// スライド内で2回以上 → 新規登録
+		} else {
+			// 新規スタイル
 			sd2.nextID++
 			id := sd2.nextID
 			sd2.styleMap[key] = id
-			sd2.fontMap[key] = localFontMap[key]
 			replaceMap[key] = id
-			newStyles = append(newStyles, StyleDef{ID: id, FontStyle: localFontMap[key]})
+			newStyles = append(newStyles, StyleDef{ID: id, FontStyle: *s.font})
 		}
-	}
+	})
 
 	if len(replaceMap) == 0 {
 		return nil
 	}
 
-	// 2パス目: 対象フォントを参照IDに置き換え
+	// 2パス目: フォントを参照IDに置き換え
 	walkFontSlots(sd.Shapes, sd.Notes, func(s fontSlot) {
 		if id, ok := replaceMap[fontKey(*s.font)]; ok {
 			*s.styleRef = id

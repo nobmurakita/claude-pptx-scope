@@ -78,7 +78,8 @@ pptx-scope slides [options] <file>
 出力例:
 ```jsonl
 {"slide":1,"title":"基本設計書","shapes":2,"has_notes":true}
-{"shape":1,"type":"rect","placeholder":"ctrTitle","pos":{"x":54,"y":180,"w":612,"h":115.75},"z":0,"alignment":{"vertical":"center"},"paragraphs":[{"text":"基本設計書","font":{"name":"メイリオ","size":36,"bold":true,"color":"#333333"},"alignment":{"horizontal":"center"}}]}
+{"style":1,"name":"メイリオ","size":36,"bold":true,"color":"#333333"}
+{"shape":1,"type":"rect","placeholder":"ctrTitle","pos":{"x":54,"y":180,"w":612,"h":115.75},"z":0,"alignment":{"vertical":"center"},"paragraphs":[{"text":"基本設計書","s":1,"alignment":{"horizontal":"center"}}]}
 {"shape":2,"type":"rect","placeholder":"subTitle","pos":{"x":108,"y":306,"w":504,"h":138},"z":1,"paragraphs":[{"text":"2025年4月版"}]}
 {"slide":2,"title":"目次","shapes":2}
 {"shape":1,"type":"rect","placeholder":"title","pos":{"x":36,"y":21.63,"w":648,"h":90},"z":0,"paragraphs":[{"text":"目次"}]}
@@ -107,7 +108,7 @@ pptx-scope slides [options] <file>
 - `line`: 枠線情報（`color`, `style`, `width`。`width` はpt単位）
 - `link`: ハイパーリンク（`url` で外部URL、`slide` でスライド内リンクのスライド番号）
 - `alignment`: テキストの垂直配置（`vertical` フィールド）。デフォルトの場合は省略
-- `paragraphs`: 段落の配列。各段落に `text`, `bullet`, `level`, `font`/`s`, `alignment`, `link`, `rich_text`。`font.size` はpt単位。複数回使われるフォントは `_styles` 行（独立JSONL行）に定義を抽出し `s` で参照する
+- `paragraphs`: 段落の配列。各段落に `text`, `bullet`, `level`, `s`, `alignment`, `link`, `rich_text`。フォント情報は `style` 行（独立JSONL行）に定義を抽出し `s` で参照する
 - `callout_pointer`: 吹き出しのポインタ位置（`x`, `y`。pt単位）
 
 **コネクタの追加フィールド:**

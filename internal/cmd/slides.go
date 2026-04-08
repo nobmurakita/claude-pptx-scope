@@ -26,11 +26,6 @@ type notesOutput struct {
 	Notes []pptx.Paragraph `json:"notes"`
 }
 
-// styleDefsOutput はスタイル定義の出力行
-type styleDefsOutput struct {
-	Styles []pptx.StyleDef `json:"_styles"`
-}
-
 func runSlides(cmd *cobra.Command, args []string) error {
 	slideNums, err := cmd.Flags().GetIntSlice("slide")
 	if err != nil {
@@ -81,11 +76,10 @@ func emitSlideData(enc *json.Encoder, dedup *pptx.StyleDeduplicator, sd *pptx.Sl
 	// フォントスタイルの重複排除（スライド横断で共有）
 	newStyles := dedup.Deduplicate(sd)
 
-	// 新規スタイル定義があれば独立行として先に出力
-	if len(newStyles) > 0 {
-		if err := enc.Encode(styleDefsOutput{Styles: newStyles}); err != nil {
-			return fmt.Errorf("スタイル定義の出力エラー: %w", err)
-		}
+	// 新規スタイル定義を初回使用の直前に出力するための準備
+	pending := make(map[int]pptx.StyleDef, len(newStyles))
+	for _, s := range newStyles {
+		pending[s.ID] = s
 	}
 
 	// スライドヘッダ行
@@ -95,19 +89,118 @@ func emitSlideData(enc *json.Encoder, dedup *pptx.StyleDeduplicator, sd *pptx.Sl
 		return fmt.Errorf("JSON出力エラー: %w", err)
 	}
 
-	// 図形を1つずつ個別の行として出力
+	// 図形を1つずつ個別の行として出力（使用するスタイル定義を直前に挿入）
 	for i := range sd.Shapes {
+		if err := emitPendingStyles(enc, pending, &sd.Shapes[i]); err != nil {
+			return err
+		}
 		if err := enc.Encode(sd.Shapes[i]); err != nil {
 			return fmt.Errorf("JSON出力エラー: %w", err)
 		}
 	}
 
-	// ノートを独立行として出力
+	// ノートで使用するスタイル定義を出力
 	if len(sd.Notes) > 0 {
+		if err := emitPendingParaStyles(enc, pending, sd.Notes); err != nil {
+			return err
+		}
 		if err := enc.Encode(notesOutput{Notes: sd.Notes}); err != nil {
 			return fmt.Errorf("JSON出力エラー: %w", err)
 		}
 	}
 
 	return nil
+}
+
+// emitPendingStyles は図形が参照するスタイル定義のうち未出力のものを出力する
+func emitPendingStyles(enc *json.Encoder, pending map[int]pptx.StyleDef, shape *pptx.Shape) error {
+	if len(pending) == 0 {
+		return nil
+	}
+	for _, id := range collectShapeStyleIDs(shape) {
+		if s, ok := pending[id]; ok {
+			if err := enc.Encode(s); err != nil {
+				return fmt.Errorf("スタイル定義の出力エラー: %w", err)
+			}
+			delete(pending, id)
+		}
+	}
+	return nil
+}
+
+// emitPendingParaStyles は段落群が参照するスタイル定義のうち未出力のものを出力する
+func emitPendingParaStyles(enc *json.Encoder, pending map[int]pptx.StyleDef, paras []pptx.Paragraph) error {
+	if len(pending) == 0 {
+		return nil
+	}
+	for _, id := range collectParaStyleIDs(paras) {
+		if s, ok := pending[id]; ok {
+			if err := enc.Encode(s); err != nil {
+				return fmt.Errorf("スタイル定義の出力エラー: %w", err)
+			}
+			delete(pending, id)
+		}
+	}
+	return nil
+}
+
+// collectShapeStyleIDs は図形が参照するスタイルIDを収集する（重複なし、出現順）
+func collectShapeStyleIDs(shape *pptx.Shape) []int {
+	seen := make(map[int]bool)
+	var ids []int
+	collectShapeStyleRefs(shape, func(id int) {
+		if !seen[id] {
+			seen[id] = true
+			ids = append(ids, id)
+		}
+	})
+	return ids
+}
+
+// collectShapeStyleRefs は図形内の全スタイル参照を走査する
+func collectShapeStyleRefs(shape *pptx.Shape, fn func(int)) {
+	for _, p := range shape.Paragraphs {
+		collectParaStyleRefs(p, fn)
+	}
+	if shape.Table != nil {
+		for _, row := range shape.Table.Rows {
+			for _, cell := range row {
+				if cell != nil {
+					for _, p := range cell.Paragraphs {
+						collectParaStyleRefs(p, fn)
+					}
+				}
+			}
+		}
+	}
+	for i := range shape.Children {
+		collectShapeStyleRefs(&shape.Children[i], fn)
+	}
+}
+
+// collectParaStyleIDs は段落群が参照するスタイルIDを収集する（重複なし、出現順）
+func collectParaStyleIDs(paras []pptx.Paragraph) []int {
+	seen := make(map[int]bool)
+	var ids []int
+	for _, p := range paras {
+		collectParaStyleRefs(p, func(id int) {
+			if !seen[id] {
+				seen[id] = true
+				ids = append(ids, id)
+			}
+		})
+	}
+	return ids
+}
+
+// collectParaStyleRefs は段落内のスタイル参照を走査する
+func collectParaStyleRefs(p pptx.Paragraph, fn func(int)) {
+	if p.StyleRef != 0 {
+		fn(p.StyleRef)
+	}
+	for _, rt := range p.RichText {
+		if rt.StyleRef != 0 {
+			fn(rt.StyleRef)
+		}
+	}
 }
