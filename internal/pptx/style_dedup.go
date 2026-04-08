@@ -66,25 +66,36 @@ func NewStyleDeduplicator() *StyleDeduplicator {
 	}
 }
 
+// fontSlot はフォント参照のスロット（読み書き可能）
+type fontSlot struct {
+	font     **FontStyle
+	styleRef *int
+}
+
 // Deduplicate はスライドデータ内のフォント情報を重複排除する。
 // スライド内で2回以上、またはスライド横断で既出のフォントを参照IDに置き換える。
 // 戻り値はこのスライドで新規に定義されたスタイルのみ。
 // 元の SlideData を直接変更する。
 func (sd2 *StyleDeduplicator) Deduplicate(sd *SlideData) []StyleDef {
-	// 1パス目: スライド内のフォント出現回数をカウント
+	// 1パス目: フォント出現回数のカウントとフォントマップの収集
 	counts := make(map[string]int)
-	countShapes(counts, sd.Shapes)
-	countParas(counts, sd.Notes)
+	localFontMap := make(map[string]*FontStyle)
+	walkFontSlots(sd.Shapes, sd.Notes, func(s fontSlot) {
+		key := fontKey(*s.font)
+		if key == "" {
+			return
+		}
+		counts[key]++
+		if _, ok := localFontMap[key]; !ok {
+			localFontMap[key] = *s.font
+		}
+	})
 
 	// スタイル定義に登録するフォントを決定:
 	// - スライド内で2回以上使われるフォント
 	// - スライド横断で既に登録済みのフォント（1回でも参照IDに置き換え可能）
-	localFontMap := make(map[string]*FontStyle)
-	collectFontMap(localFontMap, sd.Shapes)
-	collectFontMapParas(localFontMap, sd.Notes)
-
 	var newStyles []StyleDef
-	replaceMap := make(map[string]int) // このスライドで置き換え対象のフォント
+	replaceMap := make(map[string]int)
 
 	for key, count := range counts {
 		if id, ok := sd2.styleMap[key]; ok {
@@ -106,130 +117,51 @@ func (sd2 *StyleDeduplicator) Deduplicate(sd *SlideData) []StyleDef {
 	}
 
 	// 2パス目: 対象フォントを参照IDに置き換え
-	replaceShapes(replaceMap, sd.Shapes)
-	replaceParas(replaceMap, sd.Notes)
+	walkFontSlots(sd.Shapes, sd.Notes, func(s fontSlot) {
+		if id, ok := replaceMap[fontKey(*s.font)]; ok {
+			*s.styleRef = id
+			*s.font = nil
+		}
+	})
 
 	return newStyles
 }
 
-// --- 1パス目: カウント ---
-
-func countShapes(counts map[string]int, shapes []Shape) {
-	for _, s := range shapes {
-		countParas(counts, s.Paragraphs)
-		if s.Table != nil {
-			countTableCells(counts, s.Table)
-		}
-		if s.Type == "group" {
-			countShapes(counts, s.Children)
-		}
-	}
+// walkFontSlots はスライドデータ内の全フォントスロットを走査する。
+// fn は font が非 nil のスロットに対してのみ呼び出される。
+func walkFontSlots(shapes []Shape, notes []Paragraph, fn func(fontSlot)) {
+	walkShapeFontSlots(shapes, fn)
+	walkParaFontSlots(notes, fn)
 }
 
-func countTableCells(counts map[string]int, table *TableData) {
-	for _, row := range table.Rows {
-		for _, cell := range row {
-			if cell != nil {
-				countParas(counts, cell.Paragraphs)
-			}
-		}
-	}
-}
-
-func countParas(counts map[string]int, paras []Paragraph) {
-	for _, p := range paras {
-		if key := fontKey(p.Font); key != "" {
-			counts[key]++
-		}
-		for _, rt := range p.RichText {
-			if key := fontKey(rt.Font); key != "" {
-				counts[key]++
-			}
-		}
-	}
-}
-
-// --- FontStyle マッピング収集 ---
-
-func collectFontMap(fontMap map[string]*FontStyle, shapes []Shape) {
-	for _, s := range shapes {
-		collectFontMapParas(fontMap, s.Paragraphs)
-		if s.Table != nil {
-			collectFontMapTable(fontMap, s.Table)
-		}
-		if s.Type == "group" {
-			collectFontMap(fontMap, s.Children)
-		}
-	}
-}
-
-func collectFontMapTable(fontMap map[string]*FontStyle, table *TableData) {
-	for _, row := range table.Rows {
-		for _, cell := range row {
-			if cell != nil {
-				collectFontMapParas(fontMap, cell.Paragraphs)
-			}
-		}
-	}
-}
-
-func collectFontMapParas(fontMap map[string]*FontStyle, paras []Paragraph) {
-	for _, p := range paras {
-		if p.Font != nil {
-			key := fontKey(p.Font)
-			if _, ok := fontMap[key]; !ok {
-				fontMap[key] = p.Font
-			}
-		}
-		for _, rt := range p.RichText {
-			if rt.Font != nil {
-				key := fontKey(rt.Font)
-				if _, ok := fontMap[key]; !ok {
-					fontMap[key] = rt.Font
+// walkShapeFontSlots は図形ツリー内のフォントスロットを再帰的に走査する
+func walkShapeFontSlots(shapes []Shape, fn func(fontSlot)) {
+	for i := range shapes {
+		walkParaFontSlots(shapes[i].Paragraphs, fn)
+		if shapes[i].Table != nil {
+			for _, row := range shapes[i].Table.Rows {
+				for _, cell := range row {
+					if cell != nil {
+						walkParaFontSlots(cell.Paragraphs, fn)
+					}
 				}
 			}
 		}
-	}
-}
-
-// --- 2パス目: 置き換え ---
-
-func replaceShapes(styleMap map[string]int, shapes []Shape) {
-	for i := range shapes {
-		replaceParas(styleMap, shapes[i].Paragraphs)
-		if shapes[i].Table != nil {
-			replaceTableCells(styleMap, shapes[i].Table)
-		}
 		if shapes[i].Type == "group" {
-			replaceShapes(styleMap, shapes[i].Children)
+			walkShapeFontSlots(shapes[i].Children, fn)
 		}
 	}
 }
 
-func replaceTableCells(styleMap map[string]int, table *TableData) {
-	for _, row := range table.Rows {
-		for _, cell := range row {
-			if cell != nil {
-				replaceParas(styleMap, cell.Paragraphs)
-			}
-		}
-	}
-}
-
-func replaceParas(styleMap map[string]int, paras []Paragraph) {
+// walkParaFontSlots は段落内のフォントスロットを走査する
+func walkParaFontSlots(paras []Paragraph, fn func(fontSlot)) {
 	for i := range paras {
 		if paras[i].Font != nil {
-			if id, ok := styleMap[fontKey(paras[i].Font)]; ok {
-				paras[i].StyleRef = id
-				paras[i].Font = nil
-			}
+			fn(fontSlot{font: &paras[i].Font, styleRef: &paras[i].StyleRef})
 		}
 		for j := range paras[i].RichText {
 			if paras[i].RichText[j].Font != nil {
-				if id, ok := styleMap[fontKey(paras[i].RichText[j].Font)]; ok {
-					paras[i].RichText[j].StyleRef = id
-					paras[i].RichText[j].Font = nil
-				}
+				fn(fontSlot{font: &paras[i].RichText[j].Font, styleRef: &paras[i].RichText[j].StyleRef})
 			}
 		}
 	}

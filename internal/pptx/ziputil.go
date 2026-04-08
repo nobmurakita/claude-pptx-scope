@@ -3,6 +3,7 @@ package pptx
 import (
 	"encoding/xml"
 	"io"
+	"strings"
 )
 
 // readZipFile は ZIP 内の指定パスのファイルを読み込む
@@ -42,4 +43,22 @@ func openZipFile(zi *zipIndex, path string) (io.ReadCloser, int64, error) {
 		return nil, 0, err
 	}
 	return rc, int64(f.UncompressedSize64), nil
+}
+
+// pathDir はパスのディレクトリ部分を返す
+func pathDir(p string) string {
+	idx := strings.LastIndex(p, "/")
+	if idx < 0 {
+		return ""
+	}
+	return p[:idx]
+}
+
+// pathBase はパスのファイル名部分を返す
+func pathBase(p string) string {
+	idx := strings.LastIndex(p, "/")
+	if idx < 0 {
+		return p
+	}
+	return p[idx+1:]
 }

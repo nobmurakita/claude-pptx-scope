@@ -3,7 +3,6 @@ package pptx
 import (
 	"encoding/xml"
 	"fmt"
-	"strings"
 )
 
 // LoadSlideInfos は全スライドの概要情報を取得する（info コマンド用）
@@ -47,55 +46,6 @@ func (f *File) LoadSlideInfos() ([]SlideInfo, error) {
 	return infos, nil
 }
 
-// extractTitle は子要素からタイトルテキストを取得する
-func extractTitle(children []xmlSpTreeChild) string {
-	for _, child := range children {
-		if child.Sp == nil {
-			continue
-		}
-		ph := child.Sp.NvSpPr.NvPr.Ph
-		if ph == nil {
-			continue
-		}
-		if ph.Type == "title" || ph.Type == "ctrTitle" {
-			return extractTextFromTxBody(child.Sp.TxBody)
-		}
-	}
-	return ""
-}
-
-// extractTextFromTxBody は txBody から全テキストを結合して返す
-func extractTextFromTxBody(txBody *xmlTxBody) string {
-	if txBody == nil {
-		return ""
-	}
-	var parts []string
-	for _, p := range txBody.Ps {
-		text := extractParagraphText(p)
-		if text != "" {
-			parts = append(parts, text)
-		}
-	}
-	return strings.Join(parts, " ")
-}
-
-// extractParagraphText は段落からプレーンテキストを結合する。
-// a:br は改行、テキストランとフィールドはXML出現順に結合する。
-func extractParagraphText(p xmlP) string {
-	var sb strings.Builder
-	for _, elem := range p.Elements {
-		switch {
-		case elem.R != nil:
-			sb.WriteString(elem.R.T)
-		case elem.Br:
-			sb.WriteByte('\n')
-		case elem.Fld != nil:
-			sb.WriteString(elem.Fld.T)
-		}
-	}
-	return sb.String()
-}
-
 // hasImages は子要素内に画像が存在するかチェックする（グループ内も再帰的に確認）
 func hasImages(children []xmlSpTreeChild) bool {
 	for _, child := range children {
@@ -107,78 +57,4 @@ func hasImages(children []xmlSpTreeChild) bool {
 		}
 	}
 	return false
-}
-
-// hasNotes はスライドにノートが存在するか確認する
-func (f *File) hasNotes(slideIdx int) bool {
-	txBody := f.findNotesBody(slideIdx)
-	text := extractTextFromTxBody(txBody)
-	return strings.TrimSpace(text) != ""
-}
-
-// findNotesBody はスライドのノートから body プレースホルダーの txBody を取得する。
-// hasNotes と loadNotesParagraphs の共通処理。
-func (f *File) findNotesBody(slideIdx int) *xmlTxBody {
-	notesPath := f.notesPath(slideIdx)
-	if notesPath == "" {
-		return nil
-	}
-
-	// ノートの読み込み・パース失敗はスライド処理に影響させない
-	data, err := readZipFile(f.zi, notesPath)
-	if err != nil || data == nil {
-		return nil
-	}
-
-	var notes xmlNotes
-	if err := xml.Unmarshal(data, &notes); err != nil {
-		return nil
-	}
-
-	for _, child := range notes.CSld.SpTree.Children {
-		if child.Sp == nil {
-			continue
-		}
-		ph := child.Sp.NvSpPr.NvPr.Ph
-		if ph == nil || ph.Type != "body" {
-			continue
-		}
-		return child.Sp.TxBody
-	}
-	return nil
-}
-
-// notesPath はスライドに対応するノートのZIPパスを返す
-func (f *File) notesPath(slideIdx int) string {
-	if slideIdx < 0 || slideIdx >= len(f.slideEntries) {
-		return ""
-	}
-	entry := f.slideEntries[slideIdx]
-	// スライドの .rels からノートのリレーションを探す
-	relsPath := relsPathFor(entry.Path)
-	rels, _ := loadRelsTyped(f, relsPath) // エラー時はノートなしとして扱う
-	for _, r := range rels {
-		if strings.HasSuffix(r.Type, "/notesSlide") {
-			return resolveRelTarget(pathDir(entry.Path), r.Target)
-		}
-	}
-	return ""
-}
-
-// pathDir はパスのディレクトリ部分を返す
-func pathDir(p string) string {
-	idx := strings.LastIndex(p, "/")
-	if idx < 0 {
-		return ""
-	}
-	return p[:idx]
-}
-
-// pathBase はパスのファイル名部分を返す
-func pathBase(p string) string {
-	idx := strings.LastIndex(p, "/")
-	if idx < 0 {
-		return p
-	}
-	return p[idx+1:]
 }

@@ -536,3 +536,25 @@ type xmlFont struct {
 	Typeface string `xml:"typeface,attr"`
 }
 
+// ---------- プレゼンテーション ----------
+
+// xmlPresentation は presentation.xml の構造
+type xmlPresentation struct {
+	XMLName          xml.Name     `xml:"presentation"`
+	SldSz            xmlSldSz     `xml:"sldSz"`
+	SldIdLst         struct {
+		SldId []xmlSldId `xml:"sldId"`
+	} `xml:"sldIdLst"`
+	DefaultTextStyle *xmlLstStyle `xml:"defaultTextStyle"`
+}
+
+type xmlSldSz struct {
+	Cx int64 `xml:"cx,attr"`
+	Cy int64 `xml:"cy,attr"`
+}
+
+type xmlSldId struct {
+	ID  string `xml:"id,attr"`
+	RID string `xml:"http://schemas.openxmlformats.org/officeDocument/2006/relationships id,attr"`
+}
+
