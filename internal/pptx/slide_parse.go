@@ -59,7 +59,7 @@ func (f *File) LoadSlide(slideNum int, includeNotes bool) (*SlideData, error) {
 	sd := &SlideData{
 		Number:    slideNum,
 		Title:     extractTitle(sld.CSld.SpTree.Children),
-		Hidden:    sld.Show == "0",
+		Hidden:    sld.Show == "0", // OOXML: show属性のデフォルトは"1"（表示）、省略時は空文字列（表示扱い）
 		HasNotes:  f.hasNotes(idx),
 		HasImages: hasImages(sld.CSld.SpTree.Children),
 	}

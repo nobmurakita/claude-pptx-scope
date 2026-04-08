@@ -114,20 +114,14 @@ func (ctx *parseContext) parseRunStyles(p xmlP, level int, inherited *inheritedS
 	runs := collectTextRuns(p)
 	if len(runs) == 0 {
 		// ランがなくても継承からフォント情報を取得できる場合がある
-		font := ctx.applyInheritedFont(nil, nil, level, inherited)
-		if font != nil && isEmptyFont(font) {
-			font = nil
-		}
+		font := nilIfEmpty(ctx.applyInheritedFont(nil, nil, level, inherited))
 		return font, nil, nil
 	}
 
 	// 単一ランの場合はフォント情報+リンクのみ
 	if len(runs) == 1 && runs[0].R != nil {
 		font := ctx.rprToFont(runs[0].R.RPr)
-		font = ctx.applyInheritedFont(font, runs[0].R.RPr, level, inherited)
-		if font != nil && isEmptyFont(font) {
-			font = nil
-		}
+		font = nilIfEmpty(ctx.applyInheritedFont(font, runs[0].R.RPr, level, inherited))
 		link := ctx.resolveRunHyperlink(runs[0].R.RPr)
 		return font, link, nil
 	}
@@ -178,10 +172,7 @@ func (ctx *parseContext) parseRunStyles(p xmlP, level int, inherited *inheritedS
 
 	// すべて同じ書式・リンクで改行なしなら統一フォント+リンクのみ
 	if allSame && !hasBr {
-		if firstFont != nil && isEmptyFont(firstFont) {
-			firstFont = nil
-		}
-		return firstFont, firstLink, nil
+		return nilIfEmpty(firstFont), firstLink, nil
 	}
 
 	return nil, nil, richText
@@ -363,6 +354,14 @@ func (ctx *parseContext) rprToFont(rpr *xmlRPr) *FontStyle {
 		f.Color = ctx.resolveSolidFillColor(rpr.SolidFill)
 	}
 
+	return f
+}
+
+// nilIfEmpty はフォントが空なら nil を返す
+func nilIfEmpty(f *FontStyle) *FontStyle {
+	if f == nil || isEmptyFont(f) {
+		return nil
+	}
 	return f
 }
 

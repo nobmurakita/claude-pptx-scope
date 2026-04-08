@@ -88,6 +88,7 @@ func (ow *outputWriter) finalize() error {
 	}
 	ow.file = nil // cleanup での二重 Close を防止
 	enc := newJSONEncoder(os.Stdout)
-	lines := ow.lineCount
-	return enc.Encode(outputResult{File: name, Lines: &lines})
+	return enc.Encode(outputResult{File: name, Lines: intPtr(ow.lineCount)})
 }
+
+func intPtr(n int) *int { return &n }

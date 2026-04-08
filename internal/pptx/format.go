@@ -5,7 +5,8 @@ import (
 	"strings"
 )
 
-// formatAutoNum は自動番号を書式化する
+// formatAutoNum は自動番号を書式化する。
+// 未知の numType は arabicPeriod（"N."）にフォールバックする。
 func formatAutoNum(numType string, num int) string {
 	switch numType {
 	case "arabicPeriod":

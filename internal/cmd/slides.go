@@ -96,9 +96,8 @@ func emitSlideData(enc *json.Encoder, dedup *pptx.StyleDeduplicator, sd *pptx.Sl
 	}
 
 	// スライドヘッダ行
-	shapeCount := len(sd.Shapes)
 	header := sd.Info()
-	header.Shapes = &shapeCount
+	header.Shapes = intPtr(len(sd.Shapes))
 	if err := enc.Encode(header); err != nil {
 		return fmt.Errorf("JSON出力エラー: %w", err)
 	}
