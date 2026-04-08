@@ -58,10 +58,10 @@ type slideEntry struct {
 	Path string // ZIP内のXMLパス（例: "ppt/slides/slide1.xml"）
 }
 
-// SlideSize はスライドのサイズ
+// SlideSize はスライドのサイズ（pt単位）
 type SlideSize struct {
-	Width  int64 `json:"width"`
-	Height int64 `json:"height"`
+	Width  float64 `json:"width"`
+	Height float64 `json:"height"`
 }
 
 // OpenFile は PowerPoint ファイルを開く
@@ -180,10 +180,10 @@ func (f *File) loadPresentation() error {
 		return fmt.Errorf("presentation.xml のパースに失敗: %w", err)
 	}
 
-	// スライドサイズ
+	// スライドサイズ（EMU → pt）
 	f.slideSize = SlideSize{
-		Width:  pres.SldSz.Cx,
-		Height: pres.SldSz.Cy,
+		Width:  emuToPt(pres.SldSz.Cx),
+		Height: emuToPt(pres.SldSz.Cy),
 	}
 
 	// defaultTextStyle

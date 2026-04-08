@@ -48,7 +48,7 @@ $ pptx-scope slides --slide 1,2,3 example.pptx
 
 出力例:
 ```jsonl
-{"file":"基本設計書.pptx","slide_size":{"width":9144000,"height":6858000}}
+{"file":"基本設計書.pptx","slide_size":{"width":720,"height":540}}
 {"slide":1,"title":"基本設計書","has_notes":true}
 {"slide":2,"title":"目次"}
 {"slide":3,"title":"システム構成","has_images":true}
@@ -58,7 +58,7 @@ $ pptx-scope slides --slide 1,2,3 example.pptx
 
 1行目はファイルメタ情報、2行目以降はスライド行（slides/search と共通形式）。
 
-- `slide_size`: スライドサイズ（EMU単位。標準4:3=9144000x6858000, 16:9=12192000x6858000）
+- `slide_size`: スライドサイズ（pt単位。標準4:3=720x540, 16:9=960x540）
 - `title`: タイトルプレースホルダーのテキスト。存在しない場合は省略
 - `has_notes`: ノートにテキストがある場合のみ `true`
 - `has_images`: 画像を含む場合のみ `true`（グループ内の画像も検出）
@@ -78,8 +78,8 @@ pptx-scope slides [options] <file>
 出力例:
 ```jsonl
 {"slide":1,"title":"基本設計書","shapes":2,"has_notes":true}
-{"shape":1,"type":"rect","placeholder":"ctrTitle","pos":{"x":685800,"y":2286000,"w":7772400,"h":1470025},"z":0,"alignment":{"vertical":"center"},"paragraphs":[{"text":"基本設計書","font":{"name":"メイリオ","size":4572000,"bold":true,"color":"#333333"},"alignment":{"horizontal":"center"}}]}
-{"shape":2,"type":"rect","placeholder":"subTitle","pos":{"x":1371600,"y":3886200,"w":6400800,"h":1752600},"z":1,"paragraphs":[{"text":"2025年4月版"}]}
+{"shape":1,"type":"rect","placeholder":"ctrTitle","pos":{"x":54,"y":180,"w":612,"h":115.75},"z":0,"alignment":{"vertical":"center"},"paragraphs":[{"text":"基本設計書","font":{"name":"メイリオ","size":36,"bold":true,"color":"#333333"},"alignment":{"horizontal":"center"}}]}
+{"shape":2,"type":"rect","placeholder":"subTitle","pos":{"x":108,"y":306,"w":504,"h":138},"z":1,"paragraphs":[{"text":"2025年4月版"}]}
 {"slide":2,"title":"目次","shapes":2}
 {"shape":1,"type":"rect","placeholder":"title","z":0,"paragraphs":[{"text":"目次"}]}
 {"shape":2,"type":"rect","placeholder":"body","z":1,"paragraphs":[{"text":"システム概要","bullet":"1."},{"text":"機能一覧","bullet":"2."}]}
@@ -100,15 +100,15 @@ pptx-scope slides [options] <file>
 - `shape`: スライド内の連番ID（1始まり）
 - `placeholder`: プレースホルダー種別（`title`, `ctrTitle`, `subTitle`, `body` 等）。プレースホルダーでなければ省略
 - `name`: 図形名。プレースホルダーの場合は省略
-- `pos`: 位置とサイズ（`x`, `y`, `w`, `h`。EMU単位）
+- `pos`: 位置とサイズ（`x`, `y`, `w`, `h`。pt単位）
 - `z`: Z-order（0始まり、大きいほど前面）
 - `rotation`: 回転角度（時計回り、度単位。0の場合は省略）
 - `fill`: 塗りつぶし色（`#RRGGBB`）
-- `line`: 枠線情報（`color`, `style`, `width`。`width` はEMU単位）
+- `line`: 枠線情報（`color`, `style`, `width`。`width` はpt単位）
 - `link`: ハイパーリンク（`url` で外部URL、`slide` でスライド内リンクのスライド番号）
 - `alignment`: テキストの垂直配置（`vertical` フィールド）。デフォルトの場合は省略
-- `paragraphs`: 段落の配列。各段落に `text`, `bullet`, `level`, `font`/`s`, `alignment`, `link`, `rich_text`。`font.size` はEMU単位。複数回使われるフォントは `_styles` 行（独立JSONL行）に定義を抽出し `s` で参照する
-- `callout_pointer`: 吹き出しのポインタ位置（`x`, `y`。EMU単位）
+- `paragraphs`: 段落の配列。各段落に `text`, `bullet`, `level`, `font`/`s`, `alignment`, `link`, `rich_text`。`font.size` はpt単位。複数回使われるフォントは `_styles` 行（独立JSONL行）に定義を抽出し `s` で参照する
+- `callout_pointer`: 吹き出しのポインタ位置（`x`, `y`。pt単位）
 
 **コネクタの追加フィールド:**
 
@@ -117,13 +117,13 @@ pptx-scope slides [options] <file>
 - `connector_type`: `line`, `straightConnector1`, `bentConnector3`, `curvedConnector3` 等
 - `adj`: 屈曲・カーブの調整値（1/100000単位。bent/curvedコネクタで屈曲位置を制御）
 - `arrow`: `"start"`, `"end"`, `"both"`, `"none"`
-- `start`/`end`: 始点・終点座標（`x`, `y`。EMU単位。`pos` と `flip` から算出）
+- `start`/`end`: 始点・終点座標（`x`, `y`。pt単位。`pos` と `flip` から算出）
 - `label`: コネクタ上のテキスト
 
 **テーブルの出力例:**
 
 ```json
-{"shape":4,"type":"table","name":"表 1","pos":{"x":457200,"y":1600200,"w":8229600,"h":3000000},"z":3,"table":{"cols":3,"rows":[["項目","説明","備考"],["機能A",null,"必須"]]}}
+{"shape":4,"type":"table","name":"表 1","pos":{"x":36,"y":126,"w":648,"h":236.22},"z":3,"table":{"cols":3,"rows":[["項目","説明","備考"],["機能A",null,"必須"]]}}
 ```
 
 **ノート（`--notes` 指定時）:**
@@ -137,7 +137,7 @@ pptx-scope slides [options] <file>
 slides 出力の `image_id` を指定する。stdout に `{"file":"$TMPDIR/pptx-scope-abc123.png"}` が返る。返された `file` パスを Read で確認し、終わったら削除する。
 
 ```jsonl
-{"shape":5,"type":"picture","name":"図 1","pos":{"x":1000000,"y":1000000,"w":5000000,"h":3000000},"z":4,"alt_text":"システム構成図","image_id":"ppt/media/image1.png"}
+{"shape":5,"type":"picture","name":"図 1","pos":{"x":78.74,"y":78.74,"w":393.7,"h":236.22},"z":4,"alt_text":"システム構成図","image_id":"ppt/media/image1.png"}
 ```
 
 ```bash

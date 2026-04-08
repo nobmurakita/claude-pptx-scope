@@ -131,13 +131,13 @@ func (ctx *parseContext) parseGrpSp(grp xmlGrpSp) *Shape {
 		Name: grp.NvGrpSpPr.CNvPr.Name,
 	}
 
-	// グループの位置
+	// グループの位置（EMU → pt）
 	if grp.GrpSpPr.Xfrm != nil {
 		s.Pos = &Position{
-			X: grp.GrpSpPr.Xfrm.Off.X,
-			Y: grp.GrpSpPr.Xfrm.Off.Y,
-			W: grp.GrpSpPr.Xfrm.Ext.Cx,
-			H: grp.GrpSpPr.Xfrm.Ext.Cy,
+			X: emuToPt(grp.GrpSpPr.Xfrm.Off.X),
+			Y: emuToPt(grp.GrpSpPr.Xfrm.Off.Y),
+			W: emuToPt(grp.GrpSpPr.Xfrm.Ext.Cx),
+			H: emuToPt(grp.GrpSpPr.Xfrm.Ext.Cy),
 		}
 	}
 

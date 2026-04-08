@@ -6,9 +6,9 @@ func TestDeduplicate_MultipleUsage(t *testing.T) {
 	sd := &SlideData{
 		Shapes: []Shape{
 			{Paragraphs: []Paragraph{
-				{Text: "a", Font: &FontStyle{Name: "Arial", Size: 127000}},
-				{Text: "b", Font: &FontStyle{Name: "Arial", Size: 127000}}, // 同じ
-				{Text: "c", Font: &FontStyle{Name: "Meiryo", Size: 254000}},
+				{Text: "a", Font: &FontStyle{Name: "Arial", Size: 10}},
+				{Text: "b", Font: &FontStyle{Name: "Arial", Size: 10}}, // 同じ
+				{Text: "c", Font: &FontStyle{Name: "Meiryo", Size: 20}},
 			}},
 		},
 	}

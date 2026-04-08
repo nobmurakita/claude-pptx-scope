@@ -53,8 +53,10 @@ func (ctx *parseContext) parseParagraphs(ps []xmlP, inherited *inheritedStyle) [
 			resetAutoNum()
 		}
 
-		// 段落インデント（marL/indent）
-		para.MarginL, para.Indent = resolveParaIndent(p.PPr, level, inherited)
+		// 段落インデント（marL/indent、EMU → pt）
+		marL, indent := resolveParaIndent(p.PPr, level, inherited)
+		para.MarginL = emuToPtPtr(marL)
+		para.Indent = emuToPtPtr(indent)
 
 		// 配置（デフォルトの左揃えは省略）
 		if p.PPr != nil && p.PPr.Algn != "" && p.PPr.Algn != "l" {
@@ -255,7 +257,7 @@ func (ctx *parseContext) applyInheritedFont(font *FontStyle, rpr *xmlRPr, level 
 		}
 
 		if needSize && drp.Sz > 0 {
-			font.Size = int64(drp.Sz) * 127
+			font.Size = float64(drp.Sz) / 100
 			needSize = false
 			modified = true
 		}
@@ -324,9 +326,9 @@ func (ctx *parseContext) rprToFont(rpr *xmlRPr) *FontStyle {
 		f.Name = tc.ResolveThemeFont(rpr.Ea.Typeface)
 	}
 
-	// サイズ（hundredths of point → EMU: ×127）
+	// サイズ（hundredths of point → pt: ÷100）
 	if rpr.Sz > 0 {
-		f.Size = int64(rpr.Sz) * 127
+		f.Size = float64(rpr.Sz) / 100
 	}
 
 	// 太字
@@ -443,16 +445,16 @@ func extractTextMargin(bodyPr xmlBodyPr) *TextMargin {
 
 	tm := &TextMargin{}
 	if l != nil {
-		tm.Left = l
+		tm.Left = emuToPtPtr(l)
 	}
 	if r != nil {
-		tm.Right = r
+		tm.Right = emuToPtPtr(r)
 	}
 	if t != nil {
-		tm.Top = t
+		tm.Top = emuToPtPtr(t)
 	}
 	if b != nil {
-		tm.Bottom = b
+		tm.Bottom = emuToPtPtr(b)
 	}
 	return tm
 }

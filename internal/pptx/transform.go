@@ -1,15 +1,32 @@
 package pptx
 
-// xfrmToPosition は xfrm 要素を Position に変換する
+import "math"
+
+// emuToPt は EMU（English Metric Units）を pt（ポイント）に変換する。
+// 1pt = 12700 EMU。小数点以下2桁に丸める。
+func emuToPt(emu int64) float64 {
+	return math.Round(float64(emu)/127) / 100
+}
+
+// emuToPtPtr は *int64（EMU）を *float64（pt）に変換する
+func emuToPtPtr(p *int64) *float64 {
+	if p == nil {
+		return nil
+	}
+	v := emuToPt(*p)
+	return &v
+}
+
+// xfrmToPosition は xfrm 要素を Position（pt単位）に変換する
 func xfrmToPosition(xfrm *xmlXfrm) *Position {
 	if xfrm == nil {
 		return nil
 	}
 	return &Position{
-		X: xfrm.Off.X,
-		Y: xfrm.Off.Y,
-		W: xfrm.Ext.Cx,
-		H: xfrm.Ext.Cy,
+		X: emuToPt(xfrm.Off.X),
+		Y: emuToPt(xfrm.Off.Y),
+		W: emuToPt(xfrm.Ext.Cx),
+		H: emuToPt(xfrm.Ext.Cy),
 	}
 }
 
@@ -32,22 +49,22 @@ func xfrmFlip(xfrm *xmlXfrm) string {
 	return ""
 }
 
-// coordTransform は子座標空間から親座標空間への変換パラメータ
+// coordTransform は子座標空間から親座標空間への変換パラメータ（pt単位）
 type coordTransform struct {
-	chOffX, chOffY int64
-	chExtW, chExtH int64
-	grpX, grpY     int64
-	grpW, grpH     int64
+	chOffX, chOffY float64
+	chExtW, chExtH float64
+	grpX, grpY     float64
+	grpW, grpH     float64
 }
 
 // transformGroupChildren はグループ内の子要素の座標を絶対座標に変換する
 // グループの子座標空間(ChOff/ChExt)からスライド座標空間(Off/Ext)へマッピングする
 func transformGroupChildren(children []Shape, xfrm *xmlGrpXfrm) {
 	ct := coordTransform{
-		chOffX: xfrm.ChOff.X, chOffY: xfrm.ChOff.Y,
-		chExtW: xfrm.ChExt.Cx, chExtH: xfrm.ChExt.Cy,
-		grpX: xfrm.Off.X, grpY: xfrm.Off.Y,
-		grpW: xfrm.Ext.Cx, grpH: xfrm.Ext.Cy,
+		chOffX: emuToPt(xfrm.ChOff.X), chOffY: emuToPt(xfrm.ChOff.Y),
+		chExtW: emuToPt(xfrm.ChExt.Cx), chExtH: emuToPt(xfrm.ChExt.Cy),
+		grpX: emuToPt(xfrm.Off.X), grpY: emuToPt(xfrm.Off.Y),
+		grpW: emuToPt(xfrm.Ext.Cx), grpH: emuToPt(xfrm.Ext.Cy),
 	}
 	// ChExt が 0 の場合はスケール計算でゼロ除算になるため変換をスキップする。
 	// 通常の PPTX では発生しないが、壊れたファイルへの防御として残す。

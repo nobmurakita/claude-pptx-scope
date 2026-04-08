@@ -205,8 +205,8 @@ func TestParseSp_TextOnly(t *testing.T) {
 		SpPr: xmlSpPr{
 			PrstGeom: &xmlPrstGeom{Prst: "roundRect"},
 			Xfrm: &xmlXfrm{
-				Off: xmlOff{X: 100, Y: 200},
-				Ext: xmlExt{Cx: 300, Cy: 400},
+				Off: xmlOff{X: 12700, Y: 25400},
+				Ext: xmlExt{Cx: 38100, Cy: 50800},
 			},
 		},
 		TxBody: &xmlTxBody{
@@ -230,8 +230,8 @@ func TestParseSp_TextOnly(t *testing.T) {
 	if s.Pos == nil {
 		t.Fatal("Pos がnil")
 	}
-	if s.Pos.X != 100 || s.Pos.Y != 200 {
-		t.Errorf("Pos: got (%d,%d), want (100,200)", s.Pos.X, s.Pos.Y)
+	if s.Pos.X != 1 || s.Pos.Y != 2 {
+		t.Errorf("Pos: got (%g,%g), want (1,2)", s.Pos.X, s.Pos.Y)
 	}
 	if len(s.Paragraphs) != 1 || s.Paragraphs[0].Text != "Hello" {
 		t.Errorf("Paragraphs: got %v", s.Paragraphs)
@@ -607,8 +607,8 @@ func TestParsePic(t *testing.T) {
 		},
 		SpPr: xmlSpPr{
 			Xfrm: &xmlXfrm{
-				Off: xmlOff{X: 500, Y: 600},
-				Ext: xmlExt{Cx: 700, Cy: 800},
+				Off: xmlOff{X: 63500, Y: 76200},
+				Ext: xmlExt{Cx: 88900, Cy: 101600},
 			},
 		},
 	}
@@ -624,8 +624,8 @@ func TestParsePic(t *testing.T) {
 	if s.AltText != "テスト画像" {
 		t.Errorf("AltText: got %q, want %q", s.AltText, "テスト画像")
 	}
-	if s.Pos.X != 500 || s.Pos.W != 700 {
-		t.Errorf("Pos: got (%d,%d), want (500,700)", s.Pos.X, s.Pos.W)
+	if s.Pos.X != 5 || s.Pos.W != 7 {
+		t.Errorf("Pos: got (%g,%g), want (5,7)", s.Pos.X, s.Pos.W)
 	}
 	// slideRels が未設定なので ImageID は空
 	if s.ImageID != "" {
@@ -644,8 +644,8 @@ func TestParseGrpSp(t *testing.T) {
 		},
 		GrpSpPr: xmlGrpSpPr{
 			Xfrm: &xmlGrpXfrm{
-				Off: xmlOff{X: 10, Y: 20},
-				Ext: xmlExt{Cx: 300, Cy: 400},
+				Off: xmlOff{X: 12700, Y: 25400},
+				Ext: xmlExt{Cx: 38100, Cy: 50800},
 			},
 		},
 		Children: []xmlSpTreeChild{
@@ -669,8 +669,8 @@ func TestParseGrpSp(t *testing.T) {
 	if s.Type != "group" {
 		t.Errorf("Type: got %q, want %q", s.Type, "group")
 	}
-	if s.Pos.X != 10 || s.Pos.H != 400 {
-		t.Errorf("Pos: got (%d,%d), want (10,400)", s.Pos.X, s.Pos.H)
+	if s.Pos.X != 1 || s.Pos.H != 4 {
+		t.Errorf("Pos: got (%g,%g), want (1,4)", s.Pos.X, s.Pos.H)
 	}
 	if len(s.Children) != 1 {
 		t.Fatalf("Children: got %d, want 1", len(s.Children))

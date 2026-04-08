@@ -115,9 +115,9 @@ func (ctx *parseContext) resolveLine(ln *xmlLn) *LineStyle {
 		ls.Style = "solid"
 	}
 
-	// 幅（EMU）
+	// 幅（EMU → pt）
 	if ln.W > 0 {
-		ls.Width = int64(ln.W)
+		ls.Width = emuToPt(int64(ln.W))
 	}
 
 	if ls.Color == "" && ls.Style == "" && ls.Width == 0 {

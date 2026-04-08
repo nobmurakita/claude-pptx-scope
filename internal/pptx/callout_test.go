@@ -40,10 +40,10 @@ func TestResolveCalloutPointer_DefaultValues(t *testing.T) {
 	// px = 1000 + 100000/2 + (-20833)*100000/100000 = 1000 + 50000 - 20833 = 30167
 	// py = 2000 + 100000/2 + 62500*100000/100000 = 2000 + 50000 + 62500 = 114500
 	if pt.X != 30167 {
-		t.Errorf("X: got %d, want 30167", pt.X)
+		t.Errorf("X: got %g, want 30167", pt.X)
 	}
 	if pt.Y != 114500 {
-		t.Errorf("Y: got %d, want 114500", pt.Y)
+		t.Errorf("Y: got %g, want 114500", pt.Y)
 	}
 }
 
@@ -66,10 +66,10 @@ func TestResolveCalloutPointer_CustomAdj(t *testing.T) {
 
 	// adj1=0, adj2=0 → ポインタは図形の中心
 	if pt.X != 100000 {
-		t.Errorf("X: got %d, want 100000", pt.X)
+		t.Errorf("X: got %g, want 100000", pt.X)
 	}
 	if pt.Y != 100000 {
-		t.Errorf("Y: got %d, want 100000", pt.Y)
+		t.Errorf("Y: got %g, want 100000", pt.Y)
 	}
 }
 

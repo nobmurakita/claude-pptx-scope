@@ -46,7 +46,7 @@ func fontKey(font *FontStyle) string {
 	if font == nil {
 		return ""
 	}
-	return fmt.Sprintf("%s\x00%d\x00%t\x00%t\x00%t\x00%s\x00%s",
+	return fmt.Sprintf("%s\x00%g\x00%t\x00%t\x00%t\x00%s\x00%s",
 		font.Name, font.Size, font.Bold, font.Italic, font.Strikethrough, font.Underline, font.Color)
 }
 

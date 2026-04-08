@@ -122,8 +122,8 @@ func TestResolveInheritedFont_FromDefRPr(t *testing.T) {
 	if font.Name != "メイリオ" {
 		t.Errorf("Name: got %q, want %q", font.Name, "メイリオ")
 	}
-	if font.Size != 2400*127 {
-		t.Errorf("Size: got %d, want %d", font.Size, 2400*127)
+	if font.Size != 24 {
+		t.Errorf("Size: got %g, want 24", font.Size)
 	}
 	if font.Color != "#333333" {
 		t.Errorf("Color: got %q, want %q", font.Color, "#333333")
@@ -177,7 +177,7 @@ func TestResolveInheritedFont_ExplicitFalse_NoInherit(t *testing.T) {
 
 	// rpr で明示的に B="0" を指定 → 継承しない
 	rpr := &xmlRPr{B: "0", I: "0", Sz: 1800}
-	font := ctx.applyInheritedFont(&FontStyle{Size: 1800 * 127}, rpr, 0, inherited)
+	font := ctx.applyInheritedFont(&FontStyle{Size: 18}, rpr, 0, inherited)
 	if font == nil {
 		t.Fatal("フォントが返されない")
 	}
@@ -206,13 +206,13 @@ func TestResolveInheritedFont_NoOverrideExplicit(t *testing.T) {
 	}
 
 	// 既にフォント名が設定されている場合は上書きしない
-	font := &FontStyle{Name: "メイリオ", Size: 127000}
+	font := &FontStyle{Name: "メイリオ", Size: 10}
 	result := ctx.applyInheritedFont(font, nil, 0, inherited)
 	if result.Name != "メイリオ" {
 		t.Errorf("明示的な値が上書きされた: got %q, want %q", result.Name, "メイリオ")
 	}
-	if result.Size != 127000 {
-		t.Errorf("明示的なサイズが上書きされた: got %d, want %d", result.Size, 127000)
+	if result.Size != 10 {
+		t.Errorf("明示的なサイズが上書きされた: got %g, want 10", result.Size)
 	}
 }
 
@@ -233,8 +233,8 @@ func TestResolveInheritedFont_Level2(t *testing.T) {
 	if font == nil {
 		t.Fatal("継承フォントが返されない")
 	}
-	if font.Size != 1600*127 {
-		t.Errorf("Size: got %d, want %d (level 2 → lvl3pPr)", font.Size, 1600*127)
+	if font.Size != 16 {
+		t.Errorf("Size: got %g, want 16 (level 2 → lvl3pPr)", font.Size)
 	}
 }
 

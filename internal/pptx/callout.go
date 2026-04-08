@@ -45,8 +45,8 @@ func resolveCalloutPointer(geom *xmlPrstGeom, pos *Position) *Point {
 		}
 	}
 
-	px := pos.X + pos.W/2 + a1*pos.W/100000
-	py := pos.Y + pos.H/2 + a2*pos.H/100000
+	px := pos.X + pos.W/2 + float64(a1)*pos.W/100000
+	py := pos.Y + pos.H/2 + float64(a2)*pos.H/100000
 
 	return &Point{X: px, Y: py}
 }

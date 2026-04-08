@@ -50,25 +50,25 @@ type Shape struct {
 	Children []Shape `json:"children,omitempty"`
 }
 
-// Position は位置とサイズ
+// Position は位置とサイズ（pt単位）
 type Position struct {
-	X  int64 `json:"x"`
-	Y  int64 `json:"y"`
-	W  int64 `json:"w"`
-	H  int64 `json:"h"`
+	X  float64 `json:"x"`
+	Y  float64 `json:"y"`
+	W  float64 `json:"w"`
+	H  float64 `json:"h"`
 }
 
-// Point は座標
+// Point は座標（pt単位）
 type Point struct {
-	X int64 `json:"x"`
-	Y int64 `json:"y"`
+	X float64 `json:"x"`
+	Y float64 `json:"y"`
 }
 
 // LineStyle は枠線情報
 type LineStyle struct {
-	Color string `json:"color,omitempty"`
-	Style string `json:"style,omitempty"`
-	Width int64  `json:"width,omitempty"`
+	Color string  `json:"color,omitempty"`
+	Style string  `json:"style,omitempty"`
+	Width float64 `json:"width,omitempty"`
 }
 
 // Paragraph は段落
@@ -76,8 +76,8 @@ type Paragraph struct {
 	Text      string         `json:"text"`
 	Bullet    string         `json:"bullet,omitempty"`
 	Level     int            `json:"level,omitempty"`
-	MarginL   *int64         `json:"margin_left,omitempty"`
-	Indent    *int64         `json:"indent,omitempty"`
+	MarginL   *float64       `json:"margin_left,omitempty"`
+	Indent    *float64       `json:"indent,omitempty"`
 	Font      *FontStyle     `json:"font,omitempty"`
 	StyleRef  int            `json:"s,omitempty"`
 	Alignment *Alignment     `json:"alignment,omitempty"`
@@ -102,7 +102,7 @@ type HyperlinkData struct {
 // FontStyle はフォント情報
 type FontStyle struct {
 	Name          string `json:"name,omitempty"`
-	Size          int64  `json:"size,omitempty"`
+	Size          float64 `json:"size,omitempty"`
 	Bold          bool   `json:"bold,omitempty"`
 	Italic        bool   `json:"italic,omitempty"`
 	Strikethrough bool   `json:"strikethrough,omitempty"`
@@ -116,12 +116,12 @@ type Alignment struct {
 	Vertical   string `json:"vertical,omitempty"`
 }
 
-// TextMargin はテキストボディの内部マージン（EMU単位）
+// TextMargin はテキストボディの内部マージン（pt単位）
 type TextMargin struct {
-	Left   *int64 `json:"left,omitempty"`
-	Right  *int64 `json:"right,omitempty"`
-	Top    *int64 `json:"top,omitempty"`
-	Bottom *int64 `json:"bottom,omitempty"`
+	Left   *float64 `json:"left,omitempty"`
+	Right  *float64 `json:"right,omitempty"`
+	Top    *float64 `json:"top,omitempty"`
+	Bottom *float64 `json:"bottom,omitempty"`
 }
 
 // TableData はテーブルデータ
