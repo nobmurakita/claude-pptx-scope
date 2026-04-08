@@ -383,7 +383,7 @@ func TestLstStyleGetLevel_Nil(t *testing.T) {
 	}
 }
 
-func TestInheritedStyleGetLevelPPr_Cascade(t *testing.T) {
+func TestInheritedStyleCascade(t *testing.T) {
 	// 最初の lstStyle には level 0 がない → 2番目から取得
 	is := &inheritedStyle{
 		lstStyles: []*xmlLstStyle{
@@ -392,7 +392,14 @@ func TestInheritedStyleGetLevelPPr_Cascade(t *testing.T) {
 		},
 	}
 
-	ppr := is.getLevelPPr(0)
+	// lstStyles を順に辿って level 0 が見つかることを検証
+	var ppr *xmlLvlPPr
+	for _, ls := range is.lstStyles {
+		if p := ls.GetLevel(0); p != nil {
+			ppr = p
+			break
+		}
+	}
 	if ppr == nil || ppr.Algn != "l" {
 		t.Errorf("カスケードで2番目の lstStyle から取得されるべき")
 	}

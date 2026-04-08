@@ -36,32 +36,6 @@ type inheritedStyle struct {
 	lstStyles []*xmlLstStyle
 }
 
-// getLevelPPr はレベルに対応する xmlLvlPPr を継承チェーンから探す
-func (is *inheritedStyle) getLevelPPr(level int) *xmlLvlPPr {
-	if is == nil {
-		return nil
-	}
-	for _, ls := range is.lstStyles {
-		if ppr := ls.GetLevel(level); ppr != nil {
-			return ppr
-		}
-	}
-	return nil
-}
-
-// getDefRPr はレベルに対応する defRPr を継承チェーンから探す
-func (is *inheritedStyle) getDefRPr(level int) *xmlRPr {
-	if is == nil {
-		return nil
-	}
-	for _, ls := range is.lstStyles {
-		if ppr := ls.GetLevel(level); ppr != nil && ppr.DefRPr != nil {
-			return ppr.DefRPr
-		}
-	}
-	return nil
-}
-
 // File にレイアウト/マスターキャッシュを追加するための拡張
 
 // inheritCache はレイアウト/マスターのキャッシュ

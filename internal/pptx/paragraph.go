@@ -13,13 +13,15 @@ func (ctx *parseContext) parseParagraphs(ps []xmlP, inherited *inheritedStyle) [
 	// 自動番号のカウンタ管理
 	autoNumCounters := make(map[int]int) // level → カウンタ
 	lastAutoNumLevel := -1
+	resetAutoNum := func() {
+		autoNumCounters = make(map[int]int)
+		lastAutoNumLevel = -1
+	}
 
 	for _, p := range ps {
 		text := extractParagraphText(p)
 		if text == "" {
-			// 空の段落で自動番号をリセット
-			autoNumCounters = make(map[int]int)
-			lastAutoNumLevel = -1
+			resetAutoNum()
 			continue
 		}
 
@@ -35,11 +37,10 @@ func (ctx *parseContext) parseParagraphs(ps []xmlP, inherited *inheritedStyle) [
 		}
 
 		// 箇条書き（スライド上で明示指定されているか、継承から取得）
-		buChar, buAutoNum, buNone := resolveBullet(p.PPr, level, inherited)
+		buChar, buAutoNum, _ := resolveBullet(p.PPr, level, inherited)
 		if buChar != nil {
 			para.Bullet = buChar.Char
-			autoNumCounters = make(map[int]int)
-			lastAutoNumLevel = -1
+			resetAutoNum()
 		} else if buAutoNum != nil {
 			// レベルが変わるか、前が自動番号でなければカウンタリセット
 			if level != lastAutoNumLevel {
@@ -53,14 +54,8 @@ func (ctx *parseContext) parseParagraphs(ps []xmlP, inherited *inheritedStyle) [
 			num := startAt + autoNumCounters[level] - 1
 			para.Bullet = formatAutoNum(buAutoNum.Type, num)
 			lastAutoNumLevel = level
-		} else if buNone {
-			// 明示的に箇条書きなし → リセット
-			autoNumCounters = make(map[int]int)
-			lastAutoNumLevel = -1
 		} else {
-			// 箇条書き指定なし（PPr なし含む）→ 自動番号をリセット
-			autoNumCounters = make(map[int]int)
-			lastAutoNumLevel = -1
+			resetAutoNum()
 		}
 
 		// 段落インデント（marL/indent）
@@ -142,47 +137,17 @@ func (ctx *parseContext) parseRunStyles(p xmlP, level int, inherited *inheritedS
 		return font, link, nil
 	}
 
-	// 複数要素の場合: すべて同じ書式・リンクで改行なしならフォント+リンク情報のみ
+	// 1パスで RichTextRun を構築しつつ均一性を判定する
+	richText := make([]RichTextRun, 0, len(runs))
 	hasBr := false
 	allSame := true
 	var firstFont *FontStyle
 	var firstLink *HyperlinkData
 	firstSet := false
+
 	for _, elem := range runs {
 		if elem.Br {
 			hasBr = true
-			continue
-		}
-		var rpr *xmlRPr
-		if elem.R != nil {
-			rpr = elem.R.RPr
-		} else if elem.Fld != nil {
-			rpr = elem.Fld.RPr
-		}
-		f := ctx.rprToFont(rpr)
-		f = ctx.applyInheritedFont(f, rpr, level, inherited)
-		l := ctx.resolveRunHyperlink(rpr)
-		if !firstSet {
-			firstFont = f
-			firstLink = l
-			firstSet = true
-		} else if !fontsEqual(firstFont, f) || !linksEqual(firstLink, l) {
-			allSame = false
-			break
-		}
-	}
-
-	if allSame && !hasBr {
-		if firstFont != nil && isEmptyFont(firstFont) {
-			firstFont = nil
-		}
-		return firstFont, firstLink, nil
-	}
-
-	// 書式・リンクが異なるか改行を含む場合: リッチテキスト
-	richText := make([]RichTextRun, 0, len(runs))
-	for _, elem := range runs {
-		if elem.Br {
 			richText = append(richText, RichTextRun{Text: "\n"})
 			continue
 		}
@@ -195,17 +160,33 @@ func (ctx *parseContext) parseRunStyles(p xmlP, level int, inherited *inheritedS
 			text = elem.Fld.T
 			rpr = elem.Fld.RPr
 		}
-		if text == "" {
-			continue
-		}
-		rt := RichTextRun{Text: text}
 		font := ctx.rprToFont(rpr)
 		font = ctx.applyInheritedFont(font, rpr, level, inherited)
-		if font != nil && !isEmptyFont(font) {
-			rt.Font = font
+		link := ctx.resolveRunHyperlink(rpr)
+
+		if !firstSet {
+			firstFont = font
+			firstLink = link
+			firstSet = true
+		} else if allSame && (!fontsEqual(firstFont, font) || !linksEqual(firstLink, link)) {
+			allSame = false
 		}
-		rt.Link = ctx.resolveRunHyperlink(rpr)
-		richText = append(richText, rt)
+
+		if text != "" {
+			rt := RichTextRun{Text: text, Link: link}
+			if font != nil && !isEmptyFont(font) {
+				rt.Font = font
+			}
+			richText = append(richText, rt)
+		}
+	}
+
+	// すべて同じ書式・リンクで改行なしなら統一フォント+リンクのみ
+	if allSame && !hasBr {
+		if firstFont != nil && isEmptyFont(firstFont) {
+			firstFont = nil
+		}
+		return firstFont, firstLink, nil
 	}
 
 	return nil, nil, richText
@@ -241,6 +222,16 @@ func linksEqual(a, b *HyperlinkData) bool {
 	return a.URL == b.URL && a.Slide == b.Slide
 }
 
+// findInheritedDefRPr は継承チェーンから条件に合う最初の defRPr を返す
+func findInheritedDefRPr(inherited *inheritedStyle, level int, pred func(*xmlRPr) bool) *xmlRPr {
+	for _, ls := range inherited.lstStyles {
+		if ppr := ls.GetLevel(level); ppr != nil && ppr.DefRPr != nil && pred(ppr.DefRPr) {
+			return ppr.DefRPr
+		}
+	}
+	return nil
+}
+
 // applyInheritedFont は継承チェーンからフォント情報を補完する。
 // font が nil の場合は新たに作成する。inherited が nil の場合は何もしない。
 // rpr は元のランプロパティ（明示指定の有無を判定するため）。nil の場合はすべて未指定として扱う。
@@ -259,97 +250,73 @@ func (ctx *parseContext) applyInheritedFont(font *FontStyle, rpr *xmlRPr, level 
 
 	// フォント名: 継承チェーン上で最初に見つかったフォント名を使用
 	if font.Name == "" {
-		for _, ls := range inherited.lstStyles {
-			if ppr := ls.GetLevel(level); ppr != nil && ppr.DefRPr != nil {
-				if ppr.DefRPr.Latin != nil && ppr.DefRPr.Latin.Typeface != "" {
-					font.Name = tc.ResolveThemeFont(ppr.DefRPr.Latin.Typeface)
-					modified = true
-					break
-				}
-				if ppr.DefRPr.Ea != nil && ppr.DefRPr.Ea.Typeface != "" {
-					font.Name = tc.ResolveThemeFont(ppr.DefRPr.Ea.Typeface)
-					modified = true
-					break
-				}
+		if drp := findInheritedDefRPr(inherited, level, func(r *xmlRPr) bool {
+			return (r.Latin != nil && r.Latin.Typeface != "") || (r.Ea != nil && r.Ea.Typeface != "")
+		}); drp != nil {
+			if drp.Latin != nil && drp.Latin.Typeface != "" {
+				font.Name = tc.ResolveThemeFont(drp.Latin.Typeface)
+			} else {
+				font.Name = tc.ResolveThemeFont(drp.Ea.Typeface)
 			}
+			modified = true
 		}
 	}
 
 	// サイズ: 継承チェーン上で最初に見つかったサイズを使用
 	if font.Size == 0 {
-		for _, ls := range inherited.lstStyles {
-			if ppr := ls.GetLevel(level); ppr != nil && ppr.DefRPr != nil && ppr.DefRPr.Sz > 0 {
-				font.Size = int64(ppr.DefRPr.Sz) * 127
-				modified = true
-				break
-			}
+		if drp := findInheritedDefRPr(inherited, level, func(r *xmlRPr) bool { return r.Sz > 0 }); drp != nil {
+			font.Size = int64(drp.Sz) * 127
+			modified = true
 		}
 	}
 
 	// 色: 継承チェーン上で最初に見つかった色を使用
 	if font.Color == "" {
-		for _, ls := range inherited.lstStyles {
-			if ppr := ls.GetLevel(level); ppr != nil && ppr.DefRPr != nil && ppr.DefRPr.SolidFill != nil {
-				color := ctx.resolveSolidFillColor(ppr.DefRPr.SolidFill)
-				if color != "" {
-					font.Color = color
-					modified = true
-					break
-				}
+		if drp := findInheritedDefRPr(inherited, level, func(r *xmlRPr) bool { return r.SolidFill != nil }); drp != nil {
+			if color := ctx.resolveSolidFillColor(drp.SolidFill); color != "" {
+				font.Color = color
+				modified = true
 			}
 		}
 	}
 
 	// 太字: rPr で明示指定されていない場合（B == ""）のみ継承
 	if !font.Bold && (rpr == nil || rpr.B == "") {
-		for _, ls := range inherited.lstStyles {
-			if ppr := ls.GetLevel(level); ppr != nil && ppr.DefRPr != nil && ppr.DefRPr.B != "" {
-				if ppr.DefRPr.B == "1" || ppr.DefRPr.B == "true" {
-					font.Bold = true
-					modified = true
-				}
-				break // 明示的な値が見つかった（false含む）ので終了
+		if drp := findInheritedDefRPr(inherited, level, func(r *xmlRPr) bool { return r.B != "" }); drp != nil {
+			if drp.B == "1" || drp.B == "true" {
+				font.Bold = true
+				modified = true
 			}
 		}
 	}
 
 	// 斜体: rPr で明示指定されていない場合のみ継承
 	if !font.Italic && (rpr == nil || rpr.I == "") {
-		for _, ls := range inherited.lstStyles {
-			if ppr := ls.GetLevel(level); ppr != nil && ppr.DefRPr != nil && ppr.DefRPr.I != "" {
-				if ppr.DefRPr.I == "1" || ppr.DefRPr.I == "true" {
-					font.Italic = true
-					modified = true
-				}
-				break
+		if drp := findInheritedDefRPr(inherited, level, func(r *xmlRPr) bool { return r.I != "" }); drp != nil {
+			if drp.I == "1" || drp.I == "true" {
+				font.Italic = true
+				modified = true
 			}
 		}
 	}
 
 	// 下線: rPr で明示指定されていない場合のみ継承
 	if font.Underline == "" && (rpr == nil || rpr.U == "") {
-		for _, ls := range inherited.lstStyles {
-			if ppr := ls.GetLevel(level); ppr != nil && ppr.DefRPr != nil && ppr.DefRPr.U != "" && ppr.DefRPr.U != "none" {
-				font.Underline = ppr.DefRPr.U
-				modified = true
-				break
-			}
+		if drp := findInheritedDefRPr(inherited, level, func(r *xmlRPr) bool { return r.U != "" && r.U != "none" }); drp != nil {
+			font.Underline = drp.U
+			modified = true
 		}
 	}
 
 	// 取り消し線: rPr で明示指定されていない場合のみ継承
 	if !font.Strikethrough && (rpr == nil || rpr.Strike == "") {
-		for _, ls := range inherited.lstStyles {
-			if ppr := ls.GetLevel(level); ppr != nil && ppr.DefRPr != nil && ppr.DefRPr.Strike != "" && ppr.DefRPr.Strike != "noStrike" {
-				font.Strikethrough = true
-				modified = true
-				break
-			}
+		if drp := findInheritedDefRPr(inherited, level, func(r *xmlRPr) bool { return r.Strike != "" && r.Strike != "noStrike" }); drp != nil {
+			font.Strikethrough = true
+			modified = true
 		}
 	}
 
-	// 何も補完されなかった場合は元の状態を維持
-	if !modified && font.Name == "" && font.Size == 0 && !font.Bold && !font.Italic && font.Underline == "" && !font.Strikethrough && font.Color == "" {
+	if !modified && isEmptyFont(font) {
 		return nil
 	}
 
