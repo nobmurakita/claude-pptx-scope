@@ -105,8 +105,8 @@ pptx-scope slides [options] <file>
 - `z`: Z-order（0始まり、大きいほど前面）
 - `rotation`: 回転角度（時計回り、度単位。0の場合は省略）
 - `flip`: 反転（`"h"`, `"v"`, `"hv"`。反転なしの場合は省略）
-- `fill`: 塗りつぶし色（`#RRGGBB`）
-- `line`: 枠線情報（`color`, `style`, `width`。`width` はpt単位）
+- `fill`: 塗りつぶし色（`#RRGGBB`）。塗りつぶしなしの場合は省略
+- `line`: 枠線情報（`color`, `style`, `width`。`width` はpt単位）。枠線なしの場合は省略
 - `link`: ハイパーリンク（`url` で外部URL、`slide` でスライド内リンクのスライド番号）
 - `alignment`: テキストの垂直配置（`vertical` フィールド）。デフォルトの場合は省略
 - `text_margin`: テキストボディの内部マージン（`left`, `right`, `top`, `bottom`。pt単位。デフォルトの場合は省略）
@@ -116,10 +116,10 @@ pptx-scope slides [options] <file>
 **コネクタの追加フィールド:**
 
 - `from`/`to`: 接続元/先の図形ID
-- `from_idx`/`to_idx`: 接続ポイントのインデックス（図形上の接続位置、形状依存）
-- `connector_type`: `line`, `straightConnector1`, `bentConnector3`, `curvedConnector3` 等
+- `from_idx`/`to_idx`: 接続ポイントのインデックス。矩形の場合 0=上, 1=左, 2=下, 3=右
+- `connector_type`: コネクタ形状。`straightConnector1`（直線）、`bentConnector2`（L字・1回屈曲）、`bentConnector3`（コの字・2回屈曲）、`curvedConnector3`（曲線）等
 - `adj`: 屈曲・カーブの調整値（1/100000単位。bent/curvedコネクタで屈曲位置を制御）
-- `arrow`: `"start"`, `"end"`, `"both"`, `"none"`
+- `arrow`: 矢印ヘッドの位置。`"start"` は `start` 座標側、`"end"` は `end` 座標側、`"both"` は両端。矢印なしの場合は省略
 - `start`/`end`: 始点・終点座標（`x`, `y`。pt単位。`pos` と `flip` から算出）
 - `label`: コネクタ上のテキスト
 
