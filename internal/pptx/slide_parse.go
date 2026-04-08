@@ -245,7 +245,7 @@ func (ctx *parseContext) parseSp(sp xmlSp) *Shape {
 
 	ph := sp.NvSpPr.NvPr.Ph
 
-	// プレースホルダーの継承スタイルを解決
+	// プレースホルダ��の継承スタイルを解決
 	var inherited *inheritedStyle
 	if ph != nil {
 		var slideLstStyle *xmlLstStyle
@@ -255,8 +255,14 @@ func (ctx *parseContext) parseSp(sp xmlSp) *Shape {
 		inherited = resolveInheritedStyle(ph, slideLstStyle, ctx.layout, ctx.master, ctx.f.defaultTextStyle)
 	}
 
-	// テキスト・塗りつぶし・枠線のいずれもない図形はスキップ（プレースホルダー含む）
-	hasText := hasTextContent(sp.TxBody)
+	// テキストを先にパースし、結果で有無を判定（extractParagraphText の重複呼び出しを回避）
+	var paras []Paragraph
+	if sp.TxBody != nil {
+		paras = ctx.parseParagraphs(sp.TxBody.Ps, inherited)
+	}
+
+	// テキスト・塗りつぶし・枠線のい���れもない図形は���キップ（プレースホル���ー含む）
+	hasText := len(paras) > 0
 	hasFill := sp.SpPr.SolidFill != nil || sp.SpPr.GradFill != nil
 	hasLine := sp.SpPr.Ln != nil && sp.SpPr.Ln.NoFill == nil
 	if !hasText && !hasFill && !hasLine {
@@ -311,9 +317,9 @@ func (ctx *parseContext) parseSp(sp xmlSp) *Shape {
 	// 吹き出しポインタ
 	s.CalloutPointer = resolveCalloutPointer(sp.SpPr.PrstGeom, s.Pos)
 
-	// テキスト
+	// テキスト（パース済みの結果を使用）
 	if sp.TxBody != nil {
-		s.Paragraphs = ctx.parseParagraphs(sp.TxBody.Ps, inherited)
+		s.Paragraphs = paras
 		s.Alignment = ctx.extractShapeLevelAlignment(sp.TxBody)
 		s.TextMargin = extractTextMargin(sp.TxBody.BodyPr)
 	}
@@ -390,65 +396,6 @@ func (ctx *parseContext) parseGrpSp(grp xmlGrpSp) *Shape {
 
 	return s
 }
-
-// coordTransform は子座標空間から親座標空間への変換パラメータ
-type coordTransform struct {
-	chOffX, chOffY int64
-	chExtW, chExtH int64
-	grpX, grpY     int64
-	grpW, grpH     int64
-}
-
-// transformGroupChildren はグループ内の子要素の座標を絶対座標に変換する
-// グループの子座標空間(ChOff/ChExt)からスライド座標空間(Off/Ext)へマッピングする
-func transformGroupChildren(children []Shape, xfrm *xmlGrpXfrm) {
-	ct := coordTransform{
-		chOffX: xfrm.ChOff.X, chOffY: xfrm.ChOff.Y,
-		chExtW: xfrm.ChExt.Cx, chExtH: xfrm.ChExt.Cy,
-		grpX: xfrm.Off.X, grpY: xfrm.Off.Y,
-		grpW: xfrm.Ext.Cx, grpH: xfrm.Ext.Cy,
-	}
-	// ChExt が 0 の場合はスケール計算でゼロ除算になるため変換をスキップする。
-	// 通常の PPTX では発生しないが、壊れたファイルへの防御として残す。
-	if ct.chExtW == 0 || ct.chExtH == 0 {
-		return
-	}
-	ct.applyToChildren(children)
-}
-
-// applyToChildren は子要素の座標を再帰的に親座標空間に変換する
-func (ct *coordTransform) applyToChildren(children []Shape) {
-	for i := range children {
-		ct.transformShapePos(children[i].Pos)
-		ct.transformPointPos(children[i].CalloutPointer)
-		ct.transformPointPos(children[i].Start)
-		ct.transformPointPos(children[i].End)
-		if children[i].Type == "group" {
-			ct.applyToChildren(children[i].Children)
-		}
-	}
-}
-
-// transformShapePos は Position を子座標空間から親座標空間に変換する
-func (ct *coordTransform) transformShapePos(pos *Position) {
-	if pos == nil {
-		return
-	}
-	pos.X = ct.grpX + (pos.X-ct.chOffX)*ct.grpW/ct.chExtW
-	pos.Y = ct.grpY + (pos.Y-ct.chOffY)*ct.grpH/ct.chExtH
-	pos.W = pos.W * ct.grpW / ct.chExtW
-	pos.H = pos.H * ct.grpH / ct.chExtH
-}
-
-// transformPointPos は Point を子座標空間から親座標空間に変換する
-func (ct *coordTransform) transformPointPos(pt *Point) {
-	if pt == nil {
-		return
-	}
-	pt.X = ct.grpX + (pt.X-ct.chOffX)*ct.grpW/ct.chExtW
-	pt.Y = ct.grpY + (pt.Y-ct.chOffY)*ct.grpH/ct.chExtH
-}
-
 
 // resolveHyperlink は xmlHlinkClick からハイパーリンク情報を解決する
 func (ctx *parseContext) resolveHyperlink(hlink *xmlHlinkClick) *HyperlinkData {

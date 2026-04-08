@@ -32,19 +32,6 @@ func xfrmFlip(xfrm *xmlXfrm) string {
 	return ""
 }
 
-// hasTextContent は txBody にテキストが含まれるかを判定する
-func hasTextContent(txBody *xmlTxBody) bool {
-	if txBody == nil {
-		return false
-	}
-	for _, p := range txBody.Ps {
-		if extractParagraphText(p) != "" {
-			return true
-		}
-	}
-	return false
-}
-
 // resolveArrow はコネクタの矢印情報を解決する
 func resolveArrow(ln *xmlLn) string {
 	if ln == nil {

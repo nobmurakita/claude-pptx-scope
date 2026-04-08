@@ -1,10 +1,5 @@
 package pptx
 
-import (
-	"fmt"
-	"strings"
-)
-
 // parseParagraphs は段落の配列をパースする。
 // inherited はプレースホルダーの継承スタイル（非プレースホルダーの場合はnil）。
 func (ctx *parseContext) parseParagraphs(ps []xmlP, inherited *inheritedStyle) []Paragraph {
@@ -222,20 +217,10 @@ func linksEqual(a, b *HyperlinkData) bool {
 	return a.URL == b.URL && a.Slide == b.Slide
 }
 
-// findInheritedDefRPr は継承チェーンから条件に合う最初の defRPr を返す
-func findInheritedDefRPr(inherited *inheritedStyle, level int, pred func(*xmlRPr) bool) *xmlRPr {
-	for _, ls := range inherited.lstStyles {
-		if ppr := ls.GetLevel(level); ppr != nil && ppr.DefRPr != nil && pred(ppr.DefRPr) {
-			return ppr.DefRPr
-		}
-	}
-	return nil
-}
-
 // applyInheritedFont は継承チェーンからフォント情報を補完する。
 // font が nil の場合は新たに作成する。inherited が nil の場合は何もしない。
 // rpr は元のランプロパティ（明示指定の有無を判定するため）。nil の場合はすべて未指定として扱う。
-// 各フォントフィールドごとに継承チェーンを個別に辿り、空の defRPr による遮断を防ぐ。
+// 継承チェーンを1回走査し、未解決のプロパティをまとめて収集する。
 func (ctx *parseContext) applyInheritedFont(font *FontStyle, rpr *xmlRPr, level int, inherited *inheritedStyle) *FontStyle {
 	if inherited == nil {
 		return font
@@ -248,70 +233,79 @@ func (ctx *parseContext) applyInheritedFont(font *FontStyle, rpr *xmlRPr, level 
 	tc := ctx.f.getTheme()
 	modified := false
 
-	// フォント名: 継承チェーン上で最初に見つかったフォント名を使用
-	if font.Name == "" {
-		if drp := findInheritedDefRPr(inherited, level, func(r *xmlRPr) bool {
-			return (r.Latin != nil && r.Latin.Typeface != "") || (r.Ea != nil && r.Ea.Typeface != "")
-		}); drp != nil {
+	// 各プロパティの解決状態を追跡
+	needName := font.Name == ""
+	needSize := font.Size == 0
+	needColor := font.Color == ""
+	needBold := !font.Bold && (rpr == nil || rpr.B == "")
+	needItalic := !font.Italic && (rpr == nil || rpr.I == "")
+	needUnderline := font.Underline == "" && (rpr == nil || rpr.U == "")
+	needStrike := !font.Strikethrough && (rpr == nil || rpr.Strike == "")
+
+	for _, ls := range inherited.lstStyles {
+		if !needName && !needSize && !needColor && !needBold && !needItalic && !needUnderline && !needStrike {
+			break
+		}
+
+		ppr := ls.GetLevel(level)
+		if ppr == nil || ppr.DefRPr == nil {
+			continue
+		}
+		drp := ppr.DefRPr
+
+		if needName && ((drp.Latin != nil && drp.Latin.Typeface != "") || (drp.Ea != nil && drp.Ea.Typeface != "")) {
 			if drp.Latin != nil && drp.Latin.Typeface != "" {
 				font.Name = tc.ResolveThemeFont(drp.Latin.Typeface)
 			} else {
 				font.Name = tc.ResolveThemeFont(drp.Ea.Typeface)
 			}
+			needName = false
 			modified = true
 		}
-	}
 
-	// サイズ: 継承チェーン上で最初に見つかったサイズを使用
-	if font.Size == 0 {
-		if drp := findInheritedDefRPr(inherited, level, func(r *xmlRPr) bool { return r.Sz > 0 }); drp != nil {
+		if needSize && drp.Sz > 0 {
 			font.Size = int64(drp.Sz) * 127
+			needSize = false
 			modified = true
 		}
-	}
 
-	// 色: 継承チェーン上で最初に見つかった色を使用
-	if font.Color == "" {
-		if drp := findInheritedDefRPr(inherited, level, func(r *xmlRPr) bool { return r.SolidFill != nil }); drp != nil {
+		if needColor && drp.SolidFill != nil {
 			if color := ctx.resolveSolidFillColor(drp.SolidFill); color != "" {
 				font.Color = color
+				needColor = false
 				modified = true
 			}
 		}
-	}
 
-	// 太字: rPr で明示指定されていない場合（B == ""）のみ継承
-	if !font.Bold && (rpr == nil || rpr.B == "") {
-		if drp := findInheritedDefRPr(inherited, level, func(r *xmlRPr) bool { return r.B != "" }); drp != nil {
+		// 太字: B が明示指定（"0"含む）されていれば、値に関わらず探索を停止
+		if needBold && drp.B != "" {
 			if drp.B == "1" || drp.B == "true" {
 				font.Bold = true
 				modified = true
 			}
+			needBold = false
 		}
-	}
 
-	// 斜体: rPr で明示指定されていない場合のみ継承
-	if !font.Italic && (rpr == nil || rpr.I == "") {
-		if drp := findInheritedDefRPr(inherited, level, func(r *xmlRPr) bool { return r.I != "" }); drp != nil {
+		// 斜体: 太字と同様
+		if needItalic && drp.I != "" {
 			if drp.I == "1" || drp.I == "true" {
 				font.Italic = true
 				modified = true
 			}
+			needItalic = false
 		}
-	}
 
-	// 下線: rPr で明示指定されていない場合のみ継承
-	if font.Underline == "" && (rpr == nil || rpr.U == "") {
-		if drp := findInheritedDefRPr(inherited, level, func(r *xmlRPr) bool { return r.U != "" && r.U != "none" }); drp != nil {
+		// 下線: "none" は未指定扱いで探索を継続
+		if needUnderline && drp.U != "" && drp.U != "none" {
 			font.Underline = drp.U
+			needUnderline = false
 			modified = true
 		}
-	}
 
-	// 取り消し線: rPr で明示指定されていない場合のみ継承
-	if !font.Strikethrough && (rpr == nil || rpr.Strike == "") {
-		if drp := findInheritedDefRPr(inherited, level, func(r *xmlRPr) bool { return r.Strike != "" && r.Strike != "noStrike" }); drp != nil {
+		// 取り消し線: "noStrike" は未指定扱いで探索を継続
+		if needStrike && drp.Strike != "" && drp.Strike != "noStrike" {
 			font.Strikethrough = true
+			needStrike = false
 			modified = true
 		}
 	}
@@ -389,76 +383,6 @@ func fontsEqual(a, b *FontStyle) bool {
 		a.Strikethrough == b.Strikethrough && a.Color == b.Color
 }
 
-// formatAutoNum は自動番号を書式化する
-func formatAutoNum(numType string, num int) string {
-	switch numType {
-	case "arabicPeriod":
-		return fmt.Sprintf("%d.", num)
-	case "arabicParenR":
-		return fmt.Sprintf("%d)", num)
-	case "alphaLcPeriod":
-		return fmt.Sprintf("%s.", toLowerAlpha(num))
-	case "alphaUcPeriod":
-		return fmt.Sprintf("%s.", toUpperAlpha(num))
-	case "romanLcPeriod":
-		return fmt.Sprintf("%s.", toLowerRoman(num))
-	case "romanUcPeriod":
-		return fmt.Sprintf("%s.", toUpperRoman(num))
-	default:
-		return fmt.Sprintf("%d.", num)
-	}
-}
-
-func toLowerAlpha(n int) string {
-	if n < 1 {
-		return fmt.Sprintf("%d", n)
-	}
-	var buf [8]byte
-	i := len(buf)
-	for n > 0 {
-		n--
-		i--
-		buf[i] = byte('a' + n%26)
-		n /= 26
-	}
-	return string(buf[i:])
-}
-
-func toUpperAlpha(n int) string {
-	return strings.ToUpper(toLowerAlpha(n))
-}
-
-func toLowerRoman(n int) string {
-	return strings.ToLower(toUpperRoman(n))
-}
-
-func toUpperRoman(n int) string {
-	vals := []int{1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1}
-	syms := []string{"M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"}
-	var sb strings.Builder
-	for i, v := range vals {
-		for n >= v {
-			sb.WriteString(syms[i])
-			n -= v
-		}
-	}
-	return sb.String()
-}
-
-func mapAlignment(algn string) string {
-	switch algn {
-	case "l":
-		return "left"
-	case "r":
-		return "right"
-	case "ctr":
-		return "center"
-	case "just":
-		return "justify"
-	default:
-		return algn
-	}
-}
 
 // resolveParaIndent は段落の marL と indent を解決する。
 // スライド上の pPr を優先し、なければ継承チェーンから取得する。
@@ -547,15 +471,3 @@ func (ctx *parseContext) extractShapeLevelAlignment(txBody *xmlTxBody) *Alignmen
 	return &Alignment{Vertical: v}
 }
 
-func mapVerticalAnchor(anchor string) string {
-	switch anchor {
-	case "t":
-		return "top"
-	case "ctr":
-		return "center"
-	case "b":
-		return "bottom"
-	default:
-		return ""
-	}
-}
