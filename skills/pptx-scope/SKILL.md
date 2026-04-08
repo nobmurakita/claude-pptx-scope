@@ -11,17 +11,17 @@ allowed-tools:
 
 PowerPointファイル（.pptx）の内容をCLIから出力するツール。
 
-実行ファイル: `bash ${CLAUDE_SKILL_DIR}/scripts/pptx-scope <command> [options] <file>`
+実行ファイル: `bash ${CLAUDE_SKILL_DIR}/scripts/pptx-scope`（以降 `pptx-scope` と表記）
 
 ## 出力の読み取り方
 
 全コマンドの出力は自動的に一時ファイルに保存され、stdout にはファイルパスと行数のみが返る。
 
 ```bash
-$ bash ${CLAUDE_SKILL_DIR}/scripts/pptx-scope info example.pptx
+$ pptx-scope info example.pptx
 {"file":"$TMPDIR/pptx-scope-abc123.jsonl","lines":1}
 
-$ bash ${CLAUDE_SKILL_DIR}/scripts/pptx-scope slides --slide 1,2,3 example.pptx
+$ pptx-scope slides --slide 1,2,3 example.pptx
 {"file":"$TMPDIR/pptx-scope-abc456.jsonl","lines":5}
 ```
 
@@ -29,25 +29,16 @@ $ bash ${CLAUDE_SKILL_DIR}/scripts/pptx-scope slides --slide 1,2,3 example.pptx
 
 ## 利用フロー
 
-```
-1. info   → スライド一覧を確認し対象スライドを特定
-2. slides → スライドの内容を取得
-3. image  → 必要な画像を個別に取得して確認
-4. search → 特定テキストの検索（slides より効率的）
-```
+1. `info` でスライド一覧とタイトルを確認し対象を特定
+2. 目的に応じてコマンドを選択:
 
-基本的には `info` → `slides` で内容を把握する。特定のキーワードを探す場合は `search` が効率的。
+   - **特定キーワードを探す** → `search` で該当スライドを特定 → `slides --slide` で詳細取得
+   - **スライド内容を確認する** → `slides --slide` で対象スライドを取得
+   - **全体を把握する** → `slides` で数枚ずつ分割取得（一括取得はトークン消費大）
+
+3. `slides` 出力に `image_id` があれば `image` で取得し Read で確認（確認後は削除）
+
 図形の書式情報（フォント・色・枠線）は常に出力される。
-
-**大規模プレゼンテーションの取得戦略:**
-
-スライド数が多い場合、全スライドを一括取得するとトークン消費が大きくなる。まず `info` でスライド一覧とタイトルを確認し、`--slide` で必要なスライドに絞って取得する。全体を把握する必要がある場合は、数枚ずつ分割して取得する。特定のキーワードを探す場合は `search` で該当スライドを特定してから `slides` で詳細を取得するのが効率的。
-
-**画像の確認:** `info` で `has_images: true` のスライドには画像が含まれる。`slides` 出力に `image_id` がある場合、内容の把握に役立つ可能性が高いため積極的に確認する。
-
-1. `image` サブコマンドで画像を取得: `pptx-scope image <file> <image_id>`
-2. 返された `file` パスを Read で画像の内容を確認する
-3. 確認が終わったら削除する
 
 ## コマンドリファレンス
 
