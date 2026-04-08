@@ -38,8 +38,12 @@ func parseHexRGB(hex string) (r, g, b float64, ok bool) {
 	return float64(ri) / 255.0, float64(gi) / 255.0, float64(bi) / 255.0, true
 }
 
-// formatHexRGB は 0.0〜1.0 の RGB を "#RRGGBB" 形式に変換する
+// formatHexRGB は 0.0〜1.0 の RGB を "#RRGGBB" 形式に変換する。
+// 入力値が範囲外の場合は 0.0〜1.0 にクランプする。
 func formatHexRGB(r, g, b float64) string {
+	r = math.Max(0, math.Min(1, r))
+	g = math.Max(0, math.Min(1, g))
+	b = math.Max(0, math.Min(1, b))
 	return fmt.Sprintf("#%02X%02X%02X",
 		int(math.Round(r*255)),
 		int(math.Round(g*255)),

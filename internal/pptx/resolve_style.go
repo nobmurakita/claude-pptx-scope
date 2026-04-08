@@ -111,7 +111,7 @@ func (ctx *parseContext) resolveLine(ln *xmlLn) *LineStyle {
 	// スタイル
 	if ln.PrstDash != nil {
 		ls.Style = ln.PrstDash.Val
-	} else if ln.SolidFill != nil {
+	} else if ls.Color != "" {
 		ls.Style = "solid"
 	}
 

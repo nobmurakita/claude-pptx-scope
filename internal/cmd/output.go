@@ -11,11 +11,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// newJSONLWriter は JSONL 出力用のエンコーダを生成する
-func newJSONLWriter(w io.Writer) *json.Encoder {
+// newJSONEncoder は SetEscapeHTML(false) 設定済みの json.Encoder を生成する
+func newJSONEncoder(w io.Writer) *json.Encoder {
 	enc := json.NewEncoder(w)
 	enc.SetEscapeHTML(false)
 	return enc
+}
+
+// newJSONLWriter は JSONL 出力用のエンコーダを生成する
+func newJSONLWriter(w io.Writer) *json.Encoder {
+	return newJSONEncoder(w)
 }
 
 // outputResult は一時ファイルモード時に stdout に出力する結果JSON
@@ -82,8 +87,7 @@ func (ow *outputWriter) finalize() error {
 		return err
 	}
 	ow.file = nil // cleanup での二重 Close を防止
-	enc := json.NewEncoder(os.Stdout)
-	enc.SetEscapeHTML(false)
+	enc := newJSONEncoder(os.Stdout)
 	lines := ow.lineCount
 	return enc.Encode(outputResult{File: name, Lines: &lines})
 }

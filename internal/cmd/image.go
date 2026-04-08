@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -38,8 +37,8 @@ func runImage(cmd *cobra.Command, args []string) error {
 	outputPath := out.Name()
 	succeeded := false
 	defer func() {
-		out.Close()
 		if !succeeded {
+			out.Close()
 			os.Remove(outputPath)
 		}
 	}()
@@ -48,17 +47,17 @@ func runImage(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// 書き込み完了後、パスを報告する前にファイルを閉じる
+	if err := out.Close(); err != nil {
+		return fmt.Errorf("一時ファイルの書き込みエラー: %w", err)
+	}
+	succeeded = true
+
 	useStdout, _ := cmd.Root().PersistentFlags().GetBool("stdout")
 	if useStdout {
 		fmt.Println(outputPath)
-		succeeded = true
 		return nil
 	}
-	enc := json.NewEncoder(os.Stdout)
-	enc.SetEscapeHTML(false)
-	if err := enc.Encode(outputResult{File: outputPath}); err != nil {
-		return err
-	}
-	succeeded = true
-	return nil
+	enc := newJSONEncoder(os.Stdout)
+	return enc.Encode(outputResult{File: outputPath})
 }
