@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -53,11 +54,7 @@ func newOutputWriter(cmd *cobra.Command) (*outputWriter, error) {
 
 func (ow *outputWriter) Write(p []byte) (n int, err error) {
 	n, err = ow.w.Write(p)
-	for _, b := range p[:n] {
-		if b == '\n' {
-			ow.lineCount++
-		}
-	}
+	ow.lineCount += bytes.Count(p[:n], []byte{'\n'})
 	return
 }
 

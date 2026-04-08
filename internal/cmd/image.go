@@ -35,8 +35,14 @@ func runImage(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("一時ファイルの作成エラー: %w", err)
 	}
-	defer out.Close()
 	outputPath := out.Name()
+	succeeded := false
+	defer func() {
+		out.Close()
+		if !succeeded {
+			os.Remove(outputPath)
+		}
+	}()
 
 	if err := f.ExtractImage(imageID, out); err != nil {
 		return err
@@ -45,9 +51,14 @@ func runImage(cmd *cobra.Command, args []string) error {
 	useStdout, _ := cmd.Root().PersistentFlags().GetBool("stdout")
 	if useStdout {
 		fmt.Println(outputPath)
+		succeeded = true
 		return nil
 	}
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetEscapeHTML(false)
-	return enc.Encode(outputResult{File: outputPath})
+	if err := enc.Encode(outputResult{File: outputPath}); err != nil {
+		return err
+	}
+	succeeded = true
+	return nil
 }

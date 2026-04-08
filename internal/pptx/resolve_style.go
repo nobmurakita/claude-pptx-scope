@@ -34,23 +34,45 @@ func (ctx *parseContext) resolveSolidFillColor(fill *xmlSolidFill) string {
 	return ""
 }
 
-// applyColorTransforms は色変換をXML出現順に適用する
+// applyColorTransforms は色変換をXML出現順に適用する。
+// lumMod/lumOff はペアで蓄積してから1回で適用する（丸め誤差の防止）。
 func applyColorTransforms(color string, transforms []colorTransform) string {
 	if color == "" {
 		return ""
 	}
+
+	// lumMod/lumOff を蓄積して一括適用するための変数
+	lumMod := 1.0
+	lumOff := 0.0
+	hasLum := false
+
+	flushLum := func() {
+		if hasLum {
+			color = applyLuminance(color, lumMod, lumOff)
+			lumMod = 1.0
+			lumOff = 0.0
+			hasLum = false
+		}
+	}
+
 	for _, t := range transforms {
 		switch t.Op {
 		case "tint":
+			flushLum()
 			color = applyTint(color, float64(t.Val)/100000.0)
 		case "shade":
+			flushLum()
 			color = applyTint(color, -(1.0-float64(t.Val)/100000.0))
 		case "lumMod":
-			color = applyLuminance(color, float64(t.Val)/100000.0, 0)
+			lumMod = float64(t.Val) / 100000.0
+			hasLum = true
 		case "lumOff":
-			color = applyLuminance(color, 1.0, float64(t.Val)/100000.0)
+			lumOff = float64(t.Val) / 100000.0
+			hasLum = true
 		}
 	}
+	flushLum()
+
 	return color
 }
 
