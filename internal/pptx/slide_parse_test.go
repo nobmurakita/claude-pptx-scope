@@ -1011,7 +1011,7 @@ func TestResolveConnectors_InGroup(t *testing.T) {
 
 	shapes := []Shape{
 		{
-			ID:   2,
+			ID: 2,
 			Type: "group",
 			Children: []Shape{
 				{ID: 1, Type: "rect"},

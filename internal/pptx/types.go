@@ -14,7 +14,7 @@ type SlideInfo struct {
 
 // Shape は図形の出力データ
 type Shape struct {
-	ID             int         `json:"id"`
+	ID             int         `json:"shape"`
 	Type           string      `json:"type"`
 	Name           string      `json:"name,omitempty"`
 	Placeholder    string      `json:"placeholder,omitempty"`

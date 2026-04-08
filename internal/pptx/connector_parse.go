@@ -9,7 +9,7 @@ func (ctx *parseContext) parseCxnSp(cxn xmlCxnSp) *Shape {
 	}
 
 	s := &Shape{
-		ID:   ctx.allocID(cxn.NvCxnSpPr.CNvPr.ID),
+		ID: ctx.allocID(cxn.NvCxnSpPr.CNvPr.ID),
 		Type: "connector",
 		Name: cxn.NvCxnSpPr.CNvPr.Name,
 	}

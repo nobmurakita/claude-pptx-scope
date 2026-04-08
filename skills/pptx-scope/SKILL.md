@@ -78,11 +78,11 @@ pptx-scope slides [options] <file>
 出力例:
 ```jsonl
 {"slide":1,"title":"基本設計書","shapes":2,"has_notes":true}
-{"slide":1,"id":1,"type":"rect","placeholder":"ctrTitle","pos":{"x":685800,"y":2286000,"w":7772400,"h":1470025},"z":0,"alignment":{"vertical":"center"},"paragraphs":[{"text":"基本設計書","font":{"name":"メイリオ","size":4572000,"bold":true,"color":"#333333"},"alignment":{"horizontal":"center"}}]}
-{"slide":1,"id":2,"type":"rect","placeholder":"subTitle","pos":{"x":1371600,"y":3886200,"w":6400800,"h":1752600},"z":1,"paragraphs":[{"text":"2025年4月版"}]}
+{"shape":1,"type":"rect","placeholder":"ctrTitle","pos":{"x":685800,"y":2286000,"w":7772400,"h":1470025},"z":0,"alignment":{"vertical":"center"},"paragraphs":[{"text":"基本設計書","font":{"name":"メイリオ","size":4572000,"bold":true,"color":"#333333"},"alignment":{"horizontal":"center"}}]}
+{"shape":2,"type":"rect","placeholder":"subTitle","pos":{"x":1371600,"y":3886200,"w":6400800,"h":1752600},"z":1,"paragraphs":[{"text":"2025年4月版"}]}
 {"slide":2,"title":"目次","shapes":2}
-{"slide":2,"id":1,"type":"rect","placeholder":"title","z":0,"paragraphs":[{"text":"目次"}]}
-{"slide":2,"id":2,"type":"rect","placeholder":"body","z":1,"paragraphs":[{"text":"システム概要","bullet":"1."},{"text":"機能一覧","bullet":"2."}]}
+{"shape":1,"type":"rect","placeholder":"title","z":0,"paragraphs":[{"text":"目次"}]}
+{"shape":2,"type":"rect","placeholder":"body","z":1,"paragraphs":[{"text":"システム概要","bullet":"1."},{"text":"機能一覧","bullet":"2."}]}
 ```
 
 スライドヘッダ行（`shapes` は図形数）に続いて、図形を1つずつ個別の行として出力する。`--slide` 未指定時は全スライドを順番に出力する。
@@ -97,7 +97,7 @@ pptx-scope slides [options] <file>
 
 **図形の主なフィールド:**
 
-- `id`: スライド内の連番ID（1始まり）
+- `shape`: スライド内の連番ID（1始まり）
 - `placeholder`: プレースホルダー種別（`title`, `ctrTitle`, `subTitle`, `body` 等）。プレースホルダーでなければ省略
 - `name`: 図形名。プレースホルダーの場合は省略
 - `pos`: 位置とサイズ（`x`, `y`, `w`, `h`。EMU単位）
@@ -123,7 +123,7 @@ pptx-scope slides [options] <file>
 **テーブルの出力例:**
 
 ```json
-{"id":4,"type":"table","name":"表 1","pos":{"x":457200,"y":1600200,"w":8229600,"h":3000000},"z":3,"table":{"cols":3,"rows":[["項目","説明","備考"],["機能A",null,"必須"]]}}
+{"shape":4,"type":"table","name":"表 1","pos":{"x":457200,"y":1600200,"w":8229600,"h":3000000},"z":3,"table":{"cols":3,"rows":[["項目","説明","備考"],["機能A",null,"必須"]]}}
 ```
 
 **ノート（`--notes` 指定時）:**
@@ -137,7 +137,7 @@ pptx-scope slides [options] <file>
 slides 出力の `image_id` を指定する。stdout に `{"file":"$TMPDIR/pptx-scope-abc123.png"}` が返る。返された `file` パスを Read で確認し、終わったら削除する。
 
 ```jsonl
-{"id":5,"type":"picture","name":"図 1","pos":{"x":1000000,"y":1000000,"w":5000000,"h":3000000},"z":4,"alt_text":"システム構成図","image_id":"ppt/media/image1.png"}
+{"shape":5,"type":"picture","name":"図 1","pos":{"x":1000000,"y":1000000,"w":5000000,"h":3000000},"z":4,"alt_text":"システム構成図","image_id":"ppt/media/image1.png"}
 ```
 
 ```bash

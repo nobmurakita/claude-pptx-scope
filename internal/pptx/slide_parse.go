@@ -352,7 +352,7 @@ func (ctx *parseContext) parsePic(pic xmlPic) *Shape {
 	}
 
 	s := &Shape{
-		ID:   ctx.allocID(pic.NvPicPr.CNvPr.ID),
+		ID: ctx.allocID(pic.NvPicPr.CNvPr.ID),
 		Type: "picture",
 		Name: pic.NvPicPr.CNvPr.Name,
 	}
@@ -381,7 +381,7 @@ func (ctx *parseContext) parseGrpSp(grp xmlGrpSp) *Shape {
 	}
 
 	s := &Shape{
-		ID:   ctx.allocID(grp.NvGrpSpPr.CNvPr.ID),
+		ID: ctx.allocID(grp.NvGrpSpPr.CNvPr.ID),
 		Type: "group",
 		Name: grp.NvGrpSpPr.CNvPr.Name,
 	}

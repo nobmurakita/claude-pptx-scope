@@ -21,15 +21,8 @@ func NewSlidesCmd() *cobra.Command {
 	return cmd
 }
 
-// shapeOutput は図形の出力行（スライド番号を付与）
-type shapeOutput struct {
-	Slide int `json:"slide"`
-	pptx.Shape
-}
-
 // notesOutput はノートの出力行
 type notesOutput struct {
-	Slide int              `json:"slide"`
 	Notes []pptx.Paragraph `json:"notes"`
 }
 
@@ -104,18 +97,14 @@ func emitSlideData(enc *json.Encoder, dedup *pptx.StyleDeduplicator, sd *pptx.Sl
 
 	// 図形を1つずつ個別の行として出力
 	for i := range sd.Shapes {
-		out := shapeOutput{
-			Slide: sd.Number,
-			Shape: sd.Shapes[i],
-		}
-		if err := enc.Encode(out); err != nil {
+		if err := enc.Encode(sd.Shapes[i]); err != nil {
 			return fmt.Errorf("JSON出力エラー: %w", err)
 		}
 	}
 
 	// ノートを独立行として出力
 	if len(sd.Notes) > 0 {
-		if err := enc.Encode(notesOutput{Slide: sd.Number, Notes: sd.Notes}); err != nil {
+		if err := enc.Encode(notesOutput{Notes: sd.Notes}); err != nil {
 			return fmt.Errorf("JSON出力エラー: %w", err)
 		}
 	}

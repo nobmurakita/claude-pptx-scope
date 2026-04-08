@@ -27,8 +27,8 @@ func TestMatchShapesText_Table(t *testing.T) {
 	cell := func(s string) *TableCell { return &TableCell{Text: s} }
 	shapes := []Shape{
 		{
-			ID:   1,
-			Type: "table",
+			ID: 1,
+			Type:    "table",
 			Table: &TableData{
 				Cols: 2,
 				Rows: [][]*TableCell{
@@ -64,8 +64,8 @@ func TestMatchShapesText_Connector(t *testing.T) {
 func TestMatchShapesText_Group(t *testing.T) {
 	shapes := []Shape{
 		{
-			ID:   1,
-			Type: "group",
+			ID: 1,
+			Type:    "group",
 			Children: []Shape{
 				{ID: 2, Type: "rect", Paragraphs: []Paragraph{{Text: "内部テキスト"}}},
 				{ID: 3, Type: "rect", Paragraphs: []Paragraph{{Text: "別のテキスト"}}},

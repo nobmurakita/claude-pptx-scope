@@ -12,7 +12,7 @@ func (ctx *parseContext) parseGraphicFrame(gf xmlGraphicFrame) *Shape {
 	}
 
 	s := &Shape{
-		ID:   ctx.allocID(gf.NvGraphicFramePr.CNvPr.ID),
+		ID: ctx.allocID(gf.NvGraphicFramePr.CNvPr.ID),
 		Type: "table",
 		Name: gf.NvGraphicFramePr.CNvPr.Name,
 	}
