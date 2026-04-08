@@ -18,11 +18,6 @@ func newJSONEncoder(w io.Writer) *json.Encoder {
 	return enc
 }
 
-// newJSONLWriter は JSONL 出力用のエンコーダを生成する
-func newJSONLWriter(w io.Writer) *json.Encoder {
-	return newJSONEncoder(w)
-}
-
 // outputResult は一時ファイルモード時に stdout に出力する結果JSON
 type outputResult struct {
 	File  string `json:"file"`

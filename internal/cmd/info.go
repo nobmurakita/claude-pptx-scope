@@ -41,7 +41,7 @@ func runInfo(cmd *cobra.Command, args []string) error {
 	}
 	defer ow.cleanup()
 
-	enc := newJSONLWriter(ow)
+	enc := newJSONEncoder(ow)
 
 	// メタ情報行
 	if err := enc.Encode(infoMeta{File: f.Name, SlideSize: f.GetSlideSize()}); err != nil {

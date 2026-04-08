@@ -58,7 +58,7 @@ func runSlides(cmd *cobra.Command, args []string) error {
 	}
 	defer ow.cleanup()
 
-	enc := newJSONLWriter(ow)
+	enc := newJSONEncoder(ow)
 	dedup := pptx.NewStyleDeduplicator()
 
 	for _, n := range targets {

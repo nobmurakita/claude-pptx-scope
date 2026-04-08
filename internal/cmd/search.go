@@ -53,7 +53,7 @@ func runSearch(cmd *cobra.Command, args []string) error {
 	}
 	defer ow.cleanup()
 
-	enc := newJSONLWriter(ow)
+	enc := newJSONEncoder(ow)
 	for _, info := range results {
 		if err := enc.Encode(info); err != nil {
 			return fmt.Errorf("JSON出力エラー: %w", err)
