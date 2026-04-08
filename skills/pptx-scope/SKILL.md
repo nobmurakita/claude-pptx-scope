@@ -51,9 +51,9 @@ $ pptx-scope slides --slide 1,2,3 example.pptx
 {"file":"基本設計書.pptx","slide_size":{"width":720,"height":540}}
 {"slide":1,"title":"基本設計書","has_notes":true}
 {"slide":2,"title":"目次"}
-{"slide":3,"title":"システム構成","has_images":true}
+{"slide":3,"title":"システム構成","has_notes":true}
 {"slide":4}
-{"slide":5,"title":"フロー図","hidden":true}
+{"slide":5,"title":"フロー図","has_images":true,"hidden":true}
 ```
 
 1行目はファイルメタ情報、2行目以降はスライド行（slides/search と共通形式）。
@@ -81,8 +81,8 @@ pptx-scope slides [options] <file>
 {"shape":1,"type":"rect","placeholder":"ctrTitle","pos":{"x":54,"y":180,"w":612,"h":115.75},"z":0,"alignment":{"vertical":"center"},"paragraphs":[{"text":"基本設計書","font":{"name":"メイリオ","size":36,"bold":true,"color":"#333333"},"alignment":{"horizontal":"center"}}]}
 {"shape":2,"type":"rect","placeholder":"subTitle","pos":{"x":108,"y":306,"w":504,"h":138},"z":1,"paragraphs":[{"text":"2025年4月版"}]}
 {"slide":2,"title":"目次","shapes":2}
-{"shape":1,"type":"rect","placeholder":"title","z":0,"paragraphs":[{"text":"目次"}]}
-{"shape":2,"type":"rect","placeholder":"body","z":1,"paragraphs":[{"text":"システム概要","bullet":"1."},{"text":"機能一覧","bullet":"2."}]}
+{"shape":1,"type":"rect","placeholder":"title","pos":{"x":36,"y":21.63,"w":648,"h":90},"z":0,"paragraphs":[{"text":"目次"}]}
+{"shape":2,"type":"rect","placeholder":"body","pos":{"x":36,"y":126,"w":648,"h":356.38},"z":1,"paragraphs":[{"text":"システム概要","bullet":"1."},{"text":"機能一覧","bullet":"2."},{"text":"データフロー","bullet":"3."}]}
 ```
 
 スライドヘッダ行（`shapes` は図形数）に続いて、図形を1つずつ個別の行として出力する。`--slide` 未指定時は全スライドを順番に出力する。

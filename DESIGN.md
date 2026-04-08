@@ -78,7 +78,7 @@ Claude Code からの典型的な利用フローは以下の通り:
 **出力例:**
 
 ```jsonl
-{"slide":1,"title":"基本設計書","shapes":2}
+{"slide":1,"title":"基本設計書","shapes":2,"has_notes":true}
 {"shape":1,"type":"rect","placeholder":"ctrTitle","pos":{"x":54,"y":180,"w":612,"h":115.75},"z":0,"alignment":{"vertical":"center"},"paragraphs":[{"text":"基本設計書","font":{"name":"メイリオ","size":36,"bold":true,"color":"#333333"},"alignment":{"horizontal":"center"}}]}
 {"shape":2,"type":"rect","placeholder":"subTitle","pos":{"x":108,"y":306,"w":504,"h":138},"z":1,"paragraphs":[{"text":"2025年4月版"}]}
 {"slide":2,"title":"目次","shapes":2}
@@ -110,6 +110,9 @@ Claude Code からの典型的な利用フローは以下の通り:
 | `slide` | number | スライド番号 |
 | `title` | string | スライドタイトル（存在する場合のみ） |
 | `shapes` | number | スライド内の図形数 |
+| `has_notes` | bool | ノートにテキストがある場合のみ `true` |
+| `has_images` | bool | 画像を含む場合のみ `true` |
+| `hidden` | bool | 非表示スライドの場合のみ `true` |
 
 #### 図形フィールド
 
