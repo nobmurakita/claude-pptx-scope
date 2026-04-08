@@ -32,9 +32,9 @@ $ pptx-scope slides --slide 1,2,3 example.pptx
 1. `info` でスライド一覧とタイトルを確認し対象を特定
 2. 目的に応じてコマンドを選択:
 
-   - **特定キーワードを探す** → `search` で該当スライドを特定 → `slides --slide` で詳細取得
    - **スライド内容を確認する** → `slides --slide` で対象スライドを取得
    - **全体を把握する** → `slides` で数枚ずつ分割取得（一括取得はトークン消費大）
+   - **特定キーワードを探す** → `search` で該当スライドを特定 → `slides --slide` で詳細取得
 
 3. `slides` 出力に `image_id` があれば `image` で取得し Read で確認（確認後は削除）
 
@@ -126,18 +126,6 @@ pptx-scope slides [options] <file>
 {"id":4,"type":"table","name":"表 1","pos":{"x":457200,"y":1600200,"w":8229600,"h":3000000},"z":3,"table":{"cols":3,"rows":[["項目","説明","備考"],["機能A",null,"必須"]]}}
 ```
 
-**画像の確認方法:**
-
-出力の `image_id` を使い、`image` サブコマンドで画像のバイナリを取得できる。
-
-```jsonl
-{"id":5,"type":"picture","name":"図 1","pos":{"x":1000000,"y":1000000,"w":5000000,"h":3000000},"z":4,"alt_text":"システム構成図","image_id":"ppt/media/image1.png"}
-```
-
-```bash
-pptx-scope image example.pptx ppt/media/image1.png
-```
-
 **ノート（`--notes` 指定時）:**
 
 図形行の後にノート行 `{"slide":N,"notes":[...]}` が出力される。`notes` は `paragraphs` と同じ構造。
@@ -147,6 +135,14 @@ pptx-scope image example.pptx ppt/media/image1.png
 `pptx-scope image <file> <image_id>` — 画像を一時ファイルに保存。
 
 slides 出力の `image_id` を指定する。stdout に `{"file":"$TMPDIR/pptx-scope-abc123.png"}` が返る。返された `file` パスを Read で確認し、終わったら削除する。
+
+```jsonl
+{"id":5,"type":"picture","name":"図 1","pos":{"x":1000000,"y":1000000,"w":5000000,"h":3000000},"z":4,"alt_text":"システム構成図","image_id":"ppt/media/image1.png"}
+```
+
+```bash
+pptx-scope image example.pptx ppt/media/image1.png
+```
 
 ### search
 
