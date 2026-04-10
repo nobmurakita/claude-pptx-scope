@@ -1,5 +1,10 @@
 package pptx
 
+import (
+	"fmt"
+	"strconv"
+)
+
 // parseParagraphs は段落の配列をパースする。
 // inherited はプレースホルダーの継承スタイル（非プレースホルダーの場合はnil）。
 func (ctx *parseContext) parseParagraphs(ps []xmlP, inherited *inheritedStyle) []Paragraph {
@@ -57,6 +62,12 @@ func (ctx *parseContext) parseParagraphs(ps []xmlP, inherited *inheritedStyle) [
 		marL, indent := resolveParaIndent(p.PPr, level, inherited)
 		para.MarginL = emuToPtPtr(marL)
 		para.Indent = emuToPtPtr(indent)
+
+		// 行間・段落前後スペース
+		lnSpc, spcBef, spcAft := resolveParaSpacing(p.PPr, level, inherited)
+		para.LineSpacing = formatSpacing(lnSpc)
+		para.SpaceBefore = formatSpacing(spcBef)
+		para.SpaceAfter = formatSpacing(spcAft)
 
 		// 配置（デフォルトの左揃えは省略）
 		if p.PPr != nil && p.PPr.Algn != "" && p.PPr.Algn != "l" {
@@ -230,13 +241,16 @@ func (ctx *parseContext) applyInheritedFont(font *FontStyle, rpr *xmlRPr, level 
 	needName := font.Name == ""
 	needSize := font.Size == 0
 	needColor := font.Color == ""
+	needHighlight := font.Highlight == ""
+	needBaseline := font.Baseline == "" && (rpr == nil || rpr.Baseline == nil)
+	needCap := font.Cap == "" && (rpr == nil || rpr.Cap == "")
 	needBold := !font.Bold && (rpr == nil || rpr.B == "")
 	needItalic := !font.Italic && (rpr == nil || rpr.I == "")
 	needUnderline := font.Underline == "" && (rpr == nil || rpr.U == "")
 	needStrike := !font.Strikethrough && (rpr == nil || rpr.Strike == "")
 
 	for _, ls := range inherited.lstStyles {
-		if !needName && !needSize && !needColor && !needBold && !needItalic && !needUnderline && !needStrike {
+		if !needName && !needSize && !needColor && !needHighlight && !needBaseline && !needCap && !needBold && !needItalic && !needUnderline && !needStrike {
 			break
 		}
 
@@ -268,6 +282,30 @@ func (ctx *parseContext) applyInheritedFont(font *FontStyle, rpr *xmlRPr, level 
 				needColor = false
 				modified = true
 			}
+		}
+
+		if needHighlight && drp.Highlight != nil {
+			if color := ctx.resolveSolidFillColor(drp.Highlight); color != "" {
+				font.Highlight = color
+				needHighlight = false
+				modified = true
+			}
+		}
+
+		if needBaseline && drp.Baseline != nil {
+			if label := baselineLabel(drp.Baseline); label != "" {
+				font.Baseline = label
+				modified = true
+			}
+			needBaseline = false
+		}
+
+		if needCap && drp.Cap != "" {
+			if drp.Cap == "all" || drp.Cap == "small" {
+				font.Cap = drp.Cap
+				modified = true
+			}
+			needCap = false
 		}
 
 		// 太字: B が明示指定（"0"含む）されていれば、値に関わらず探索を停止
@@ -356,7 +394,32 @@ func (ctx *parseContext) rprToFont(rpr *xmlRPr) *FontStyle {
 		f.Color = ctx.resolveSolidFillColor(rpr.SolidFill)
 	}
 
+	// 背景色（ハイライト）
+	if rpr.Highlight != nil {
+		f.Highlight = ctx.resolveSolidFillColor(rpr.Highlight)
+	}
+
+	// 上付き/下付き文字
+	f.Baseline = baselineLabel(rpr.Baseline)
+
+	// 英字大文字化（"none" は省略）
+	if rpr.Cap == "all" || rpr.Cap == "small" {
+		f.Cap = rpr.Cap
+	}
+
 	return f
+}
+
+// baselineLabel は baseline 属性値（パーセント×1000）を "super"/"sub" に変換する。
+// 0 または nil の場合は空文字列。
+func baselineLabel(b *int) string {
+	if b == nil || *b == 0 {
+		return ""
+	}
+	if *b > 0 {
+		return "super"
+	}
+	return "sub"
 }
 
 // nilIfEmpty はフォントが空なら nil を返す
@@ -369,7 +432,8 @@ func nilIfEmpty(f *FontStyle) *FontStyle {
 
 func isEmptyFont(f *FontStyle) bool {
 	return f.Name == "" && f.Size == 0 && !f.Bold && !f.Italic &&
-		f.Underline == "" && !f.Strikethrough && f.Color == ""
+		f.Underline == "" && !f.Strikethrough && f.Color == "" && f.Highlight == "" &&
+		f.Baseline == "" && f.Cap == ""
 }
 
 func fontsEqual(a, b *FontStyle) bool {
@@ -381,9 +445,73 @@ func fontsEqual(a, b *FontStyle) bool {
 	}
 	return a.Name == b.Name && a.Size == b.Size && a.Bold == b.Bold &&
 		a.Italic == b.Italic && a.Underline == b.Underline &&
-		a.Strikethrough == b.Strikethrough && a.Color == b.Color
+		a.Strikethrough == b.Strikethrough && a.Color == b.Color &&
+		a.Highlight == b.Highlight && a.Baseline == b.Baseline && a.Cap == b.Cap
 }
 
+
+// resolveParaSpacing は段落の行間・前スペース・後スペースを解決する。
+// スライド上の pPr を優先し、なければ継承チェーンから取得する。
+func resolveParaSpacing(ppr *xmlPPr, level int, inherited *inheritedStyle) (lnSpc, spcBef, spcAft *xmlSpacing) {
+	if ppr != nil {
+		lnSpc = ppr.LnSpc
+		spcBef = ppr.SpcBef
+		spcAft = ppr.SpcAft
+	}
+
+	if inherited != nil {
+		for _, ls := range inherited.lstStyles {
+			if lnSpc != nil && spcBef != nil && spcAft != nil {
+				break
+			}
+			lvlPPr := ls.GetLevel(level)
+			if lvlPPr == nil {
+				continue
+			}
+			if lnSpc == nil && lvlPPr.LnSpc != nil {
+				lnSpc = lvlPPr.LnSpc
+			}
+			if spcBef == nil && lvlPPr.SpcBef != nil {
+				spcBef = lvlPPr.SpcBef
+			}
+			if spcAft == nil && lvlPPr.SpcAft != nil {
+				spcAft = lvlPPr.SpcAft
+			}
+		}
+	}
+
+	return lnSpc, spcBef, spcAft
+}
+
+// formatSpacing は xmlSpacing を人間可読な文字列に変換する。
+// a:spcPct は "150%"（パーセント×1000 → %）、a:spcPts は "6pt"（ポイント×100 → pt）。
+// デフォルト値（100% / 0pt）は空文字列を返してノイズを省く。
+func formatSpacing(s *xmlSpacing) string {
+	if s == nil {
+		return ""
+	}
+	if s.SpcPct != nil {
+		if s.SpcPct.Val == 100000 { // 100% はデフォルト
+			return ""
+		}
+		pct := float64(s.SpcPct.Val) / 1000.0
+		return fmt.Sprintf("%s%%", trimFloat(pct))
+	}
+	if s.SpcPts != nil {
+		if s.SpcPts.Val == 0 { // 0pt はデフォルト
+			return ""
+		}
+		pt := float64(s.SpcPts.Val) / 100.0
+		return fmt.Sprintf("%spt", trimFloat(pt))
+	}
+	return ""
+}
+
+// trimFloat は小数点以下の不要な 0 を削除する（例: 150.0 → "150", 1.5 → "1.5"）
+func trimFloat(f float64) string {
+	s := strconv.FormatFloat(f, 'f', -1, 64)
+	return s
+}
 
 // resolveParaIndent は段落の marL と indent を解決する。
 // スライド上の pPr を優先し、なければ継承チェーンから取得する。

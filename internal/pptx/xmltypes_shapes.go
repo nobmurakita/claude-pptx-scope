@@ -157,6 +157,18 @@ type xmlTc struct {
 	VMerge   string     `xml:"vMerge,attr"`
 	HMerge   string     `xml:"hMerge,attr"`
 	TxBody   *xmlTxBody `xml:"txBody"`
+	TcPr     *xmlTcPr   `xml:"tcPr"`
+}
+
+// xmlTcPr は a:tcPr 要素（テーブルセルプロパティ）
+type xmlTcPr struct {
+	LnL       *xmlLn        `xml:"lnL"` // 左罫線
+	LnR       *xmlLn        `xml:"lnR"` // 右罫線
+	LnT       *xmlLn        `xml:"lnT"` // 上罫線
+	LnB       *xmlLn        `xml:"lnB"` // 下罫線
+	SolidFill *xmlSolidFill `xml:"solidFill"`
+	GradFill  *xmlGradFill  `xml:"gradFill"`
+	NoFill    *struct{}     `xml:"noFill"`
 }
 
 // ---------- ノート ----------

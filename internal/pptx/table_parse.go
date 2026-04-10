@@ -46,6 +46,7 @@ func (ctx *parseContext) parseTableData(tbl *xmlTbl) *TableData {
 			}
 			if tc.VMerge != "1" && tc.HMerge != "1" {
 				cell := ctx.parseTableCell(tc.TxBody)
+				ctx.applyCellStyle(cell, tc.TcPr)
 				row[colIdx] = cell
 			}
 			span := tc.GridSpan
@@ -76,6 +77,24 @@ func (ctx *parseContext) parseTableData(tbl *xmlTbl) *TableData {
 		Cols: cols,
 		Rows: rows,
 	}
+}
+
+// applyCellStyle はセルに塗りつぶし色と罫線情報を反映する。
+func (ctx *parseContext) applyCellStyle(cell *TableCell, tcPr *xmlTcPr) {
+	if cell == nil || tcPr == nil {
+		return
+	}
+	// 塗りつぶし（solidFill 優先、なければ gradFill の代表色）
+	if tcPr.SolidFill != nil {
+		cell.Fill = ctx.resolveSolidFillColor(tcPr.SolidFill)
+	} else if tcPr.GradFill != nil {
+		cell.Fill = ctx.resolveGradFillColor(tcPr.GradFill)
+	}
+	// 罫線
+	cell.BorderL = ctx.resolveLine(tcPr.LnL)
+	cell.BorderR = ctx.resolveLine(tcPr.LnR)
+	cell.BorderT = ctx.resolveLine(tcPr.LnT)
+	cell.BorderB = ctx.resolveLine(tcPr.LnB)
 }
 
 // parseTableCell はテーブルセルのテキストと段落情報をパースする。

@@ -395,7 +395,21 @@ type xmlLvlPPr struct {
 	BuNone    *struct{}     `xml:"buNone"`
 	BuChar    *xmlBuChar    `xml:"buChar"`
 	BuAutoNum *xmlBuAutoNum `xml:"buAutoNum"`
+	LnSpc     *xmlSpacing   `xml:"lnSpc"`
+	SpcBef    *xmlSpacing   `xml:"spcBef"`
+	SpcAft    *xmlSpacing   `xml:"spcAft"`
 	DefRPr    *xmlRPr       `xml:"defRPr"`
+}
+
+// xmlSpacing は a:lnSpc/a:spcBef/a:spcAft 要素。
+// 子として a:spcPct（パーセント×1000）または a:spcPts（ポイント×100）を持つ
+type xmlSpacing struct {
+	SpcPct *xmlSpacingVal `xml:"spcPct"`
+	SpcPts *xmlSpacingVal `xml:"spcPts"`
+}
+
+type xmlSpacingVal struct {
+	Val int `xml:"val,attr"`
 }
 
 // ---------- テキスト ----------
@@ -487,6 +501,9 @@ type xmlPPr struct {
 	BuNone    *struct{}     `xml:"buNone"`
 	BuChar    *xmlBuChar    `xml:"buChar"`
 	BuAutoNum *xmlBuAutoNum `xml:"buAutoNum"`
+	LnSpc     *xmlSpacing   `xml:"lnSpc"`
+	SpcBef    *xmlSpacing   `xml:"spcBef"`
+	SpcAft    *xmlSpacing   `xml:"spcAft"`
 	DefRPr    *xmlRPr       `xml:"defRPr"`
 }
 
@@ -513,16 +530,19 @@ type xmlFld struct {
 
 // xmlRPr は a:rPr / a:endParaRPr 要素（ランプロパティ）
 type xmlRPr struct {
-	Lang      string         `xml:"lang,attr"`
-	Sz        int            `xml:"sz,attr"`
-	B         string         `xml:"b,attr"`
-	I         string         `xml:"i,attr"`
-	U         string         `xml:"u,attr"`
-	Strike    string         `xml:"strike,attr"`
-	SolidFill *xmlSolidFill  `xml:"solidFill"`
-	Latin     *xmlFont       `xml:"latin"`
-	Ea        *xmlFont       `xml:"ea"`
-	Cs        *xmlFont       `xml:"cs"`
+	Lang       string         `xml:"lang,attr"`
+	Sz         int            `xml:"sz,attr"`
+	B          string         `xml:"b,attr"`
+	I          string         `xml:"i,attr"`
+	U          string         `xml:"u,attr"`
+	Strike     string         `xml:"strike,attr"`
+	Baseline   *int           `xml:"baseline,attr"` // 上付き/下付き文字（パーセント×1000。正=上付き、負=下付き）
+	Cap        string         `xml:"cap,attr"`      // 英字大文字化（"all"/"small"/"none"）
+	SolidFill  *xmlSolidFill  `xml:"solidFill"`
+	Highlight  *xmlSolidFill  `xml:"highlight"` // 文字の背景色（a:highlight）。中身は solidFill と同じ構造
+	Latin      *xmlFont       `xml:"latin"`
+	Ea         *xmlFont       `xml:"ea"`
+	Cs         *xmlFont       `xml:"cs"`
 	HlinkClick *xmlHlinkClick `xml:"hlinkClick"`
 }
 

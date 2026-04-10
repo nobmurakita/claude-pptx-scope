@@ -73,16 +73,19 @@ type LineStyle struct {
 
 // Paragraph は段落
 type Paragraph struct {
-	Text      string         `json:"text"`
-	Bullet    string         `json:"bullet,omitempty"`
-	Level     int            `json:"level,omitempty"`
-	MarginL   *float64       `json:"margin_left,omitempty"`
-	Indent    *float64       `json:"indent,omitempty"`
-	Font      *FontStyle     `json:"font,omitempty"`
-	StyleRef  int            `json:"s,omitempty"`
-	Alignment *Alignment     `json:"alignment,omitempty"`
-	Link      *HyperlinkData `json:"link,omitempty"`
-	RichText  []RichTextRun  `json:"rich_text,omitempty"`
+	Text        string         `json:"text"`
+	Bullet      string         `json:"bullet,omitempty"`
+	Level       int            `json:"level,omitempty"`
+	MarginL     *float64       `json:"margin_left,omitempty"`
+	Indent      *float64       `json:"indent,omitempty"`
+	LineSpacing string         `json:"line_spacing,omitempty"` // "150%" または "12pt"
+	SpaceBefore string         `json:"space_before,omitempty"` // "150%" または "6pt"
+	SpaceAfter  string         `json:"space_after,omitempty"`  // "150%" または "6pt"
+	Font        *FontStyle     `json:"font,omitempty"`
+	StyleRef    int            `json:"s,omitempty"`
+	Alignment   *Alignment     `json:"alignment,omitempty"`
+	Link        *HyperlinkData `json:"link,omitempty"`
+	RichText    []RichTextRun  `json:"rich_text,omitempty"`
 }
 
 // RichTextRun はリッチテキストラン
@@ -101,13 +104,16 @@ type HyperlinkData struct {
 
 // FontStyle はフォント情報
 type FontStyle struct {
-	Name          string `json:"name,omitempty"`
+	Name          string  `json:"name,omitempty"`
 	Size          float64 `json:"size,omitempty"`
-	Bold          bool   `json:"bold,omitempty"`
-	Italic        bool   `json:"italic,omitempty"`
-	Strikethrough bool   `json:"strikethrough,omitempty"`
-	Underline     string `json:"underline,omitempty"`
-	Color         string `json:"color,omitempty"`
+	Bold          bool    `json:"bold,omitempty"`
+	Italic        bool    `json:"italic,omitempty"`
+	Strikethrough bool    `json:"strikethrough,omitempty"`
+	Underline     string  `json:"underline,omitempty"`
+	Color         string  `json:"color,omitempty"`
+	Highlight     string  `json:"highlight,omitempty"` // 文字の背景色（a:highlight）
+	Baseline      string  `json:"baseline,omitempty"`  // "super"（上付き）/"sub"（下付き）
+	Cap           string  `json:"cap,omitempty"`       // "all"（すべて大文字）/"small"（スモールキャップ）
 }
 
 // Alignment は配置情報
@@ -133,6 +139,11 @@ type TableData struct {
 // TableCell はテーブルのセル
 type TableCell struct {
 	Text       string      `json:"text"`
+	Fill       string      `json:"fill,omitempty"`        // セルの背景色（#RRGGBB）
+	BorderL    *LineStyle  `json:"border_left,omitempty"` // 左罫線
+	BorderR    *LineStyle  `json:"border_right,omitempty"`
+	BorderT    *LineStyle  `json:"border_top,omitempty"`
+	BorderB    *LineStyle  `json:"border_bottom,omitempty"`
 	Paragraphs []Paragraph `json:"paragraphs,omitempty"`
 }
 

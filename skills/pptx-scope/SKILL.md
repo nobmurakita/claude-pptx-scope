@@ -79,7 +79,7 @@ pptx-scope slides [options] <file>
 出力例:
 ```jsonl
 {"slide":1,"title":"基本設計書","shapes":2,"has_notes":true}
-{"style":1,"name":"メイリオ","size":36,"bold":true,"color":"#333333"}
+{"style":1,"name":"メイリオ","size":36,"bold":true,"color":"#333333","highlight":"#FFFF00"}
 {"shape":1,"type":"rect","placeholder":"ctrTitle","pos":{"x":54,"y":180,"w":612,"h":115.75},"z":0,"alignment":{"vertical":"center"},"paragraphs":[{"text":"基本設計書","s":1,"alignment":{"horizontal":"center"}}]}
 {"shape":2,"type":"rect","placeholder":"subTitle","pos":{"x":108,"y":306,"w":504,"h":138},"z":1,"paragraphs":[{"text":"2025年4月版"}]}
 {"slide":2,"title":"目次","shapes":2}
@@ -111,7 +111,7 @@ pptx-scope slides [options] <file>
 - `link`: ハイパーリンク（`url` で外部URL、`slide` でスライド内リンクのスライド番号）
 - `alignment`: テキストの垂直配置（`vertical` フィールド）。デフォルトの場合は省略
 - `text_margin`: テキストボディの内部マージン（`left`, `right`, `top`, `bottom`。pt単位。デフォルトの場合は省略）
-- `paragraphs`: 段落の配列。各段落に `text`, `bullet`, `level`, `margin_left`, `indent`, `s`, `alignment`, `link`, `rich_text`。フォント情報は `style` 行（独立JSONL行）に定義を抽出し `s` で参照する
+- `paragraphs`: 段落の配列。各段落に `text`, `bullet`, `level`, `margin_left`, `indent`, `line_spacing`, `space_before`, `space_after`, `s`, `alignment`, `link`, `rich_text`。行間・段落前後スペースは `"150%"` / `"6pt"` 形式の文字列（デフォルト値は省略）。フォント情報は `style` 行（独立JSONL行）に定義を抽出し `s` で参照する
 - `callout_pointer`: 吹き出しのポインタ位置（`x`, `y`。pt単位）
 
 **コネクタの追加フィールド:**
@@ -127,8 +127,10 @@ pptx-scope slides [options] <file>
 **テーブルの出力例:**
 
 ```json
-{"shape":4,"type":"table","name":"表 1","pos":{"x":36,"y":126,"w":648,"h":236.22},"z":3,"table":{"cols":3,"rows":[[{"text":"項目"},{"text":"説明"},{"text":"備考"}],[{"text":"機能A"},null,{"text":"必須"}]]}}
+{"shape":4,"type":"table","name":"表 1","pos":{"x":36,"y":126,"w":648,"h":236.22},"z":3,"table":{"cols":3,"rows":[[{"text":"項目","fill":"#4285F4","border_bottom":{"color":"#CCCCCC","style":"solid","width":0.75}},{"text":"説明","fill":"#4285F4"},{"text":"備考","fill":"#4285F4"}],[{"text":"機能A"},null,{"text":"必須"}]]}}
 ```
+
+セルごとに `fill`（背景色）、`border_left` / `border_right` / `border_top` / `border_bottom`（罫線）を持つ。未指定の場合は省略。
 
 **ノート（`--notes` 指定時）:**
 

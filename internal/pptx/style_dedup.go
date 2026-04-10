@@ -1,44 +1,23 @@
 package pptx
 
 import (
-	"encoding/json"
 	"fmt"
 )
 
-// StyleDef はスタイル定義行の出力用
+// StyleDef はスタイル定義行の出力用。
+// style フィールドを先頭に、FontStyle の各フィールドをフラットに並べる。
 type StyleDef struct {
-	ID int `json:"style"`
-	*FontStyle
-}
-
-// MarshalJSON は style フィールドと FontStyle のフィールドをフラットに結合する
-func (sd StyleDef) MarshalJSON() ([]byte, error) {
-	m := make(map[string]any)
-	m["style"] = sd.ID
-	if sd.FontStyle != nil {
-		if sd.Name != "" {
-			m["name"] = sd.Name
-		}
-		if sd.Size != 0 {
-			m["size"] = sd.Size
-		}
-		if sd.Bold {
-			m["bold"] = true
-		}
-		if sd.Italic {
-			m["italic"] = true
-		}
-		if sd.Strikethrough {
-			m["strikethrough"] = true
-		}
-		if sd.Underline != "" {
-			m["underline"] = sd.Underline
-		}
-		if sd.Color != "" {
-			m["color"] = sd.Color
-		}
-	}
-	return json.Marshal(m)
+	ID            int     `json:"style"`
+	Name          string  `json:"name,omitempty"`
+	Size          float64 `json:"size,omitempty"`
+	Bold          bool    `json:"bold,omitempty"`
+	Italic        bool    `json:"italic,omitempty"`
+	Strikethrough bool    `json:"strikethrough,omitempty"`
+	Underline     string  `json:"underline,omitempty"`
+	Color         string  `json:"color,omitempty"`
+	Highlight     string  `json:"highlight,omitempty"`
+	Baseline      string  `json:"baseline,omitempty"`
+	Cap           string  `json:"cap,omitempty"`
 }
 
 // fontKey はフォントスタイルのフィールドを連結したキー文字列を返す
@@ -46,8 +25,8 @@ func fontKey(font *FontStyle) string {
 	if font == nil {
 		return ""
 	}
-	return fmt.Sprintf("%s\x00%g\x00%t\x00%t\x00%t\x00%s\x00%s",
-		font.Name, font.Size, font.Bold, font.Italic, font.Strikethrough, font.Underline, font.Color)
+	return fmt.Sprintf("%s\x00%g\x00%t\x00%t\x00%t\x00%s\x00%s\x00%s\x00%s\x00%s",
+		font.Name, font.Size, font.Bold, font.Italic, font.Strikethrough, font.Underline, font.Color, font.Highlight, font.Baseline, font.Cap)
 }
 
 // StyleDeduplicator はスライド横断でフォントスタイルの重複排除を行う。
@@ -97,7 +76,20 @@ func (sd2 *StyleDeduplicator) Deduplicate(sd *SlideData) []StyleDef {
 			id := sd2.nextID
 			sd2.styleMap[key] = id
 			replaceMap[key] = id
-			newStyles = append(newStyles, StyleDef{ID: id, FontStyle: *s.font})
+			f := *s.font
+			newStyles = append(newStyles, StyleDef{
+				ID:            id,
+				Name:          f.Name,
+				Size:          f.Size,
+				Bold:          f.Bold,
+				Italic:        f.Italic,
+				Strikethrough: f.Strikethrough,
+				Underline:     f.Underline,
+				Color:         f.Color,
+				Highlight:     f.Highlight,
+				Baseline:      f.Baseline,
+				Cap:           f.Cap,
+			})
 		}
 	})
 
