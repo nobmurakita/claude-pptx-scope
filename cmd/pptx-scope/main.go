@@ -21,6 +21,7 @@ func main() {
 		cmd.NewSlidesCmd(),
 		cmd.NewSearchCmd(),
 		cmd.NewImageCmd(),
+		cmd.NewCleanupCmd(),
 	)
 
 	if err := rootCmd.Execute(); err != nil {

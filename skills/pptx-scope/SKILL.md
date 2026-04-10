@@ -1,9 +1,10 @@
 ---
 name: pptx-scope
-description: PowerPointファイル（.pptx）を読み取る。プレゼン資料、設計書、フローチャート、提案書の内容確認・データ抽出時に使用する。
-user-invocable: false
+description: |-
+  PowerPointファイル(.pptx)を読み取りスライド/図形/テキスト/画像などの情報をJSONLで出力する。
+  プレゼン資料・設計書・フローチャート・提案書の内容確認、データ抽出、図形構造の把握に使用する。
 allowed-tools:
-  - Bash
+  - Bash(*/.claude/skills/pptx-scope/scripts/pptx-scope *)
   - Read
 ---
 
@@ -15,17 +16,17 @@ PowerPointファイル（.pptx）の内容をCLIから出力するツール。
 
 ## 出力の読み取り方
 
-全コマンドの出力は自動的に一時ファイルに保存され、stdout にはファイルパスと行数のみが返る。
+全コマンドの出力は自動的に一時ファイル（プレフィックス `pptx-scope-tmp-`）に保存され、stdout にはファイルパスと行数のみが返る。
 
 ```bash
 $ pptx-scope info example.pptx
-{"file":"$TMPDIR/pptx-scope-abc123.jsonl","lines":1}
+{"file":"$TMPDIR/pptx-scope-tmp-abc123.jsonl","lines":1}
 
 $ pptx-scope slides --slide 1,2,3 example.pptx
-{"file":"$TMPDIR/pptx-scope-abc456.jsonl","lines":5}
+{"file":"$TMPDIR/pptx-scope-tmp-abc456.jsonl","lines":5}
 ```
 
-返された `file` パスを Read で読む（offset: 0始まり行番号, limit: 読む行数）。読み終わったら都度削除する。
+返された `file` パスを Read で読む（offset: 0始まり行番号, limit: 読む行数）。読み終わったら都度 `cleanup` サブコマンドで削除する。
 
 ## 利用フロー
 
@@ -36,7 +37,7 @@ $ pptx-scope slides --slide 1,2,3 example.pptx
    - **全体を把握する** → `slides` で数枚ずつ分割取得（一括取得はトークン消費大）
    - **特定キーワードを探す** → `search` で該当スライドを特定 → `slides --slide` で詳細取得
 
-3. `slides` 出力に `image_id` があれば `image` で取得し Read で確認（確認後は削除）
+3. `slides` 出力に `image_id` があれば `image` で取得し Read で確認（確認後は `cleanup` で削除）
 
 図形の書式情報（フォント・色・枠線）は常に出力される。
 
@@ -137,7 +138,7 @@ pptx-scope slides [options] <file>
 
 `pptx-scope image <file> <image_id>` — 画像を一時ファイルに保存。
 
-slides 出力の `image_id` を指定する。stdout に `{"file":"$TMPDIR/pptx-scope-abc123.png"}` が返る。返された `file` パスを Read で確認し、終わったら削除する。
+slides 出力の `image_id` を指定する。stdout に `{"file":"$TMPDIR/pptx-scope-tmp-abc123.png"}` が返る。
 
 ```jsonl
 {"shape":5,"type":"picture","name":"図 1","pos":{"x":78.74,"y":78.74,"w":393.7,"h":236.22},"z":4,"alt_text":"システム構成図","image_id":"ppt/media/image1.png"}
@@ -168,4 +169,13 @@ pptx-scope search --text "データ" example.pptx
 ```jsonl
 {"slide":2,"title":"システム構成","has_images":true}
 {"slide":5,"title":"データフロー"}
+```
+
+### cleanup
+
+`pptx-scope cleanup <file> [file...]` — pptx-scope が生成した一時ファイルを削除する。
+
+```bash
+$ pptx-scope cleanup /tmp/pptx-scope-tmp-abc123.jsonl /tmp/pptx-scope-tmp-def456.png
+{"deleted":2}
 ```

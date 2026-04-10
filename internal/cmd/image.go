@@ -30,7 +30,7 @@ func runImage(cmd *cobra.Command, args []string) error {
 
 	// 一時ファイルを自動生成（拡張子は image_id から取得）
 	ext := filepath.Ext(imageID)
-	out, err := os.CreateTemp("", "pptx-scope-*"+ext)
+	out, err := os.CreateTemp("", "pptx-scope-tmp-*"+ext)
 	if err != nil {
 		return fmt.Errorf("一時ファイルの作成エラー: %w", err)
 	}

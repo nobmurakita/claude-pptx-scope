@@ -42,7 +42,7 @@ func newOutputWriter(cmd *cobra.Command) (*outputWriter, error) {
 			useStdout: true,
 		}, nil
 	}
-	f, err := os.CreateTemp("", "pptx-scope-*.jsonl")
+	f, err := os.CreateTemp("", "pptx-scope-tmp-*.jsonl")
 	if err != nil {
 		return nil, fmt.Errorf("一時ファイルの作成エラー: %w", err)
 	}
