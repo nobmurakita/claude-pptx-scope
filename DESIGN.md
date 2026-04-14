@@ -11,6 +11,7 @@ Claude Code からの典型的な利用フローは以下の通り:
 2. **`slides`** — スライドの内容を取得する。図形・テキスト・テーブル・コネクタ・画像をまとめて出力する
 3. **`image`** — 画像を一時ファイルに保存する。`slides` 出力の `image_id` を指定して個別に抽出する
 4. **`search`** — プレゼンテーション内のテキストを検索する。全スライドまたは指定スライドから条件に合うテキストを抽出する
+5. **`version`** — バージョン情報を表示する
 
 基本的には `info` → `slides` で内容を把握する。特定のキーワードを探す場合は `search` が効率的。
 
@@ -449,6 +450,20 @@ pptx-scope search --text "データ" example.pptx
 {"slide":2,"title":"システム構成","has_images":true}
 {"slide":4,"title":"処理フロー"}
 ```
+
+### `pptx-scope version`
+
+**役割:** バージョン情報を表示する。
+
+**出力:**
+
+```
+v0.0.9
+```
+
+- バージョン文字列はビルド時に `-ldflags="-X github.com/nobmurakita/claude-pptx-scope/internal/cmd.Version=<tag>"` で埋め込む。リリースビルド（GitHub Actions）では `GITHUB_REF_NAME`（タグ名）が設定される
+- ldflags 未指定時のデフォルトは `latest`
+- 他コマンドと異なり、一時ファイルへの書き出しは行わない
 
 ## 技術選定
 

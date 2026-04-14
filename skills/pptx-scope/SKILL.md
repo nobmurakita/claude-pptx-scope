@@ -181,3 +181,12 @@ pptx-scope search --text "データ" example.pptx
 $ pptx-scope cleanup /tmp/pptx-scope-tmp-abc123.jsonl /tmp/pptx-scope-tmp-def456.png
 {"deleted":2}
 ```
+
+### version
+
+`pptx-scope version` — バージョン情報を表示する。
+
+```bash
+$ pptx-scope version
+v0.0.9
+```

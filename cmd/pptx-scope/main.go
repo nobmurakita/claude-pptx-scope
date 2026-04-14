@@ -22,6 +22,7 @@ func main() {
 		cmd.NewSearchCmd(),
 		cmd.NewImageCmd(),
 		cmd.NewCleanupCmd(),
+		cmd.NewVersionCmd(),
 	)
 
 	if err := rootCmd.Execute(); err != nil {
