@@ -235,109 +235,28 @@ func (ctx *parseContext) applyInheritedFont(font *FontStyle, rpr *xmlRPr, level 
 	}
 
 	tc := ctx.f.getTheme()
+	resolvers := ctx.inheritedFontResolvers(font, rpr, tc)
 	modified := false
 
-	// 各プロパティの解決状態を追跡
-	needName := font.Name == ""
-	needSize := font.Size == 0
-	needColor := font.Color == ""
-	needHighlight := font.Highlight == ""
-	needBaseline := font.Baseline == "" && (rpr == nil || rpr.Baseline == nil)
-	needCap := font.Cap == "" && (rpr == nil || rpr.Cap == "")
-	needBold := !font.Bold && (rpr == nil || rpr.B == "")
-	needItalic := !font.Italic && (rpr == nil || rpr.I == "")
-	needUnderline := font.Underline == "" && (rpr == nil || rpr.U == "")
-	needStrike := !font.Strikethrough && (rpr == nil || rpr.Strike == "")
-
 	for _, ls := range inherited.lstStyles {
-		if !needName && !needSize && !needColor && !needHighlight && !needBaseline && !needCap && !needBold && !needItalic && !needUnderline && !needStrike {
+		if allResolved(resolvers) {
 			break
 		}
-
 		ppr := ls.GetLevel(level)
 		if ppr == nil || ppr.DefRPr == nil {
 			continue
 		}
-		drp := ppr.DefRPr
-
-		if needName && ((drp.Latin != nil && drp.Latin.Typeface != "") || (drp.Ea != nil && drp.Ea.Typeface != "")) {
-			if drp.Latin != nil && drp.Latin.Typeface != "" {
-				font.Name = tc.ResolveThemeFont(drp.Latin.Typeface)
-			} else {
-				font.Name = tc.ResolveThemeFont(drp.Ea.Typeface)
+		for i := range resolvers {
+			if resolvers[i].resolved {
+				continue
 			}
-			needName = false
-			modified = true
-		}
-
-		if needSize && drp.Sz > 0 {
-			font.Size = float64(drp.Sz) / 100
-			needSize = false
-			modified = true
-		}
-
-		if needColor && drp.SolidFill != nil {
-			if color := ctx.resolveSolidFillColor(drp.SolidFill); color != "" {
-				font.Color = color
-				needColor = false
+			applied, done := resolvers[i].apply(ppr.DefRPr)
+			if applied {
 				modified = true
 			}
-		}
-
-		if needHighlight && drp.Highlight != nil {
-			if color := ctx.resolveSolidFillColor(drp.Highlight); color != "" {
-				font.Highlight = color
-				needHighlight = false
-				modified = true
+			if done {
+				resolvers[i].resolved = true
 			}
-		}
-
-		if needBaseline && drp.Baseline != nil {
-			if label := baselineLabel(drp.Baseline); label != "" {
-				font.Baseline = label
-				modified = true
-			}
-			needBaseline = false
-		}
-
-		if needCap && drp.Cap != "" {
-			if drp.Cap == "all" || drp.Cap == "small" {
-				font.Cap = drp.Cap
-				modified = true
-			}
-			needCap = false
-		}
-
-		// 太字: B が明示指定（"0"含む）されていれば、値に関わらず探索を停止
-		if needBold && drp.B != "" {
-			if drp.B == "1" || drp.B == "true" {
-				font.Bold = true
-				modified = true
-			}
-			needBold = false
-		}
-
-		// 斜体: 太字と同様
-		if needItalic && drp.I != "" {
-			if drp.I == "1" || drp.I == "true" {
-				font.Italic = true
-				modified = true
-			}
-			needItalic = false
-		}
-
-		// 下線: "none" は未指定扱いで探索を継続
-		if needUnderline && drp.U != "" && drp.U != "none" {
-			font.Underline = drp.U
-			needUnderline = false
-			modified = true
-		}
-
-		// 取り消し線: "noStrike" は未指定扱いで探索を継続
-		if needStrike && drp.Strike != "" && drp.Strike != "noStrike" {
-			font.Strikethrough = true
-			needStrike = false
-			modified = true
 		}
 	}
 
@@ -346,6 +265,154 @@ func (ctx *parseContext) applyInheritedFont(font *FontStyle, rpr *xmlRPr, level 
 	}
 
 	return font
+}
+
+// fontPropResolver は applyInheritedFont の1プロパティに対する解決ロジック。
+// resolved=true になった時点でそのプロパティは探索を打ち切る。
+// apply は (値を font に適用したか, 探索を打ち切ってよいか) を返す。
+type fontPropResolver struct {
+	resolved bool
+	apply    func(drp *xmlRPr) (applied bool, done bool)
+}
+
+func allResolved(rs []fontPropResolver) bool {
+	for _, r := range rs {
+		if !r.resolved {
+			return false
+		}
+	}
+	return true
+}
+
+func (ctx *parseContext) inheritedFontResolvers(font *FontStyle, rpr *xmlRPr, tc *themeColors) []fontPropResolver {
+	return []fontPropResolver{
+		{
+			resolved: font.Name != "",
+			apply: func(drp *xmlRPr) (bool, bool) {
+				if drp.Latin != nil && drp.Latin.Typeface != "" {
+					font.Name = tc.ResolveThemeFont(drp.Latin.Typeface)
+					return true, true
+				}
+				if drp.Ea != nil && drp.Ea.Typeface != "" {
+					font.Name = tc.ResolveThemeFont(drp.Ea.Typeface)
+					return true, true
+				}
+				return false, false
+			},
+		},
+		{
+			resolved: font.Size != 0,
+			apply: func(drp *xmlRPr) (bool, bool) {
+				if drp.Sz > 0 {
+					font.Size = float64(drp.Sz) / 100
+					return true, true
+				}
+				return false, false
+			},
+		},
+		{
+			resolved: font.Color != "",
+			apply: func(drp *xmlRPr) (bool, bool) {
+				if drp.SolidFill == nil {
+					return false, false
+				}
+				if color := ctx.resolveSolidFillColor(drp.SolidFill); color != "" {
+					font.Color = color
+					return true, true
+				}
+				return false, false
+			},
+		},
+		{
+			resolved: font.Highlight != "",
+			apply: func(drp *xmlRPr) (bool, bool) {
+				if drp.Highlight == nil {
+					return false, false
+				}
+				if color := ctx.resolveSolidFillColor(drp.Highlight); color != "" {
+					font.Highlight = color
+					return true, true
+				}
+				return false, false
+			},
+		},
+		{
+			resolved: font.Baseline != "" || (rpr != nil && rpr.Baseline != nil),
+			apply: func(drp *xmlRPr) (bool, bool) {
+				if drp.Baseline == nil {
+					return false, false
+				}
+				if label := baselineLabel(drp.Baseline); label != "" {
+					font.Baseline = label
+					return true, true
+				}
+				return false, true
+			},
+		},
+		{
+			resolved: font.Cap != "" || (rpr != nil && rpr.Cap != ""),
+			apply: func(drp *xmlRPr) (bool, bool) {
+				if drp.Cap == "" {
+					return false, false
+				}
+				if drp.Cap == "all" || drp.Cap == "small" {
+					font.Cap = drp.Cap
+					return true, true
+				}
+				return false, true
+			},
+		},
+		{
+			// 太字: B が明示指定（"0"含む）されていれば、値に関わらず探索を停止
+			resolved: font.Bold || (rpr != nil && rpr.B != ""),
+			apply: func(drp *xmlRPr) (bool, bool) {
+				if drp.B == "" {
+					return false, false
+				}
+				if drp.B == "1" || drp.B == "true" {
+					font.Bold = true
+					return true, true
+				}
+				return false, true
+			},
+		},
+		{
+			// 斜体: 太字と同様
+			resolved: font.Italic || (rpr != nil && rpr.I != ""),
+			apply: func(drp *xmlRPr) (bool, bool) {
+				if drp.I == "" {
+					return false, false
+				}
+				if drp.I == "1" || drp.I == "true" {
+					font.Italic = true
+					return true, true
+				}
+				return false, true
+			},
+		},
+		{
+			// 下線: "none" は未指定扱いで探索を継続
+			resolved: font.Underline != "" || (rpr != nil && rpr.U != ""),
+			apply: func(drp *xmlRPr) (bool, bool) {
+				if drp.U == "" || drp.U == "none" {
+					return false, false
+				}
+				font.Underline = drp.U
+				return true, true
+			},
+		},
+		{
+			// 取り消し線: "noStrike" は未指定扱いで探索を継続
+			resolved: font.Strikethrough || (rpr != nil && rpr.Strike != ""),
+			apply: func(drp *xmlRPr) (bool, bool) {
+				if drp.Strike == "" || drp.Strike == "noStrike" {
+					return false, false
+				}
+				font.Strikethrough = true
+				return true, true
+			},
+		},
+	}
 }
 
 // rprToFont は rPr からフォント情報を抽出する

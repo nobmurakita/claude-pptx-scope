@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"encoding/xml"
 	"fmt"
+	"os"
 	"path"
 	"path/filepath"
 	"strings"
@@ -128,17 +129,23 @@ func (f *File) GetSlideSize() SlideSize {
 
 // getTheme はテーマカラーを遅延ロードして返す。
 // テーマファイルが存在しない場合や読み込み失敗時は nil を返す。
+// 失敗時は stderr に警告を出し、原因調査できるようにする。
 func (f *File) getTheme() *themeColors {
 	f.themeOnce.Do(func() {
 		if f.themePath == "" {
 			return
 		}
 		data, err := readZipFile(f.zi, f.themePath)
-		if err != nil || data == nil {
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "pptx-scope: テーマファイルの読み込みに失敗: %s: %v\n", f.themePath, err)
+			return
+		}
+		if data == nil {
 			return
 		}
 		tc, err := parseThemeColors(data)
 		if err != nil {
+			fmt.Fprintf(os.Stderr, "pptx-scope: テーマの解析に失敗: %s: %v\n", f.themePath, err)
 			return
 		}
 		f.theme = tc

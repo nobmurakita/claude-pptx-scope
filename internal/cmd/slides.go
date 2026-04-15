@@ -146,61 +146,29 @@ func emitPendingParaStyles(enc *json.Encoder, pending map[int]pptx.StyleDef, par
 
 // collectShapeStyleIDs は図形が参照するスタイルIDを収集する（重複なし、出現順）
 func collectShapeStyleIDs(shape *pptx.Shape) []int {
-	seen := make(map[int]bool)
-	var ids []int
-	collectShapeStyleRefs(shape, func(id int) {
-		if !seen[id] {
-			seen[id] = true
-			ids = append(ids, id)
-		}
-	})
-	return ids
-}
-
-// collectShapeStyleRefs は図形内の全スタイル参照を走査する
-func collectShapeStyleRefs(shape *pptx.Shape, fn func(int)) {
-	for _, p := range shape.Paragraphs {
-		collectParaStyleRefs(p, fn)
-	}
-	if shape.Table != nil {
-		for _, row := range shape.Table.Rows {
-			for _, cell := range row {
-				if cell != nil {
-					for _, p := range cell.Paragraphs {
-						collectParaStyleRefs(p, fn)
-					}
-				}
-			}
-		}
-	}
-	for i := range shape.Children {
-		collectShapeStyleRefs(&shape.Children[i], fn)
-	}
+	return collectStyleIDs([]pptx.Shape{*shape}, nil)
 }
 
 // collectParaStyleIDs は段落群が参照するスタイルIDを収集する（重複なし、出現順）
 func collectParaStyleIDs(paras []pptx.Paragraph) []int {
-	seen := make(map[int]bool)
-	var ids []int
-	for _, p := range paras {
-		collectParaStyleRefs(p, func(id int) {
-			if !seen[id] {
-				seen[id] = true
-				ids = append(ids, id)
-			}
-		})
-	}
-	return ids
+	return collectStyleIDs(nil, paras)
 }
 
-// collectParaStyleRefs は段落内のスタイル参照を走査する
-func collectParaStyleRefs(p pptx.Paragraph, fn func(int)) {
-	if p.StyleRef != 0 {
-		fn(p.StyleRef)
-	}
-	for _, rt := range p.RichText {
-		if rt.StyleRef != 0 {
-			fn(rt.StyleRef)
+// collectStyleIDs はスライド内の全スタイル参照を収集する（重複なし、出現順）
+func collectStyleIDs(shapes []pptx.Shape, notes []pptx.Paragraph) []int {
+	seen := make(map[int]bool)
+	var ids []int
+	add := func(id int) {
+		if id != 0 && !seen[id] {
+			seen[id] = true
+			ids = append(ids, id)
 		}
 	}
+	pptx.WalkSlideParagraphs(shapes, notes, func(p *pptx.Paragraph) {
+		add(p.StyleRef)
+		for _, rt := range p.RichText {
+			add(rt.StyleRef)
+		}
+	})
+	return ids
 }
