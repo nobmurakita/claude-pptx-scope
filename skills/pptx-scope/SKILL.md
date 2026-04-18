@@ -54,7 +54,7 @@ $ pptx-scope slides --slide 1,2,3 example.pptx
 {"slide":2,"title":"目次"}
 {"slide":3,"title":"システム構成","has_notes":true}
 {"slide":4}
-{"slide":5,"title":"フロー図","has_images":true,"hidden":true}
+{"slide":5,"title":"フロー図","hidden":true}
 ```
 
 1行目はファイルメタ情報、2行目以降はスライド行（slides/search と共通形式）。
@@ -62,7 +62,6 @@ $ pptx-scope slides --slide 1,2,3 example.pptx
 - `slide_size`: スライドサイズ（pt単位。標準4:3=720x540, 16:9=960x540）
 - `title`: タイトルプレースホルダーのテキスト。存在しない場合は省略
 - `has_notes`: ノートにテキストがある場合のみ `true`
-- `has_images`: 画像を含む場合のみ `true`（グループ内の画像も検出）
 - `hidden`: 非表示スライドの場合のみ `true`
 
 ### slides
@@ -169,7 +168,7 @@ pptx-scope search --text "データ" example.pptx
 ```
 
 ```jsonl
-{"slide":2,"title":"システム構成","has_images":true}
+{"slide":2,"title":"システム構成"}
 {"slide":5,"title":"データフロー"}
 ```
 

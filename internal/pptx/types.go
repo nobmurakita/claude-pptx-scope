@@ -8,7 +8,6 @@ type SlideInfo struct {
 	Title     string `json:"title,omitempty"`
 	Shapes    *int   `json:"shapes,omitempty"`
 	HasNotes  bool   `json:"has_notes,omitempty"`
-	HasImages bool   `json:"has_images,omitempty"`
 	Hidden    bool   `json:"hidden,omitempty"`
 }
 

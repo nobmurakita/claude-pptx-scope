@@ -8,23 +8,21 @@ import (
 
 // SlideData はスライドのパース結果
 type SlideData struct {
-	Number    int
-	Title     string
-	Hidden    bool
-	HasNotes  bool
-	HasImages bool
-	Shapes    []Shape
-	Notes     []Paragraph
+	Number   int
+	Title    string
+	Hidden   bool
+	HasNotes bool
+	Shapes   []Shape
+	Notes    []Paragraph
 }
 
 // Info は SlideData からヘッダ情報を返す
 func (sd *SlideData) Info() SlideInfo {
 	return SlideInfo{
-		Slide:     sd.Number,
-		Title:     sd.Title,
-		HasNotes:  sd.HasNotes,
-		HasImages: sd.HasImages,
-		Hidden:    sd.Hidden,
+		Slide:    sd.Number,
+		Title:    sd.Title,
+		HasNotes: sd.HasNotes,
+		Hidden:   sd.Hidden,
 	}
 }
 
@@ -58,11 +56,10 @@ func (f *File) LoadSlide(slideNum int, includeNotes bool) (*SlideData, error) {
 	slideRels := relsToMap(rels)
 
 	sd := &SlideData{
-		Number:    slideNum,
-		Title:     extractTitle(sld.CSld.SpTree.Children),
-		Hidden:    sld.Show == "0", // OOXML: show属性のデフォルトは"1"（表示）、省略時は空文字列（表示扱い）
-		HasNotes:  f.hasNotes(idx),
-		HasImages: hasImages(sld.CSld.SpTree.Children),
+		Number:   slideNum,
+		Title:    extractTitle(sld.CSld.SpTree.Children),
+		Hidden:   sld.Show == "0", // OOXML: show属性のデフォルトは"1"（表示）、省略時は空文字列（表示扱い）
+		HasNotes: f.hasNotes(idx),
 	}
 
 	// レイアウト/マスターの継承データを取得

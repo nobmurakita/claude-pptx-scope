@@ -49,11 +49,10 @@ func (f *File) Search(query string, slideNums []int, includeNotes bool) ([]Slide
 
 		if matched {
 			results = append(results, SlideInfo{
-				Slide:     num,
-				Title:     extractTitle(sld.CSld.SpTree.Children),
-				HasNotes:  f.hasNotes(idx),
-				HasImages: hasImages(sld.CSld.SpTree.Children),
-				Hidden:    sld.Show == "0",
+				Slide:    num,
+				Title:    extractTitle(sld.CSld.SpTree.Children),
+				HasNotes: f.hasNotes(idx),
+				Hidden:   sld.Show == "0",
 			})
 		}
 	}

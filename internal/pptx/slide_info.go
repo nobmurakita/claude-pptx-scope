@@ -37,24 +37,8 @@ func (f *File) LoadSlideInfos() ([]SlideInfo, error) {
 		// ノート有無チェック
 		info.HasNotes = f.hasNotes(i)
 
-		// 画像有無チェック
-		info.HasImages = hasImages(sld.CSld.SpTree.Children)
-
 		infos = append(infos, info)
 	}
 
 	return infos, nil
-}
-
-// hasImages は子要素内に画像が存在するかチェックする（グループ内も再帰的に確認）
-func hasImages(children []xmlSpTreeChild) bool {
-	for _, child := range children {
-		if child.Pic != nil {
-			return true
-		}
-		if child.GrpSp != nil && hasImages(child.GrpSp.Children) {
-			return true
-		}
-	}
-	return false
 }
