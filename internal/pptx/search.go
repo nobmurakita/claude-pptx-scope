@@ -1,8 +1,6 @@
 package pptx
 
 import (
-	"encoding/xml"
-	"fmt"
 	"strings"
 )
 
@@ -20,19 +18,12 @@ func (f *File) Search(query string, slideNums []int, includeNotes bool) ([]Slide
 
 	for _, num := range targets {
 		idx := num - 1
-		entry := f.slideEntries[idx]
-
-		data, err := readZipFile(f.zi, entry.Path)
+		sld, err := f.loadSlideXML(idx)
 		if err != nil {
-			return nil, fmt.Errorf("スライド %d の読み込みに失敗: %w", num, err)
+			return nil, err
 		}
-		if data == nil {
+		if sld == nil {
 			continue
-		}
-
-		var sld xmlSlide
-		if err := xml.Unmarshal(data, &sld); err != nil {
-			return nil, fmt.Errorf("スライド %d のパースに失敗: %w", num, err)
 		}
 
 		matched := matchSpTreeText(sld.CSld.SpTree.Children, queryLower)

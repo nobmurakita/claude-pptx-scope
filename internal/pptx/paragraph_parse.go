@@ -1,7 +1,6 @@
 package pptx
 
 import (
-	"fmt"
 	"strconv"
 )
 
@@ -561,23 +560,15 @@ func formatSpacing(s *xmlSpacing) string {
 		if s.SpcPct.Val == 100000 { // 100% はデフォルト
 			return ""
 		}
-		pct := float64(s.SpcPct.Val) / 1000.0
-		return fmt.Sprintf("%s%%", trimFloat(pct))
+		return strconv.FormatFloat(float64(s.SpcPct.Val)/1000.0, 'f', -1, 64) + "%"
 	}
 	if s.SpcPts != nil {
 		if s.SpcPts.Val == 0 { // 0pt はデフォルト
 			return ""
 		}
-		pt := float64(s.SpcPts.Val) / 100.0
-		return fmt.Sprintf("%spt", trimFloat(pt))
+		return strconv.FormatFloat(float64(s.SpcPts.Val)/100.0, 'f', -1, 64) + "pt"
 	}
 	return ""
-}
-
-// trimFloat は小数点以下の不要な 0 を削除する（例: 150.0 → "150", 1.5 → "1.5"）
-func trimFloat(f float64) string {
-	s := strconv.FormatFloat(f, 'f', -1, 64)
-	return s
 }
 
 // resolveParaIndent は段落の marL と indent を解決する。
@@ -617,53 +608,4 @@ func resolveParaIndent(ppr *xmlPPr, level int, inherited *inheritedStyle) (marL 
 	return marL, indent
 }
 
-// extractTextMargin は bodyPr からテキストマージンを抽出する。
-// OOXML のデフォルト値（91440, 91440, 45720, 45720）と同じ場合は省略する。
-func extractTextMargin(bodyPr xmlBodyPr) *TextMargin {
-	l := bodyPr.LIns
-	r := bodyPr.RIns
-	t := bodyPr.TIns
-	b := bodyPr.BIns
-
-	// すべて未指定ならデフォルト → 省略
-	if l == nil && r == nil && t == nil && b == nil {
-		return nil
-	}
-
-	// デフォルト値（EMU: left=91440, right=91440, top=45720, bottom=45720）
-	isDefault := func(v *int64, def int64) bool {
-		return v == nil || *v == def
-	}
-	if isDefault(l, 91440) && isDefault(r, 91440) && isDefault(t, 45720) && isDefault(b, 45720) {
-		return nil
-	}
-
-	tm := &TextMargin{}
-	if l != nil {
-		tm.Left = emuToPtPtr(l)
-	}
-	if r != nil {
-		tm.Right = emuToPtPtr(r)
-	}
-	if t != nil {
-		tm.Top = emuToPtPtr(t)
-	}
-	if b != nil {
-		tm.Bottom = emuToPtPtr(b)
-	}
-	return tm
-}
-
-// extractShapeLevelAlignment はテキストボディレベルの垂直配置を抽出する。
-// デフォルトの上揃え（"t"）は省略する。
-func (ctx *parseContext) extractShapeLevelAlignment(txBody *xmlTxBody) *Alignment {
-	if txBody.BodyPr.Anchor == "" || txBody.BodyPr.Anchor == "t" {
-		return nil
-	}
-	v := mapVerticalAnchor(txBody.BodyPr.Anchor)
-	if v == "" {
-		return nil
-	}
-	return &Alignment{Vertical: v}
-}
 

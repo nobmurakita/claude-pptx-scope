@@ -159,6 +159,56 @@ func (ctx *parseContext) parseGrpSp(grp xmlGrpSp) *Shape {
 	return s
 }
 
+// extractTextMargin は bodyPr からテキストマージンを抽出する。
+// OOXML のデフォルト値（91440, 91440, 45720, 45720）と同じ場合は省略する。
+func extractTextMargin(bodyPr xmlBodyPr) *TextMargin {
+	l := bodyPr.LIns
+	r := bodyPr.RIns
+	t := bodyPr.TIns
+	b := bodyPr.BIns
+
+	// すべて未指定ならデフォルト → 省略
+	if l == nil && r == nil && t == nil && b == nil {
+		return nil
+	}
+
+	// デフォルト値（EMU: left=91440, right=91440, top=45720, bottom=45720）
+	isDefault := func(v *int64, def int64) bool {
+		return v == nil || *v == def
+	}
+	if isDefault(l, 91440) && isDefault(r, 91440) && isDefault(t, 45720) && isDefault(b, 45720) {
+		return nil
+	}
+
+	tm := &TextMargin{}
+	if l != nil {
+		tm.Left = emuToPtPtr(l)
+	}
+	if r != nil {
+		tm.Right = emuToPtPtr(r)
+	}
+	if t != nil {
+		tm.Top = emuToPtPtr(t)
+	}
+	if b != nil {
+		tm.Bottom = emuToPtPtr(b)
+	}
+	return tm
+}
+
+// extractShapeLevelAlignment はテキストボディレベルの垂直配置を抽出する。
+// デフォルトの上揃え（"t"）は省略する。
+func (ctx *parseContext) extractShapeLevelAlignment(txBody *xmlTxBody) *Alignment {
+	if txBody.BodyPr.Anchor == "" || txBody.BodyPr.Anchor == "t" {
+		return nil
+	}
+	v := mapVerticalAnchor(txBody.BodyPr.Anchor)
+	if v == "" {
+		return nil
+	}
+	return &Alignment{Vertical: v}
+}
+
 // resolveHyperlink は xmlHlinkClick からハイパーリンク情報を解決する
 func (ctx *parseContext) resolveHyperlink(hlink *xmlHlinkClick) *HyperlinkData {
 	if hlink == nil || hlink.RID == "" {

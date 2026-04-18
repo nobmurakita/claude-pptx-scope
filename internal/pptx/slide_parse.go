@@ -1,7 +1,6 @@
 package pptx
 
 import (
-	"encoding/xml"
 	"fmt"
 	"sort"
 )
@@ -29,24 +28,15 @@ func (sd *SlideData) Info() SlideInfo {
 // LoadSlide は指定スライドの内容をパースする
 func (f *File) LoadSlide(slideNum int, includeNotes bool) (*SlideData, error) {
 	idx := slideNum - 1
-	if idx < 0 || idx >= len(f.slideEntries) {
-		return nil, fmt.Errorf("スライド番号 %d は範囲外です（1〜%d）", slideNum, len(f.slideEntries))
-	}
-
-	entry := f.slideEntries[idx]
-
-	data, err := readZipFile(f.zi, entry.Path)
+	sld, err := f.loadSlideXML(idx)
 	if err != nil {
-		return nil, fmt.Errorf("スライド %d の読み込みに失敗: %w", slideNum, err)
+		return nil, err
 	}
-	if data == nil {
+	if sld == nil {
 		return nil, fmt.Errorf("スライド %d が見つかりません", slideNum)
 	}
 
-	var sld xmlSlide
-	if err := xml.Unmarshal(data, &sld); err != nil {
-		return nil, fmt.Errorf("スライド %d のパースに失敗: %w", slideNum, err)
-	}
+	entry := f.slideEntries[idx]
 
 	// スライドのリレーション（画像・コネクタ用）
 	rels, err := loadRelsTyped(f, relsPathFor(entry.Path))

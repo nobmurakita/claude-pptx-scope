@@ -3,17 +3,8 @@ package pptx
 // StyleDef はスタイル定義行の出力用。
 // style フィールドを先頭に、FontStyle の各フィールドをフラットに並べる。
 type StyleDef struct {
-	ID            int     `json:"style"`
-	Name          string  `json:"name,omitempty"`
-	Size          float64 `json:"size,omitempty"`
-	Bold          bool    `json:"bold,omitempty"`
-	Italic        bool    `json:"italic,omitempty"`
-	Strikethrough bool    `json:"strikethrough,omitempty"`
-	Underline     string  `json:"underline,omitempty"`
-	Color         string  `json:"color,omitempty"`
-	Highlight     string  `json:"highlight,omitempty"`
-	Baseline      string  `json:"baseline,omitempty"`
-	Cap           string  `json:"cap,omitempty"`
+	ID int `json:"style"`
+	FontStyle
 }
 
 // StyleDeduplicator はスライド横断でフォントスタイルの重複排除を行う。
@@ -53,12 +44,7 @@ func (sd2 *StyleDeduplicator) Deduplicate(sd *SlideData) []StyleDef {
 				sd2.nextID++
 				id = sd2.nextID
 				sd2.styleMap[key] = id
-				newStyles = append(newStyles, StyleDef{
-					ID: id, Name: key.Name, Size: key.Size,
-					Bold: key.Bold, Italic: key.Italic, Strikethrough: key.Strikethrough,
-					Underline: key.Underline, Color: key.Color, Highlight: key.Highlight,
-					Baseline: key.Baseline, Cap: key.Cap,
-				})
+				newStyles = append(newStyles, StyleDef{ID: id, FontStyle: key})
 			}
 			replaceMap[key] = id
 		}

@@ -53,11 +53,5 @@ func runImage(cmd *cobra.Command, args []string) error {
 	}
 	succeeded = true
 
-	useStdout, _ := cmd.Root().PersistentFlags().GetBool("stdout")
-	if useStdout {
-		fmt.Println(outputPath)
-		return nil
-	}
-	enc := newJSONEncoder(os.Stdout)
-	return enc.Encode(outputResult{File: outputPath})
+	return writeResultPath(cmd, outputPath)
 }

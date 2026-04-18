@@ -153,6 +153,29 @@ func (f *File) getTheme() *themeColors {
 	return f.theme
 }
 
+// loadSlideXML はスライドXMLを読み込んでパースする。
+// idx は 0 始まりのスライドインデックス。
+// エラーメッセージはスライド番号（idx+1）を含む。
+// ファイルが存在しない場合は (nil, nil) を返す。呼び出し側で「スキップ」「エラー」を判断する。
+func (f *File) loadSlideXML(idx int) (*xmlSlide, error) {
+	if idx < 0 || idx >= len(f.slideEntries) {
+		return nil, fmt.Errorf("スライド番号 %d は範囲外です（1〜%d）", idx+1, len(f.slideEntries))
+	}
+	entry := f.slideEntries[idx]
+	data, err := readZipFile(f.zi, entry.Path)
+	if err != nil {
+		return nil, fmt.Errorf("スライド %d の読み込みに失敗: %w", idx+1, err)
+	}
+	if data == nil {
+		return nil, nil
+	}
+	var sld xmlSlide
+	if err := xml.Unmarshal(data, &sld); err != nil {
+		return nil, fmt.Errorf("スライド %d のパースに失敗: %w", idx+1, err)
+	}
+	return &sld, nil
+}
+
 // slidePathToNum はZIP内のスライドパスからスライド番号（1始まり）を返す。
 // 見つからない場合は 0 を返す。
 func (f *File) slidePathToNum(slidePath string) int {
@@ -236,14 +259,5 @@ func resolveRelTarget(basePath, target string) string {
 	if strings.HasPrefix(target, "/") {
 		return target[1:]
 	}
-	combined := basePath + "/" + target
-	return cleanPath(combined)
-}
-
-// cleanPath はパス内の ".." や "." を解決する
-func cleanPath(p string) string {
-	if p == "" {
-		return ""
-	}
-	return path.Clean(p)
+	return path.Clean(basePath + "/" + target)
 }

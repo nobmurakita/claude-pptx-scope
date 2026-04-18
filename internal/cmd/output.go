@@ -89,3 +89,14 @@ func (ow *outputWriter) finalize() error {
 }
 
 func intPtr(n int) *int { return &n }
+
+// writeResultPath は生成したファイルのパスを結果として出力する。
+// --stdout 指定時はパスを直接出力し、それ以外は outputResult JSON を出力する。
+func writeResultPath(cmd *cobra.Command, path string) error {
+	useStdout, _ := cmd.Root().PersistentFlags().GetBool("stdout")
+	if useStdout {
+		fmt.Println(path)
+		return nil
+	}
+	return newJSONEncoder(os.Stdout).Encode(outputResult{File: path})
+}

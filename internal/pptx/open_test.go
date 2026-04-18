@@ -4,25 +4,6 @@ import (
 	"testing"
 )
 
-func TestCleanPath(t *testing.T) {
-	tests := []struct {
-		input string
-		want  string
-	}{
-		{"ppt/slides/../media/image1.png", "ppt/media/image1.png"},
-		{"ppt/slides/slide1.xml", "ppt/slides/slide1.xml"},
-		{"ppt/./slides/slide1.xml", "ppt/slides/slide1.xml"},
-		{"a/b/c/../../d", "a/d"},
-		{"", ""},
-	}
-	for _, tt := range tests {
-		got := cleanPath(tt.input)
-		if got != tt.want {
-			t.Errorf("cleanPath(%q) = %q, want %q", tt.input, got, tt.want)
-		}
-	}
-}
-
 func TestResolveRelTarget(t *testing.T) {
 	tests := []struct {
 		basePath string

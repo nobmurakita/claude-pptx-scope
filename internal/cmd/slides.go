@@ -91,7 +91,7 @@ func emitSlideData(enc *json.Encoder, dedup *pptx.StyleDeduplicator, sd *pptx.Sl
 
 	// 図形を1つずつ個別の行として出力（使用するスタイル定義を直前に挿入）
 	for i := range sd.Shapes {
-		if err := emitPendingStyles(enc, pending, &sd.Shapes[i]); err != nil {
+		if err := emitPendingStyles(enc, pending, collectStyleIDs(sd.Shapes[i:i+1], nil)); err != nil {
 			return err
 		}
 		if err := enc.Encode(sd.Shapes[i]); err != nil {
@@ -101,7 +101,7 @@ func emitSlideData(enc *json.Encoder, dedup *pptx.StyleDeduplicator, sd *pptx.Sl
 
 	// ノートで使用するスタイル定義を出力
 	if len(sd.Notes) > 0 {
-		if err := emitPendingParaStyles(enc, pending, sd.Notes); err != nil {
+		if err := emitPendingStyles(enc, pending, collectStyleIDs(nil, sd.Notes)); err != nil {
 			return err
 		}
 		if err := enc.Encode(notesOutput{Notes: sd.Notes}); err != nil {
@@ -112,12 +112,12 @@ func emitSlideData(enc *json.Encoder, dedup *pptx.StyleDeduplicator, sd *pptx.Sl
 	return nil
 }
 
-// emitPendingStyles は図形が参照するスタイル定義のうち未出力のものを出力する
-func emitPendingStyles(enc *json.Encoder, pending map[int]pptx.StyleDef, shape *pptx.Shape) error {
+// emitPendingStyles は ids で参照されるスタイル定義のうち未出力のものを出力する
+func emitPendingStyles(enc *json.Encoder, pending map[int]pptx.StyleDef, ids []int) error {
 	if len(pending) == 0 {
 		return nil
 	}
-	for _, id := range collectShapeStyleIDs(shape) {
+	for _, id := range ids {
 		if s, ok := pending[id]; ok {
 			if err := enc.Encode(s); err != nil {
 				return fmt.Errorf("スタイル定義の出力エラー: %w", err)
@@ -126,32 +126,6 @@ func emitPendingStyles(enc *json.Encoder, pending map[int]pptx.StyleDef, shape *
 		}
 	}
 	return nil
-}
-
-// emitPendingParaStyles は段落群が参照するスタイル定義のうち未出力のものを出力する
-func emitPendingParaStyles(enc *json.Encoder, pending map[int]pptx.StyleDef, paras []pptx.Paragraph) error {
-	if len(pending) == 0 {
-		return nil
-	}
-	for _, id := range collectParaStyleIDs(paras) {
-		if s, ok := pending[id]; ok {
-			if err := enc.Encode(s); err != nil {
-				return fmt.Errorf("スタイル定義の出力エラー: %w", err)
-			}
-			delete(pending, id)
-		}
-	}
-	return nil
-}
-
-// collectShapeStyleIDs は図形が参照するスタイルIDを収集する（重複なし、出現順）
-func collectShapeStyleIDs(shape *pptx.Shape) []int {
-	return collectStyleIDs([]pptx.Shape{*shape}, nil)
-}
-
-// collectParaStyleIDs は段落群が参照するスタイルIDを収集する（重複なし、出現順）
-func collectParaStyleIDs(paras []pptx.Paragraph) []int {
-	return collectStyleIDs(nil, paras)
 }
 
 // collectStyleIDs はスライド内の全スタイル参照を収集する（重複なし、出現順）
