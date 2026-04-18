@@ -25,3 +25,7 @@ macOS / Linux / Windows (Git Bash)で動作する。インストール後、Clau
 スキルリストに追加されたら、Claude が PowerPoint ファイルの読み取りが必要な場面で自動的に pptx-scope を使用する。
 
 出力形式やフィールドの詳細は [SPEC.md](SPEC.md) を参照。
+
+## ライセンス
+
+[MIT License](LICENSE)
