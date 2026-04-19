@@ -1,7 +1,7 @@
 # pptx-scope
 
-PowerPoint ファイル（.pptx）の内容を CLI から読み取り、JSONL形式で出力するGoツール。
-Claude Code 等の AI エージェントが PowerPoint 資料（プレゼン、設計書、フローチャート、提案書など）を構造的に読み取る用途を主眼とする。
+Claude で PowerPoint ファイル（.pptx）の内容を読み取るスキル。
+書式、図、画像などにも対応しており、視覚情報中心のスライドも読み取り可能。
 
 ## インストール
 
